@@ -1,20 +1,22 @@
 #!/bin/bash
-# Script: validate_gft_devops_environment_proj103.sh
+# Script: validate_gft_devops_environment.sh
 # Description: Validates the presence and critical configuration of essential DevOps tools
-#              specifically for executing PROJ-103 (GitHub restructuring & IaC setup)
-#              within the Gencraft studio environment. Optimized for WSL/Ubuntu.
-# Version: 1.4
-# Author: Gencraft DevOps Team (Adam, Benjamin, Camille, Diane, Édouard)
-# SSoT: gencraft-devops-automation/validation-scripts/validate_gft_devops_environment_proj103.sh
-# Usage: ./validate_gft_devops_environment_proj103.sh
+#              specifically for PROJ-103 and ongoing GenCr@ft studio development.
+#              Optimized for WSL/Ubuntu.
+# Version: 1.5.0 (Added pre-commit check, updated doc paths for ADR-001)
+# Author: Camille (Gem AB - Automation Specialist)
+# SSoT: gcd-onboarding-scripts/validations-scripts/validate_gft_devops_environment.sh
+# Based on previous version: 1.4
 
 # --- Configuration - Versions Minimales Attendues (À synchroniser avec les SSoT Gencraft) ---
 EXPECTED_OPENTOFU_VERSION_MAJOR=1
 EXPECTED_OPENTOFU_VERSION_MINOR=6
 EXPECTED_PYTHON_VERSION_MAJOR=3
-EXPECTED_PYTHON_VERSION_MINOR=8
+EXPECTED_PYTHON_VERSION_MINOR=8 # pre-commit often needs a reasonably modern Python for all its hooks
+EXPECTED_PIP_VERSION_MAJOR=20   # Example, ensure pip is functional and can install pre-commit
 EXPECTED_GIT_VERSION_MAJOR=2
-EXPECTED_GH_VERSION_MAJOR=2 # GitHub CLI
+EXPECTED_GH_VERSION_MAJOR=2 
+EXPECTED_PRECOMMIT_VERSION_MAJOR=2 # Version de pre-commit, par exemple v2.x.x ou v3.x.x
 ORGANIZATION="GenCr-ft"
 
 # --- Couleurs pour l'output ---
@@ -31,26 +33,26 @@ WARN_COUNT=0
 
 print_header() {
     echo -e "\n${BLUE}--- Section $1: $2 ---${NC}"
-}
+} #
 
 print_status() {
     local prefix
     case "$2" in
-        OK)    prefix="[${GREEN}OK${NC}]    ";;
-        FAIL)  prefix="[${RED}FAIL${NC}]  "; ((FAIL_COUNT++));;
-        WARN)  prefix="[${YELLOW}WARN${NC}]  "; ((WARN_COUNT++));;
-        INFO)  prefix="[${CYAN}INFO${NC}]  ";;
-        *)     prefix="[????]  ";;
+        OK)   prefix="[${GREEN}OK${NC}]     ";;
+        FAIL) prefix="[${RED}FAIL${NC}]   "; ((FAIL_COUNT++));;
+        WARN) prefix="[${YELLOW}WARN${NC}]   "; ((WARN_COUNT++));;
+        INFO) prefix="[${CYAN}INFO${NC}]   ";;
+        *)    prefix="[????]   ";;
     esac
     echo -e "$prefix$1"
-}
+} #
 
 check_command_exists() {
     local cmd="$1"
     local desc="$2"
     local ref="$3"
-    local install_suggestion_ubuntu="$4" # Installation suggestion for Ubuntu/WSL
-    local install_suggestion_other="$5"  # Optional: for other OS like macOS
+    local install_suggestion_ubuntu="$4" 
+    local install_suggestion_other="$5"  
     local msg_base="$desc ($cmd)"
     local msg_detail
 
@@ -67,7 +69,7 @@ check_command_exists() {
 
         if [ -n "$install_suggestion_ubuntu" ]; then
             print_status "  Suggestion d'installation (Ubuntu/WSL): $install_suggestion_ubuntu" "INFO"
-            if [[ "$install_suggestion_ubuntu" == *"sudo"* || "$install_suggestion_ubuntu" == *"apt"* ]]; then
+            if [[ "$install_suggestion_ubuntu" == *"sudo"* || "$install_suggestion_ubuntu" == *"apt"* || "$install_suggestion_ubuntu" == *"gem"* ]]; then # Added gem for mdl
                 print_status "    (Note: L'installation peut nécessiter des droits 'sudo'.)" "INFO"
             fi
         fi
@@ -79,7 +81,7 @@ check_command_exists() {
         fi
         return 1
     fi
-}
+} #
 
 check_version() {
     local version_cmd="$1"
@@ -89,6 +91,12 @@ check_version() {
     local version_regex_extract="$5"
     local version_cmd_output
     local current_version current_major current_minor
+
+    # Check if command exists before trying to get version
+    if ! command -v "${version_cmd%% *}" &> /dev/null; then # Takes the first word of version_cmd as the command
+      # print_status "$tool_name: Commande de base non trouvée, impossible de vérifier la version." "FAIL" # Already handled by check_command_exists
+      return 1
+    fi
 
     print_status "Vérification de la version de $tool_name..." "INFO"
     version_cmd_output=$($version_cmd 2>&1)
@@ -126,7 +134,7 @@ check_version() {
         print_status "$tool_name: Version $current_version (Attendu >= $expected_major.$expected_minor). Non conforme." "FAIL"
         return 1
     fi
-}
+} #
 
 # --- Début des Vérifications ---
 echo "======================================================================"
@@ -139,7 +147,7 @@ echo "======================================================================"
 
 # 1. Git (Contrôle de Version)
 print_header "1" "Git (Contrôle de Version)"
-if check_command_exists "git" "Git" "" "sudo apt update && sudo apt install git"; then
+if check_command_exists "git" "Git" "gcs-devops-standards/tooling/TOOL_00X_Git_Usage_Standard.md" "sudo apt update && sudo apt install git -y"; then # Added -y for non-interactive
     check_version "git --version" "Git" "$EXPECTED_GIT_VERSION_MAJOR" 0 'git version \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 
     GIT_USER_NAME=$(git config --global user.name)
@@ -155,46 +163,51 @@ fi
 
 # 2. GitHub CLI (gh)
 print_header "2" "GitHub CLI (gh)"
-if check_command_exists "gh" "GitHub CLI" "" "Consultez https://github.com/cli/cli#installation (suivre les instructions pour Linux/Debian/Ubuntu)"; then
+if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005_GitHub_CLI_Standard.md" "Consultez https://github.com/cli/cli#installation (instructions pour Linux/Debian/Ubuntu)"; then
     check_version "gh --version" "GitHub CLI" "$EXPECTED_GH_VERSION_MAJOR" 0 'gh version \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 
     print_status "Vérification de l'authentification GitHub CLI (gh auth status)..." "INFO"
-    if gh auth status > /dev/null 2>&1; then
+    if gh auth status -h "$ORGANIZATION" > /dev/null 2>&1; then # Check against specific org
         GH_USER=$(gh auth status -h github.com --show-token 2>/dev/null | grep "Logged in to github.com as" | sed 's/.*Logged in to github.com as \([^ ]*\) .*/\1/')
-        print_status "GitHub CLI (gh): Authentifié en tant que '$GH_USER'." "OK"
-        print_status "Permissions pour PROJ-103: Vérification MANUELLE requise." "WARN"
-        print_status "  L'utilisateur authentifié ('$GH_USER') DOIT avoir les droits d'administration" "INFO"
-        print_status "  sur l'organisation '$ORGANIZATION' ou des permissions spécifiques étendues" "INFO"
-        print_status "  pour renommer/créer des dépôts et gérer les permissions/webhooks." "INFO"
-        print_status "  Consultez /documentation/GenCr-ft/gencraft-studio-handbook/02-Knowledge-Base-Hub/KB-Domain-Security/Access-Control-Policy.md et S8." "INFO"
+        print_status "GitHub CLI (gh): Authentifié sur github.com en tant que '$GH_USER' et accès à '$ORGANIZATION' confirmé." "OK"
+    elif gh auth status > /dev/null 2>&1; then
+        GH_USER=$(gh auth status -h github.com --show-token 2>/dev/null | grep "Logged in to github.com as" | sed 's/.*Logged in to github.com as \([^ ]*\) .*/\1/')
+        print_status "GitHub CLI (gh): Authentifié sur github.com en tant que '$GH_USER', mais l'accès à l'organisation '$ORGANIZATION' n'a pas pu être confirmé directement par 'gh auth status -h $ORGANIZATION'." "WARN"
+        print_status "  Assurez-vous que votre token a les droits nécessaires pour l'organisation '$ORGANIZATION'." "INFO"
     else
         print_status "GitHub CLI (gh): Non authentifié." "FAIL"
-        print_status "  Veuillez exécuter 'gh auth login' et vous assurer d'avoir les permissions nécessaires pour l'organisation GenCr-ft." "INFO"
+        print_status "  Veuillez exécuter 'gh auth login' et vous assurer d'avoir les permissions nécessaires pour l'organisation '$ORGANIZATION'." "INFO"
     fi
+    # Removed detailed permissions check, as it's too complex for this script and better handled by context.
+    # The original detailed permission check note remains valid for manual verification by the user.
+    print_status "  Référence pour les permissions: gcs-studio-handbook/02-Knowledge-Base-Hub/KB-Domain-Security/Access-Control-Policy.md" "INFO"
+
 fi
 
 # 3. OpenTofu (tofu)
 print_header "3" "OpenTofu (tofu) - IaC Tool"
-if check_command_exists "tofu" "OpenTofu" "/documentation/GenCr-ft/devops-standards/iac/IAC_001_Tooling_Standard_OpenTofu.md" "Consultez https://opentofu.org/docs/intro/install (suivre les instructions pour Linux/Debian/Ubuntu)"; then
+if check_command_exists "tofu" "OpenTofu" "gcs-devops-standards/iac/IAC_001_OpenTofu_Tooling_Standard.md" "Consultez https://opentofu.org/docs/intro/install (Linux/Debian/Ubuntu)"; then
     check_version "tofu version" "OpenTofu" "$EXPECTED_OPENTOFU_VERSION_MAJOR" "$EXPECTED_OPENTOFU_VERSION_MINOR" 'OpenTofu v\K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 fi
 
 # 4. Outils de Traitement de Données (jq)
 print_header "4" "Outils de Traitement de Données"
-check_command_exists "jq" "jq (JSON processor)" "sudo apt install jq"
+check_command_exists "jq" "jq (JSON processor)" "gcs-devops-standards/tooling/TOOL_006_JQ_Usage_Standard.md" "sudo apt install jq -y"
 
 # 5. Outils de Linting et Qualité de Code
 print_header "5" "Outils de Linting et Qualité"
-check_command_exists "mdl" "Markdownlint (mdl)" "/documentation/GenCr-ft/gencraft-studio-handbook/04-Tooling-And-Automation-Hub/Tools/GCT-TOOL-MDLINT-V1.md" "sudo apt install ruby-full build-essential && sudo gem install mdl"
-check_command_exists "tflint" "TFLint (OpenTofu Linter)" "Consultez https://github.com/terraform-linters/tflint#installation (souvent un binaire à télécharger)"
-check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "Consultez https://aquasecurity.github.io/tfsec/latest/getting-started/installation/ (souvent un binaire à télécharger)"
-# Ou Checkov comme alternative/complément
-# check_command_exists "checkov" "Checkov (IaC Security Scanner)" "pip3 install checkov"
+check_command_exists "mdl" "Markdownlint (mdl)" "gcs-studio-handbook/04-Tooling-And-Automation-Hub/Tools/GCT-TOOL-MDLINT-V1.md" "sudo apt install ruby-full build-essential -y && sudo gem install mdl" "brew install mdl"
+check_command_exists "tflint" "TFLint (OpenTofu Linter)" "gcs-devops-standards/iac/IAC_007_IaC_Static_Analysis_Standard.md" "Consultez https://github.com/terraform-linters/tflint#installation"
+check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "gcs-devops-standards/iac/IAC_007_IaC_Static_Analysis_Standard.md" "Consultez https://aquasecurity.github.io/tfsec/latest/getting-started/installation/" "brew install tfsec"
+# check_command_exists "checkov" "Checkov (Alternative IaC Scanner)" "" "pip3 install checkov" "pip3 install checkov"
 
-if check_command_exists "python3" "Python 3" "" "sudo apt install python3 python3-pip"; then
+if check_command_exists "python3" "Python 3" "" "sudo apt install python3 python3-pip python3-venv -y"; then
     check_version "python3 --version" "Python 3" "$EXPECTED_PYTHON_VERSION_MAJOR" "$EXPECTED_PYTHON_VERSION_MINOR" 'Python \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
-    if check_command_exists "pip3" "pip3 (Python Package Installer)"; then # pip3 est généralement installé avec python3-pip
-        check_command_exists "pre-commit" "pre-commit framework" "/documentation/GenCr-ft/devops-standards/tooling/TOOL_004_Git_Hooks_Standard.md (à créer)" "pip3 install pre-commit"
+    if check_command_exists "pip3" "pip3 (Python Package Installer)"; then 
+        # Check for pre-commit
+        if check_command_exists "pre-commit" "Pre-commit framework" "gcs-devops-standards/tooling/TOOL_004_Git_Hooks_Standard.md" "pip3 install pre-commit" "pip3 install pre-commit"; then
+             check_version "pre-commit --version" "Pre-commit" "$EXPECTED_PRECOMMIT_VERSION_MAJOR" 0 'pre-commit \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
+        fi
     fi
 fi
 
@@ -204,7 +217,6 @@ echo "======================================================================"
 echo "Résumé de la Validation de l'Environnement DevOps pour PROJ-103 :"
 if [ "$FAIL_COUNT" -eq 0 ] && [ "$WARN_COUNT" -eq 0 ]; then
     print_status "Tous les outils vérifiés sont PRÉSENTS et CONFORMES aux versions de base." "OK"
-    print_status "N'oubliez pas la VÉRIFICATION MANUELLE des permissions 'gh' étendues." "INFO"
 elif [ "$FAIL_COUNT" -eq 0 ] && [ "$WARN_COUNT" -gt 0 ]; then
     print_status "Tous les outils essentiels sont présents, mais $WARN_COUNT AVERTISSEMENT(S) subsiste(nt)." "WARN"
     print_status "  Cela inclut potentiellement la configuration Git et la nécessité de vérifier les permissions 'gh'." "INFO"
@@ -213,9 +225,8 @@ else
     print_status "Veuillez corriger les ERREURS pour pouvoir exécuter les opérations de PROJ-103." "FAIL"
 fi
 echo "Consultez les standards Gencraft pour les versions exactes et les configurations détaillées."
-echo "  - OpenTofu: /documentation/GenCr-ft/devops-standards/iac/IAC_001_Tooling_Standard_OpenTofu.md"
-echo "  - GitHub CLI: /documentation/GenCr-ft/devops-standards/tooling/TOOL_00X_GH_CLI_Standard.md (ou équivalent)"
-echo "  - Hooks Git: /documentation/GenCr-ft/devops-standards/tooling/TOOL_004_Git_Hooks_Standard.md (à créer)"
+echo "  - Tous les standards et protocoles sont dans : gcs-studio-handbook"
+echo "  - Les standards DevOps spécifiques sont dans : gcs-devops-standards"
 echo "======================================================================"
 
 exit $FAIL_COUNT

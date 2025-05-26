@@ -48,7 +48,7 @@ This directory contains scripts to help new <G@FT.ai> studio members set up thei
 
 ## Full Documentation
 
-For detailed instructions on how to use these scripts, prerequisites, troubleshooting, and `.env` file configuration, please refer to the **[G@FT.ai Developer Onboarding Guide](https://github.com/GenCr-ft/devops-standards/blob/main/guides/developer-onboarding.md)** (Note: Please ensure this link points to the correct final URL of `developer-onboarding.md` in the `devops-standards` repository once it's merged and finalized).
+For detailed instructions on how to use these scripts, prerequisites, troubleshooting, and `.env` file configuration, please refer to the **** (Note: Please ensure this link points to the correct final URL of `developer-onboarding.md` in the `devops-standards` repository once it's merged and finalized).
 
 ## Contribution
 

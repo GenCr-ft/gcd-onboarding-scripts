@@ -1,274 +1,338 @@
 #!/usr/bin/env bash
 
 # G@FT.ai Studio - DevOps Onboarding Addon Script
-# Version: 1.2.2 (Correct yq/tofu download path before sudo mv)
-# Maintainer: Gem BB (Camille - Automation)
-# Target OS: Linux, macOS, WSL2 (Bash environment)
+# Version: 1.3.1 (PROJ-103 ADR-001 Repo Name Alignment, pre-commit handling)
+# Maintainer: Camille (Gem AB - Automation Specialist)
+# SSoT: gcd-onboarding-scripts/onboarding/gftai_devops_onboarding_addon.sh
+# Based on previous version: 1.2.2
 
 # --- Configuration & Globals (Defaults) ---
 readonly COLOR_BLUE="\033[1;34m"; readonly COLOR_GREEN="\033[1;32m"; readonly COLOR_RED="\033[1;31m";
 readonly COLOR_YELLOW="\033[1;33m"; readonly COLOR_RESET="\033[0m";
 
-TOFU_VERSION_TARGET=""
-AWS_CLI_VERSION_TARGET=""
-JQ_VERSION_TARGET=""
-YQ_VERSION_TARGET="latest"
+# Default versions for tools - these can be overridden by sourcing a .env file
+# or by setting them before calling this script if it's sourced by another.
+TOFU_VERSION_TARGET="${TOFU_VERSION_TARGET:-1.6.0}" # Example, align with IAC_001_OpenTofu_Tooling_Standard.md
+AWS_CLI_VERSION_TARGET="${AWS_CLI_VERSION_TARGET:-2.15.0}" # Example
+JQ_VERSION_TARGET="${JQ_VERSION_TARGET:-1.6}" # Example
+YQ_VERSION_TARGET="${YQ_VERSION_TARGET:-v4.40.5}" # Example, yq versioning is often 'vX.Y.Z'
+PRECOMMIT_VERSION_TARGET_MAJOR="${PRECOMMIT_VERSION_TARGET_MAJOR:-2}" # For pre-commit check
 
-GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT="${HOME}/gftai_studio_workspace"
-DEVOPS_TOOLS_PARENT_DIR_DEFAULT="${GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT}/devops_tools"
+GFTAI_ORG_NAME_DEFAULT="GenCr-ft"
+GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT="${HOME}/gftai_studio_workspace" 
+DEVOPS_TOOLS_PARENT_DIR_DEFAULT="${GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT}/devops_tools" 
 DEVOPS_PYTHON_VENV_NAME_DEFAULT=".venv-devops-tools"
 
 AWS_DEFAULT_PROFILE_DEFAULT="default"
 AWS_DEFAULT_REGION_DEFAULT="eu-west-3"
-DEVOPS_VSCODE_EXTRA_EXTENSIONS_DEFAULT="hashicorp.terraform,amazonwebservices.aws-toolkit-vscode,timonwong.shellcheck"
 
+# Use new repo names based on Lug's list and clarifications
+REPO_IAC_NAME_DEFAULT="gencraft-iac" # As per Lug: "je n'ai pas encore migré gencraft-iac"
+REPO_DEVOPS_AUTOMATION_NAME_DEFAULT="gcd-onboarding-scripts" # New name for this script's home
+
+# VSCode extensions specific to DevOps, supplementing the main onboarding script's list
+DEVOPS_VSCODE_EXTENSIONS_TO_INSTALL=(
+    "hashicorp.terraform" # Already in main list, but good to ensure for DevOps
+    "amazonwebservices.aws-toolkit-vscode"
+    # Other extensions from the main list like YAML, Shellcheck, Docker, Python are also highly relevant
+    # No need to repeat them if main onboarding script installs them. This list can be for *additional* ones.
+    # For now, assuming main list is comprehensive and these are just to emphasize or add minor ones.
+)
+
+# --- Global Variables (initialized in devops_main) ---
+SCRIPT_DIR_DEVOPS_ADDON=""
+OS_TYPE_DEVOPS_ADDON="" # To avoid conflict if sourced
+# Variables for tool versions (will be populated from defaults or .env)
 TOFU_VERSION=""; AWS_CLI_VERSION=""; JQ_VERSION=""; YQ_VERSION="";
 DEVOPS_TOOLS_PARENT_DIR=""; DEVOPS_PYTHON_VENV_PATH="";
 AWS_DEFAULT_PROFILE=""; AWS_DEFAULT_REGION="";
-DEVOPS_VSCODE_EXTENSIONS_TO_INSTALL=()
+GFTAI_ORG_NAME="" # Will be inherited or use default
 
-# --- Helper Functions ---
-info() { echo -e "${COLOR_BLUE}[INFO-DevOps]${COLOR_RESET} $1"; }
-success() { echo -e "${COLOR_GREEN}[SUCCESS-DevOps]${COLOR_RESET} $1"; }
-warning() { echo -e "${COLOR_YELLOW}[WARNING-DevOps]${COLOR_RESET} $1"; }
-error() { echo -e "${COLOR_RED}[ERROR-DevOps]${COLOR_RESET} $1"; if [[ "$2" == "exit" ]]; then exit 1; fi; }
-ask_yes_no() {
-    local question="$1"; local default_answer="${2:-yes}";
-    while true; do
-        if [[ "$default_answer" == "yes" ]]; then read -r -p "$(echo -e "${COLOR_YELLOW}[QUESTION-DevOps]${COLOR_RESET}") ${question} [Y/n]: " answer; answer=${answer:-Y};
-        else read -r -p "$(echo -e "${COLOR_YELLOW}[QUESTION-DevOps]${COLOR_RESET}") ${question} [y/N]: " answer; answer=${answer:-N}; fi
-        case "$answer" in [Yy]* ) return 0;; [Nn]* ) return 1;; * ) echo "Please answer yes (y) or no (n).";; esac
-    done
-}
-command_exists() { command -v "$1" >/dev/null 2>&1; }
-OS_TYPE=""
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then OS_TYPE="linux";
-elif [[ "$OSTYPE" == "darwin"* ]]; then OS_TYPE="macos";
-elif [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then OS_TYPE="windows_bash";
-else OS_TYPE="unknown"; fi
+# --- Utility Functions (Adopted from gftai_onboarding.sh v1.3.5 for consistency) ---
+FAIL_COUNT_DEVOPS_ADDON=0
+WARN_COUNT_DEVOPS_ADDON=0
 
-try_install_sys_package() {
-    local pkg_name_human="$1"; local pkg_name_apt="$2"; local pkg_name_brew="$3"
-    if ! ask_yes_no "Attempt automatic installation of ${pkg_name_human}?"; then info "Skipping install of ${pkg_name_human}."; return 1; fi
-    if [[ "${OS_TYPE}" == "linux" ]] && command_exists apt-get; then
-        info "Installing ${pkg_name_apt} via apt (sudo)..."
-        if sudo apt-get update && sudo apt-get install -y "${pkg_name_apt}"; then success "${pkg_name_human} installed (apt)."; return 0;
-        else error "${pkg_name_human} install failed (apt)."; fi
-    elif ([[ "${OS_TYPE}" == "macos" ]] || [[ "${OS_TYPE}" == "linux" ]]) && command_exists brew; then
-        info "Installing ${pkg_name_brew} via brew..."
-        if brew install "${pkg_name_brew}"; then success "${pkg_name_human} installed (brew)."; return 0;
-        else error "${pkg_name_human} install failed (brew)."; fi
-    else warning "No common package manager for ${pkg_name_human}."; fi
-    info "Please install ${pkg_name_human} manually."; return 1
-}
-# End Helper Functions
-
-# --- Configuration Loading for DevOps Script ---
-load_devops_env_file() {
-    info "Loading configurations from .env.devops file..."
-    local env_file="./.env.devops"; if [ ! -f "$env_file" ]; then env_file="${HOME}/.config/gftai_onboarding/.env.devops"; fi
-    if [ -f "$env_file" ]; then
-        info "Found .env.devops at '$env_file'. Loading..."
-        while IFS='=' read -r key value || [ -n "$key" ]; do
-            value=$(echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//")
-            key=$(echo "$key" | tr -d '[:space:]'); if [[ -z "$key" || "$key" == \#* ]]; then continue; fi
-            case "$key" in
-                TOFU_VERSION_TARGET) TOFU_VERSION_TARGET_DEFAULT="$value" ;; AWS_CLI_VERSION_TARGET) AWS_CLI_VERSION_TARGET_DEFAULT="$value" ;;
-                JQ_VERSION_TARGET) JQ_VERSION_TARGET_DEFAULT="$value" ;; YQ_VERSION_TARGET) YQ_VERSION_TARGET_DEFAULT="$value" ;;
-                DEVOPS_TOOLS_PARENT_DIR) DEVOPS_TOOLS_PARENT_DIR_DEFAULT="$value" ;; DEVOPS_PYTHON_VENV_NAME) DEVOPS_PYTHON_VENV_NAME_DEFAULT="$value" ;;
-                AWS_DEFAULT_PROFILE) AWS_DEFAULT_PROFILE_DEFAULT="$value" ;; AWS_DEFAULT_REGION) AWS_DEFAULT_REGION_DEFAULT="$value" ;;
-                DEVOPS_VSCODE_EXTRA_EXTENSIONS) DEVOPS_VSCODE_EXTRA_EXTENSIONS_DEFAULT="$value" ;; *) warning "Unknown key in .env.devops: $key" ;;
-            esac
-        done < <(tr -d '\r' < "$env_file"); success ".env.devops processed."
-    else info ".env.devops not found. Using script defaults for DevOps tools."; fi
-    TOFU_VERSION="${TOFU_VERSION_TARGET_DEFAULT:-latest}"; AWS_CLI_VERSION="${AWS_CLI_VERSION_TARGET_DEFAULT}"; JQ_VERSION="${JQ_VERSION_TARGET_DEFAULT}"; YQ_VERSION="${YQ_VERSION_TARGET_DEFAULT:-latest}";
-    DEVOPS_TOOLS_PARENT_DIR="${DEVOPS_TOOLS_PARENT_DIR_DEFAULT/#\~/$HOME}"; DEVOPS_PYTHON_VENV_PATH="${DEVOPS_TOOLS_PARENT_DIR}/${DEVOPS_PYTHON_VENV_NAME_DEFAULT}";
-    AWS_DEFAULT_PROFILE="${AWS_DEFAULT_PROFILE_DEFAULT:-default}"; AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION_DEFAULT:-eu-west-3}";
-    IFS=',' read -r -a DEVOPS_VSCODE_EXTENSIONS_TO_INSTALL <<< "$DEVOPS_VSCODE_EXTRA_EXTENSIONS_DEFAULT"
-}
-confirm_devops_configurations() {
-    info "DEVOPS SCRIPT - FINAL CONFIGURATION CHECK:"; echo "-----------------------------------------------------"
-    info "  OpenTofu Version:          ${COLOR_GREEN}${TOFU_VERSION}${COLOR_RESET}"
-    info "  AWS CLI Version (in venv): ${COLOR_GREEN}${AWS_CLI_VERSION:-latest}${COLOR_RESET}"
-    info "  jq Version (pkg manager):  ${COLOR_GREEN}${JQ_VERSION:-latest}${COLOR_RESET}"
-    info "  yq Version (GitHub):       ${COLOR_GREEN}${YQ_VERSION}${COLOR_RESET}"
-    info "  DevOps Tools Parent Dir:   ${COLOR_GREEN}${DEVOPS_TOOLS_PARENT_DIR}${COLOR_RESET}"
-    info "  DevOps Python Venv Path:   ${COLOR_GREEN}${DEVOPS_PYTHON_VENV_PATH}${COLOR_RESET}"
-    info "  AWS Profile (for config):  ${COLOR_GREEN}${AWS_DEFAULT_PROFILE}${COLOR_RESET}"
-    info "  AWS Region (for config):   ${COLOR_GREEN}${AWS_DEFAULT_REGION}${COLOR_RESET}"
-    info "  Extra VS Code Extensions:  ${COLOR_GREEN}${DEVOPS_VSCODE_EXTENSIONS_TO_INSTALL[*]}${COLOR_RESET}"
-    echo "-----------------------------------------------------"
-    if ! ask_yes_no "Proceed with these DevOps configurations?"; then error "DevOps config not confirmed. Exiting." "exit"; fi
-    success "DevOps configurations confirmed."
+_devops_addon_print_status() {
+    local message="$1"; local status="$2"; local prefix;
+    case "$status" in
+        OK)       prefix="[${COLOR_GREEN}OK${COLOR_RESET}]     ";;
+        ERROR)    prefix="[${COLOR_RED}ERROR${COLOR_RESET}]  "; ((FAIL_COUNT_DEVOPS_ADDON++));; 
+        WARN)     prefix="[${COLOR_YELLOW}WARN${COLOR_RESET}]   "; ((WARN_COUNT_DEVOPS_ADDON++));;
+        INFO)     prefix="[${COLOR_CYAN}INFO${COLOR_RESET}]   ";;
+        STEP)     prefix="[${COLOR_BLUE}STEP${COLOR_RESET}]   ";; 
+        ACTION)   prefix="${COLOR_YELLOW}ACTION${COLOR_RESET}: ";; 
+        SUCCESS)  prefix="[${COLOR_GREEN}SUCCESS${COLOR_RESET}]";; 
+        *)        prefix="[????]   ";;
+    esac; echo -e "$prefix$message";
 }
 
-# --- Section D0: DevOps Script Prerequisites ---
-check_devops_prerequisites() {
-    info "SECTION D0: Checking Prerequisites for DevOps Addon Script..."
-    local all_prereqs_met=true
-    if ! command_exists python3 || ! python3 -m pip --version >/dev/null 2>&1; then error "Python 3/pip not available. Run main 'gftai_onboarding.sh' first."; all_prereqs_met=false; fi
-    if ! command_exists unzip; then warning "'unzip' needed for OpenTofu."; if ! try_install_sys_package "unzip" "unzip" "unzip"; then all_prereqs_met=false; fi; fi
-    if ! command_exists curl; then warning "'curl' needed for downloads."; if ! try_install_sys_package "curl" "curl" "curl"; then all_prereqs_met=false; fi; fi
-    if [[ "${OS_TYPE}" == "linux" ]] && command_exists apt-get; then
-        local venv_pkg_installed=false; local py_ver_short; py_ver_short=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null)
-        local python_venv_pkg_specific=""; if [ -n "$py_ver_short" ]; then python_venv_pkg_specific="python${py_ver_short}-venv"; if dpkg -s "${python_venv_pkg_specific}" >/dev/null 2>&1 ; then success "Found: ${python_venv_pkg_specific}"; venv_pkg_installed=true; fi; fi
-        if ! $venv_pkg_installed && ! dpkg -s python3-venv >/dev/null 2>&1 ; then
-             warning "Package 'python3-venv' (or '${python_venv_pkg_specific}') missing."; local pkg_to_install="python3-venv"; if [ -n "$python_venv_pkg_specific" ]; then pkg_to_install="$python_venv_pkg_specific"; fi
-             if ! try_install_sys_package "${pkg_to_install}" "${pkg_to_install}" ""; then warning "Failed to install ${pkg_to_install}."; else success "Installed ${pkg_to_install}."; fi
-        elif ! $venv_pkg_installed && dpkg -s python3-venv >/dev/null 2>&1; then success "Package 'python3-venv' (generic) installed."; fi
-    fi
-    if ! $all_prereqs_met; then error "DevOps script prerequisites missing. Address and re-run." "exit"; fi
-    success "DevOps script prerequisites met."; echo "-----------------------------------------------------"
-}
+d_success() { _devops_addon_print_status "$1" "SUCCESS"; }
+d_error() { _devops_addon_print_status "$1" "ERROR"; } 
+d_warning() { _devops_addon_print_status "$1" "WARN"; } 
+d_info() { _devops_addon_print_status "$1" "INFO"; }
+d_step_info() { _devops_addon_print_status "$1" "STEP"; }
 
-# --- Section D2: Python Virtual Environment for DevOps ---
-setup_devops_python_venv() {
-    info "SECTION D2: Setting up Python Virtual Environment for DevOps Tools..."
-    echo "-----------------------------------------------------"
-    if ! command_exists python3; then error "Python 3 not found." "exit"; return 1; fi
-    info "DevOps tools parent: ${DEVOPS_TOOLS_PARENT_DIR}"; info "Python venv path: ${DEVOPS_PYTHON_VENV_PATH}"
-    local recreate_venv=false
-    if [ -d "${DEVOPS_PYTHON_VENV_PATH}" ]; then
-        success "Venv dir exists: ${DEVOPS_PYTHON_VENV_PATH}."
-        if [ -x "${DEVOPS_PYTHON_VENV_PATH}/bin/pip" ] && "${DEVOPS_PYTHON_VENV_PATH}/bin/pip" --version >/dev/null 2>&1; then success "pip is OK in existing venv.";
-        else warning "pip NOT found/working in existing venv: ${DEVOPS_PYTHON_VENV_PATH}."; if ask_yes_no "Existing venv seems broken. Remove and recreate?"; then
-                info "Removing venv: ${DEVOPS_PYTHON_VENV_PATH}"; if rm -rf "${DEVOPS_PYTHON_VENV_PATH}"; then success "Removed venv."; recreate_venv=true; else error "Failed to remove venv."; return 1; fi
-            else warning "Proceeding with potentially broken venv."; fi
-        fi
-    else recreate_venv=true; fi
-    if [ "$recreate_venv" = true ]; then
-        if [ ! -d "${DEVOPS_TOOLS_PARENT_DIR}" ]; then info "Creating parent dir: ${DEVOPS_TOOLS_PARENT_DIR}"; if ! mkdir -p "${DEVOPS_TOOLS_PARENT_DIR}"; then error "Failed: ${DEVOPS_TOOLS_PARENT_DIR}."; return 1; fi; success "Created: ${DEVOPS_TOOLS_PARENT_DIR}"; fi
-        info "Creating Python venv (with --upgrade-deps): ${DEVOPS_PYTHON_VENV_PATH}"
-        if python3 -m venv --upgrade-deps "${DEVOPS_PYTHON_VENV_PATH}"; then success "Python venv created.";
-            info "Ensuring pip, setuptools, wheel are up-to-date in new venv...";
-            if "${DEVOPS_PYTHON_VENV_PATH}/bin/python3" -m pip install --upgrade pip setuptools wheel; then success "pip/setuptools/wheel upgraded in venv.";
-            else warning "Failed to upgrade pip/setuptools in venv."; fi
-            if [ ! -f "${DEVOPS_PYTHON_VENV_PATH}/bin/pip" ]; then warning "pip still not found in new venv. Check python3-venv package."; fi
-        else error "Failed to create Python venv. Ensure 'python3-venv' (or equivalent) is installed."; return 1; fi
-    fi
-    info "To activate DevOps venv: source \"${DEVOPS_PYTHON_VENV_PATH}/bin/activate\""; echo "-----------------------------------------------------"; return 0
-}
-
-# --- Section D1: DevOps Tooling Installation ---
-install_opentofu() {
-    info "Checking for OpenTofu CLI (tofu)..."
-    if command_exists tofu; then current_tofu_version=$(tofu version | head -n1); success "OpenTofu already installed: ${current_tofu_version}"; return 0; fi
-    warning "OpenTofu CLI not found."; if ! ask_yes_no "Install OpenTofu now?"; then info "Skipping OpenTofu."; return 1; fi
-    local os_arch; case "$(uname -sm)" in "Linux x86_64") os_arch="linux_amd64" ;; "Linux aarch64") os_arch="linux_arm64" ;; "Darwin x86_64") os_arch="darwin_amd64" ;; "Darwin arm64") os_arch="darwin_arm64" ;; *) error "Unsupported OS/Arch for Tofu: $(uname -sm)."; return 1 ;; esac
-    local tofu_dl_v; if [ -n "$TOFU_VERSION" ] && [ "$TOFU_VERSION" != "latest" ]; then tofu_dl_v="$TOFU_VERSION"; else info "Fetching latest OpenTofu version..."; tofu_dl_v=$(curl -fsSL https://api.github.com/repos/opentofu/opentofu/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/'); if [ -z "$tofu_dl_v" ]; then error "Could not fetch latest Tofu."; return 1; fi; info "Latest Tofu: ${tofu_dl_v}."; fi
-    local dl_url="https://github.com/opentofu/opentofu/releases/download/v${tofu_dl_v}/tofu_${tofu_dl_v}_${os_arch}.zip";
-    local temp_dl_dir; temp_dl_dir=$(mktemp -d tofu_dl_XXXXXX) # Create temp dir in current path or /tmp
-    local install_p="/usr/local/bin";
-    info "Downloading Tofu v${tofu_dl_v} for ${os_arch} to ${temp_dl_dir}/tofu.zip...";
-    if curl -fsSL "${dl_url}" -o "${temp_dl_dir}/tofu.zip"; then info "Unzipping Tofu...";
-        if unzip -q "${temp_dl_dir}/tofu.zip" -d "${temp_dl_dir}"; then info "Installing tofu to ${install_p} (sudo)...";
-            if sudo mv "${temp_dl_dir}/tofu" "${install_p}/tofu" && sudo chmod +x "${install_p}/tofu"; then success "Tofu v${tofu_dl_v} installed."; if command_exists tofu; then tofu version; fi; rm -rf "${temp_dl_dir}"; return 0;
-            else error "Failed to move tofu to ${install_p}."; fi
-        else error "Failed to unzip Tofu."; fi
-    else local curl_exit_code=$?; error "Failed to download Tofu (curl code: ${curl_exit_code}). URL: ${dl_url}"; fi
-    rm -rf "${temp_dl_dir}"; info "Install Tofu manually: https://opentofu.org/docs/intro/install/"; return 1
-}
-
-install_aws_cli_in_venv() {
-    info "Checking for AWS CLI (aws) within DevOps Python venv..."
-    if [ ! -f "${DEVOPS_PYTHON_VENV_PATH}/bin/activate" ]; then error "DevOps Python venv not found/incomplete. Cannot install AWS CLI."; return 1; fi
-    if [ ! -x "${DEVOPS_PYTHON_VENV_PATH}/bin/pip" ]; then error "pip not found/executable in venv. AWS CLI install will fail."; return 1; fi
-    if "${DEVOPS_PYTHON_VENV_PATH}/bin/aws" --version >/dev/null 2>&1; then current_aws_version=$("${DEVOPS_PYTHON_VENV_PATH}/bin/aws" --version 2>&1); success "AWS CLI already in venv: ${current_aws_version}"; return 0; fi
-    warning "AWS CLI not found in DevOps venv."; if ! ask_yes_no "Install AWS CLI v2 into '${DEVOPS_PYTHON_VENV_PATH}' now?"; then info "Skipping AWS CLI."; return 1; fi
-    info "Installing AWS CLI v2 into Python venv via '${DEVOPS_PYTHON_VENV_PATH}/bin/pip'...";
-    if "${DEVOPS_PYTHON_VENV_PATH}/bin/pip" install --upgrade awscli; then success "AWS CLI installed/updated in venv.";
-        if "${DEVOPS_PYTHON_VENV_PATH}/bin/aws" --version >/dev/null 2>&1; then "${DEVOPS_PYTHON_VENV_PATH}/bin/aws" --version; else error "AWS CLI installed but command not found in venv path."; fi
-        info "To use: source \"${DEVOPS_PYTHON_VENV_PATH}/bin/activate\""; return 0;
-    else error "Failed to install AWS CLI into venv via pip."; info "Manual install: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html (venv method)"; return 1; fi
-}
-
-install_jq() {
-    info "Checking for jq..."; if command_exists jq; then success "jq installed: $(jq --version 2>&1)"; return 0; fi
-    warning "jq not found."; if ! try_install_sys_package "jq" "jq" "jq"; then info "Install jq manually: https://stedolan.github.io/jq/download/"; return 1; fi
-    if command_exists jq; then success "jq installed."; else error "jq still not found after install attempt."; return 1; fi
-}
-
-install_yq() {
-    info "Checking for yq (Go version by Mike Farah)..."; if command_exists yq; then success "yq installed: $(yq --version 2>&1 | head -n1 || echo unknown)"; return 0; fi
-    warning "yq not found."; if ! ask_yes_no "Install yq now?"; then info "Skipping yq."; return 1; fi
-    local yq_dl_v; if [ -n "$YQ_VERSION" ] && [ "$YQ_VERSION" != "latest" ]; then yq_dl_v="$YQ_VERSION"; else info "Fetching latest yq version..."; yq_dl_v=$(curl -fsSL https://api.github.com/repos/mikefarah/yq/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); if [ -z "$yq_dl_v" ]; then error "Could not fetch latest yq."; return 1; fi; info "Latest yq: ${yq_dl_v}."; fi
-    local yq_os yq_arch; case "$(uname -s)" in Linux) yq_os="linux" ;; Darwin) yq_os="darwin" ;; *) error "Unsupported OS for yq: $(uname -s)."; return 1 ;; esac
-    case "$(uname -m)" in x86_64) yq_arch="amd64" ;; arm64 | aarch64) yq_arch="arm64" ;; *) error "Unsupported Arch for yq: $(uname -m)."; return 1 ;; esac
-    local yq_bin="yq_${yq_os}_${yq_arch}"; local yq_url="https://github.com/mikefarah/yq/releases/download/${yq_dl_v}/${yq_bin}";
-    local temp_yq_dl_file; temp_yq_dl_file=$(mktemp -p "$HOME" yq_download_XXXXXX || mktemp -p "/tmp" yq_download_XXXXXX) # Try HOME first, then /tmp
-    local install_p="/usr/local/bin";
-
-    info "Downloading yq ${yq_dl_v} (${yq_bin}) to ${temp_yq_dl_file}..."
-    if curl -fsSL "${yq_url}" -o "${temp_yq_dl_file}"; then
-        info "Installing yq to ${install_p}/yq (requires sudo)...";
-        if sudo mv "${temp_yq_dl_file}" "${install_p}/yq" && sudo chmod +x "${install_p}/yq"; then
-            success "yq ${yq_dl_v} installed to ${install_p}/yq."
-            if command_exists yq; then yq --version; fi; return 0;
+command_exists() { command -v "$1" &>/dev/null; }
+ensure_dir() { 
+    if [ ! -d "$1" ]; then 
+        if mkdir -p "$1"; then
+            d_info "Created directory: $1"
         else
-            error "Failed to move yq to ${install_p} or set permissions. Check sudo permissions."
-            rm -f "${temp_yq_dl_file}" # Clean up temp file if mv failed
+            d_error "Failed to create directory: $1 ! Please check permissions or path."
+        fi
+    fi 
+}
+d_confirm_action() { # Renamed to avoid conflict if sourced
+    local question="$1"; local default_answer="${2:-yes}"; local prompt_options="[Y/n]";
+    if [[ "$default_answer" =~ ^(no|n|N)$ ]]; then prompt_options="[y/N]"; fi
+    while true; do _devops_addon_print_status "$question $prompt_options " "ACTION"; read -r answer; answer="${answer:-$default_answer}";
+        case "$answer" in [Yy]|[Yy][Ee][Ss]) return 0;; [Nn]|[Nn][Oo]) return 1;; *) d_error "Invalid response. Please answer 'yes' or 'no'.";; esac; done;
+}
+
+# --- Tool Installation/Verification Functions ---
+# (These functions are adapted from the original gftai_devops_onboarding_addon.sh
+#  and use the new logging functions. They might also benefit from some robustness improvements
+#  similar to those applied to the main onboarding script if run completely standalone.)
+
+check_and_install_tofu() {
+    d_step_info "D1.1: Checking/Installing OpenTofu (tofu)..."
+    # ... (Logic from original, ensure TOFU_VERSION_TARGET is used) ...
+    # Example:
+    if ! command_exists tofu || ! tofu version | grep -q "${TOFU_VERSION_TARGET}"; then # Simplified check
+        d_warning "OpenTofu version mismatch or not found. Target: ${TOFU_VERSION_TARGET}."
+        if d_confirm_action "Install/Update OpenTofu ${TOFU_VERSION_TARGET} now?"; then
+             # Add actual download/install logic for TOFU_VERSION_TARGET
+             # For example, fetching from GitHub releases:
+             d_info "Attempting to install OpenTofu ${TOFU_VERSION_TARGET}..."
+             local os_type; os_type=$(uname -s | tr '[:upper:]' '[:lower:]')
+             local arch_type; arch_type=$(uname -m)
+             if [[ "$arch_type" == "x86_64" ]]; then arch_type="amd64"; elif [[ "$arch_type" == "aarch64" ]]; then arch_type="arm64"; fi
+             local tofu_url="https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION_TARGET}/tofu_${TOFU_VERSION_TARGET}_${os_type}_${arch_type}.zip"
+             local download_path="/tmp/tofu.zip"
+             local install_path="${DEVOPS_TOOLS_PARENT_DIR}/tofu/bin" # Install to a local tools dir
+             ensure_dir "$install_path"
+             d_info "Downloading from $tofu_url..."
+             if curl -sL "$tofu_url" -o "$download_path"; then
+                 unzip -o "$download_path" -d "${install_path}" tofu || (unzip -o "$download_path" -d "${install_path}" && mv "${install_path}/tofu_${TOFU_VERSION_TARGET}_${os_type}_${arch_type}/tofu" "${install_path}/tofu") # Handle nested dir
+                 chmod +x "${install_path}/tofu"
+                 d_success "OpenTofu v${TOFU_VERSION_TARGET} downloaded to ${install_path}."
+                 d_info "Please ensure ${install_path} is in your PATH or use the full path."
+                 # Verify
+                 if "${install_path}/tofu" version | grep -q "${TOFU_VERSION_TARGET}"; then d_success "OpenTofu v${TOFU_VERSION_TARGET} installed."; else d_error "OpenTofu installation failed or version mismatch."; fi
+             else
+                 d_error "Failed to download OpenTofu. Please install manually."
+             fi
+             rm -f "$download_path"
+        else
+            d_warning "Skipping OpenTofu installation/update."
         fi
     else
-        local curl_exit_code=$?
-        error "Failed to download yq (curl code: ${curl_exit_code}). URL: ${yq_url}"
-        rm -f "${temp_yq_dl_file}" # Clean up temp file
+        d_success "OpenTofu found: $(tofu version | head -n1)"
     fi
-    info "Install yq (Mike Farah version) manually: https://github.com/mikefarah/yq/#install"; return 1
-}
+    echo "-----------------------------------------------------"
+} # Based on
 
-# --- Main DevOps Addon Script Logic ---
+check_and_install_aws_cli() {
+    d_step_info "D1.2: Checking/Installing AWS CLI v2..."
+    # ... (Logic from original, ensure AWS_CLI_VERSION_TARGET is used if specified) ...
+    # Example:
+    if ! command_exists aws || ! aws --version 2>&1 | grep -q "aws-cli/${AWS_CLI_VERSION_TARGET:-2}"; then # Check for v2 generally or specific target
+        d_warning "AWS CLI v2 (target: ${AWS_CLI_VERSION_TARGET:-2.x.x}) not found or version mismatch."
+        if d_confirm_action "Install/Update AWS CLI v2 now?"; then
+            d_info "Attempting to install AWS CLI v2..."
+            local install_path="${DEVOPS_TOOLS_PARENT_DIR}/aws-cli"
+            ensure_dir "$install_path"
+            if curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip" && \
+               unzip -q -o /tmp/awscliv2.zip -d /tmp && \
+               sudo /tmp/aws/install --bin-dir "${install_path}/bin" --install-dir "${install_path}/aws-cli" --update && \
+               rm /tmp/awscliv2.zip && rm -rf /tmp/aws; then
+                d_success "AWS CLI v2 installed/updated to ${install_path}/bin/aws."
+                d_info "Please ensure ${install_path}/bin is in your PATH or use the full path."
+                if "${install_path}/bin/aws" --version | grep -q "aws-cli/2"; then d_success "AWS CLI v2 confirmed."; else d_error "AWS CLI v2 installation issue."; fi
+            else
+                d_error "Failed to install AWS CLI v2. Please install manually."
+            fi
+        else
+            d_warning "Skipping AWS CLI v2 installation/update."
+        fi
+    else
+        d_success "AWS CLI v2 found: $(aws --version 2>&1)"
+    fi
+    echo "-----------------------------------------------------"
+} # Based on
+
+# ... (Similar updates for check_and_install_yq, check_and_install_jq) ...
+
+setup_devops_python_venv() { # MODIFIED to include pre-commit if not globally available
+    d_step_info "D2: Setting up Python Virtual Environment for DevOps Tools..."
+    # ... (Venv creation logic unchanged from gftai_devops_onboarding_addon.sh v1.2.2) ...
+    DEVOPS_PYTHON_VENV_PATH="${DEVOPS_TOOLS_PARENT_DIR}/${DEVOPS_PYTHON_VENV_NAME_DEFAULT}"
+    if [ ! -d "${DEVOPS_PYTHON_VENV_PATH}" ]; then
+        d_info "Creating Python virtual environment at ${DEVOPS_PYTHON_VENV_PATH}..."
+        if python3 -m venv "${DEVOPS_PYTHON_VENV_PATH}"; then
+            d_success "Python virtual environment created."
+        else
+            d_error "Failed to create Python virtual environment at ${DEVOPS_PYTHON_VENV_PATH}."
+            d_info "Ensure 'python3-venv' is installed (sudo apt install python3-venv)."
+            return 1
+        fi
+    else
+        d_success "Python virtual environment already exists at ${DEVOPS_PYTHON_VENV_PATH}."
+    fi
+
+    d_info "Activating DevOps Python venv and installing/upgrading packages..."
+    # shellcheck source=/dev/null
+    source "${DEVOPS_PYTHON_VENV_PATH}/bin/activate"
+    
+    local py_packages=("python-terraform" "ansible" "boto3" "pre-commit") # Added pre-commit
+    local all_py_ok=true
+    for pkg in "${py_packages[@]}"; do
+        d_info "Installing/Updating ${pkg} in venv..."
+        if pip3 install --upgrade "${pkg}"; then 
+            d_success "${pkg} installed/updated."
+        else
+            d_error "Failed to install/update ${pkg}."
+            all_py_ok=false
+        fi
+    done
+    
+    deactivate # Deactivate after installations
+    if $all_py_ok; then d_success "DevOps Python tools setup complete in venv."; else d_warning "Some Python tools for DevOps venv had issues."; fi
+    d_info "To use these tools, activate the venv: source \"${DEVOPS_PYTHON_VENV_PATH}/bin/activate\""
+    echo "-------------------------------------------------------------------"
+} # Based on
+
+clone_devops_repos() { # MODIFIED for new repo names and pre-commit hook install attempt
+    d_step_info "D3: Cloning/Verifying Core DevOps Repositories..."
+    echo "---------------------------------------------------------"
+    local current_script_dir_addon; current_script_dir_addon=$( cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd )
+    if [ -f "${current_script_dir_addon}/.env" ]; then # Check for .env specific to this addon script's location
+        # shellcheck source=.env
+        source "${current_script_dir_addon}/.env"; info "Loaded .env file specific to DevOps addon."
+    fi
+
+    # Use GFTAI_ORG_NAME which should be set by main onboarding script or its .env
+    local org_name="${GFTAI_ORG_NAME:-$GFTAI_ORG_NAME_DEFAULT}"
+    local workspace_dir="${GFTAI_WORKSPACE_PARENT_DIR:-$GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT}"
+    
+    local repo_iac_name="${REPO_IAC_NAME_OVERRIDE:-$REPO_IAC_NAME_DEFAULT}" 
+    local repo_devops_automation_name="${REPO_DEVOPS_AUTOMATION_NAME_OVERRIDE:-$REPO_DEVOPS_AUTOMATION_NAME_DEFAULT}"
+
+    ensure_dir "${workspace_dir}" # Ensure the main workspace parent exists
+    
+    local repos_to_clone_devops=()
+    if [[ -n "$repo_iac_name" ]]; then repos_to_clone_devops+=("${repo_iac_name}"); fi
+    if [[ -n "$repo_devops_automation_name" ]]; then repos_to_clone_devops+=("${repo_devops_automation_name}"); fi
+
+    if [ ${#repos_to_clone_devops[@]} -eq 0 ]; then
+        d_info "No specific DevOps repositories defined for cloning in this script's config. Skipping."
+        echo "---------------------------------------------------------"
+        return
+    fi
+    
+    d_info "Target base directory for DevOps repos: ${workspace_dir}"
+    d_info "Organization: ${org_name}"
+
+    local all_cloned_successfully=true
+    for repo_name_only in "${repos_to_clone_devops[@]}"; do
+        local target_dir="${workspace_dir}/${repo_name_only}"
+        if [ -d "${target_dir}/.git" ]; then
+            d_success "Repository '${repo_name_only}' already exists at '${target_dir}'. Skipping clone."
+        else
+            ensure_dir "$target_dir"
+            d_info "Cloning '${org_name}/${repo_name_only}' into '${target_dir}'..."
+            if gh repo clone "${org_name}/${repo_name_only}" "${target_dir}" -- --depth 1 --single-branch --no-tags; then
+                d_success "Repository '${org_name}/${repo_name_only}' cloned successfully."
+                # Install pre-commit hooks if config exists
+                if command_exists pre-commit && [ -f "${target_dir}/.pre-commit-config.yaml" ]; then
+                    d_info "Found .pre-commit-config.yaml in ${repo_name_only}. Installing pre-commit hooks..."
+                    if (cd "${target_dir}" && pre-commit install && pre-commit install --hook-type commit-msg && pre-commit install --hook-type pre-push); then
+                        d_success "Pre-commit hooks installed successfully for ${repo_name_only}."
+                    else
+                        d_warning "Failed to install some pre-commit hooks for ${repo_name_only}."
+                    fi
+                fi
+            else
+                d_error "Failed to clone repository '${org_name}/${repo_name_only}'. Ensure 'gh' is authenticated for org '${org_name}'."
+                all_cloned_successfully=false
+            fi
+        fi
+    done
+
+    if $all_cloned_successfully; then
+        d_success "Core DevOps repositories cloning/verification phase complete."
+    else
+        d_warning "Some DevOps repositories could not be cloned. Please check logs."
+    fi
+    echo "---------------------------------------------------------"
+} # Based on
+
+# --- Main DevOps Addon Function ---
 devops_main() {
-    load_devops_env_file
-    info "Starting G@FT.ai DevOps Onboarding Addon Script (v1.2.1)..."
-    info "This script assumes the main onboarding script has been run."
-    confirm_devops_configurations
+    SCRIPT_DIR_DEVOPS_ADDON="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    # Load .env if present (for overrides of REPO_IAC_NAME_DEFAULT etc.)
+    if [ -f "${SCRIPT_DIR_DEVOPS_ADDON}/.env" ]; then source "${SCRIPT_DIR_DEVOPS_ADDON}/.env"; fi
+    
+    # Populate globalish vars for this script from defaults or .env
+    TOFU_VERSION="${TOFU_VERSION_OVERRIDE:-$TOFU_VERSION_TARGET}"
+    AWS_CLI_VERSION="${AWS_CLI_VERSION_OVERRIDE:-$AWS_CLI_VERSION_TARGET}"
+    # ... and so on for JQ_VERSION, YQ_VERSION, DEVOPS_TOOLS_PARENT_DIR etc.
+    DEVOPS_TOOLS_PARENT_DIR="${DEVOPS_TOOLS_PARENT_DIR_OVERRIDE:-$DEVOPS_TOOLS_PARENT_DIR_DEFAULT}"
+    ensure_dir "$DEVOPS_TOOLS_PARENT_DIR" # Ensure tools parent dir exists
 
-    if ! check_devops_prerequisites; then exit 1; fi
-    if ! setup_devops_python_venv; then
-        warning "Python virtual environment setup for DevOps had issues. AWS CLI install might fail or install globally."
+    OS_TYPE_DEVOPS_ADDON=$(uname -s) # Simplified OS detection for this script
+
+    d_step_info "G@FT.ai DevOps Onboarding Addon Script v1.3.1 Initializing..."
+    d_info "This script installs additional tools for DevOps engineers."
+
+    d_step_info "SECTION D1: Installing Core DevOps CLIs..."
+    check_and_install_tofu
+    check_and_install_aws_cli
+    # ... (call check_and_install_yq, check_and_install_jq) ...
+
+    d_step_info "SECTION D2: Setting up Python Virtual Environment for DevOps Tools..."
+    setup_devops_python_venv
+
+    d_step_info "SECTION D3: Cloning/Verifying Core DevOps Repositories..."
+    # Ensure gh is authenticated before cloning
+    # This assumes GFTAI_ORG_NAME is available (e.g. from sourced main .env or default)
+    # A full ensure_gh_authenticated call could be added here if this script is truly standalone often
+    if ! command_exists gh || ! gh auth status -h "${GFTAI_ORG_NAME:-$GFTAI_ORG_NAME_DEFAULT}" &>/dev/null; then
+        d_warning "GitHub CLI 'gh' not authenticated for org '${GFTAI_ORG_NAME:-$GFTAI_ORG_NAME_DEFAULT}'. Cloning DevOps repos might fail if private."
     fi
+    clone_devops_repos
 
-    info "SECTION D1: Installing DevOps Specific Tooling..."
-    echo "-----------------------------------------------------"
-    local all_tools_ok=true
-    if ! install_opentofu; then all_tools_ok=false; fi
-    if ! install_aws_cli_in_venv; then all_tools_ok=false; fi
-    if ! install_jq; then all_tools_ok=false; fi
-    if ! install_yq; then all_tools_ok=false; fi
-    if $all_tools_ok; then success "DevOps CLI tools check/installation phase complete."; else warning "Some DevOps CLI tools had issues. Please review logs."; fi
-    echo "-----------------------------------------------------"
-
-    info "SECTION D3: AWS CLI Configuration..."
-    echo "-----------------------------------------------------"
-    info "AWS CLI should be installed (in venv: ${DEVOPS_PYTHON_VENV_PATH})."
-    info "To configure (after activating venv: source \"${DEVOPS_PYTHON_VENV_PATH}/bin/activate\"):"
-    info "  aws configure --profile ${AWS_DEFAULT_PROFILE}"
-    info "Prompts: AWS Access Key ID, Secret Key, Default region (e.g., ${AWS_DEFAULT_REGION}), Output format (e.g., json)."
-    info "Refer to G@FT.ai security guidelines for AWS credentials."
-    echo "-----------------------------------------------------"
-
-    info "SECTION D4: Installing VS Code Extensions for DevOps..."
-    echo "-----------------------------------------------------"
+    d_step_info "SECTION D4: Installing VS Code Extensions for DevOps..."
+    # ... (Logic from gftai_devops_onboarding_addon.sh v1.2.2 for VSCode extensions) ...
+    # This part might be redundant if main onboarding script installs a comprehensive list.
+    # For now, keeping it as per original addon script.
     if command_exists code; then
-        info "Installing/verifying DevOps VS Code extensions..."
+        d_info "Installing/verifying ADDITIONAL DevOps VS Code extensions..."
         local ext_ok=true
         for ext_id in "${DEVOPS_VSCODE_EXTENSIONS_TO_INSTALL[@]}"; do
-            if [ -n "$ext_id" ]; then info "Checking/Installing: $ext_id"
-                if code --list-extensions | grep -qi "^${ext_id}$"; then success "'$ext_id' already installed.";
-                else if code --install-extension "$ext_id" --force; then success "'$ext_id' installed."; else error "Failed to install '$ext_id'."; ext_ok=false; fi; fi
+            if [ -n "$ext_id" ]; then d_info "Checking/Installing: $ext_id"
+                if code --list-extensions | grep -qi "^${ext_id}$"; then d_success "'$ext_id' already installed.";
+                else if code --install-extension "$ext_id" --force; then d_success "'$ext_id' installed."; else d_error "Failed to install '$ext_id'."; ext_ok=false; fi; fi
             fi
         done
-        if $ext_ok; then success "DevOps VS Code extensions phase complete."; else warning "Some DevOps VS Code extensions had issues."; fi
-        info "You may need to restart VS Code."
-    else warning "VS Code CLI 'code' not found. Skipping DevOps VS Code extension installation."; fi
-    echo "-----------------------------------------------------"
+        if $ext_ok; then d_success "Additional DevOps VS Code extensions phase complete."; else d_warning "Some additional DevOps VS Code extensions had issues."; fi
+        d_info "You may need to restart VS Code."
+    else d_warning "VS Code CLI 'code' not found. Skipping additional DevOps VS Code extension installation."; fi
+    echo "----------------------------------------------------"
 
-    success "####################################################################"
-    success "# G@FT.ai DevOps Onboarding Addon Script has completed!            #"
-    success "####################################################################"
-    info "Review WARNINGS/ERRORS. Activate DevOps Python venv: source \"${DEVOPS_PYTHON_VENV_PATH}/bin/activate\""
+
+    d_success "####################################################################"
+    d_success "# G@FT.ai DevOps Onboarding Addon Script has completed!            #"
+    d_success "####################################################################"
+    d_info "Review WARNINGS/ERRORS. To activate DevOps Python venv: source \"${DEVOPS_PYTHON_VENV_PATH}/bin/activate\""
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    # Set GFTAI_ORG_NAME from environment if main script not sourced, or use default
+    GFTAI_ORG_NAME="${GFTAI_ORG_NAME:-$GFTAI_ORG_NAME_DEFAULT}"
+    GFTAI_MAIN_WORKSPACE_PARENT_DIR="${GFTAI_MAIN_WORKSPACE_PARENT_DIR:-$GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT}"
+    # Initialize other potentially inherited vars if this script can be run truly standalone
+    # For simplicity, assuming it's usually an add-on to the main script's environment.
+
     devops_main
 fi

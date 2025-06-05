@@ -28,3 +28,6 @@ __pycache__/
 
 # Fichiers d'historique de shell (commitlint, pre-commit)
 .git/.last_commit_message
+
+#npm lock file
+package-lock.json

@@ -1,0 +1,114 @@
+# SSoT: gcs-devops-standards/tooling/configs/.pre-commit-config.yaml
+# Version: 1.0
+# Author: Camille (Gem AB - Automation Specialist)
+# Based on: TOOL_004_Git_Hooks_Standard.md
+
+# For global hook versions, refer to the "Default Staging Environment" section of pre-commit documentation
+# or specific hook repository for latest stable tags/revisions.
+# Run `pre-commit autoupdate` periodically to update revs.
+
+# Apply to all files to prevent mistakes
+# default_stages: [commit, push, manual] # Consider 'push' for more rigorous checks
+
+repos:
+  # == Generic File Checks (Highly Recommended) ==
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0 # Check for latest stable tag
+    hooks:
+      - id: check-added-large-files # Prevent committing large binary files
+        args: ['--maxkb=1024'] # Max 1MB, adjust as needed
+      - id: check-case-conflict # Check for files that would conflict on case-insensitive filesystems
+      - id: check-executables-have-shebangs
+      - id: check-json # Check JSON file syntax
+      - id: check-merge-conflict # Check for files that contain merge conflict strings
+      - id: check-shebang-scripts-are-executable
+      - id: check-symlinks
+      - id: check-toml # Check TOML file syntax
+      - id: check-xml # Check XML file syntax
+      - id: check-yaml # Check YAML file syntax
+        args: [--allow-multiple-documents]
+      - id: detect-private-key # Detects the presence of private keys
+      - id: end-of-file-fixer # Ensures files end with one newline
+      - id: mixed-line-ending # Replaces mixed line endings with a consistent one (LF by default)
+      - id: trailing-whitespace # Trims trailing whitespace
+
+  # == Markdown Linting ==
+  # Requires .markdownlint.yaml or .markdownlint.json for configuration
+  # SSoT for config: devops-standards/linting/configs/.markdownlint.yaml
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.45.0 # Check for latest stable tag
+    hooks:
+      - id: markdownlint
+        name: "Markdownlint"
+        description: "Lints Markdown files."
+        entry: markdownlint -c .markdownlint.yaml # Assumes config file is present
+        # args: ["--fix"] # Uncomment to attempt auto-fixing (use with caution)
+
+  # == Shell Script Linting ==
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1 # Check for latest stable tag
+    hooks:
+      - id: shellcheck
+        name: "Shellcheck"
+        description: "Static analysis for shell scripts."
+        # args: ["-x"]  # To follow sourced files
+
+  # == OpenTofu/Terraform Linting & Formatting ==
+  # Requires OpenTofu installed.
+  - repo: local
+    hooks:
+      - id: opentofu-fmt
+        name: "OpenTofu Format (tofu fmt)"
+        description: "Formats OpenTofu HCL files."
+        entry: bash -c 'tofu fmt -recursive $(git ls-files -m -o --exclude-standard "*.tf" | xargs dirname | sort -u)'
+        language: system
+        files: \.tf$
+        # This runs fmt on directories containing staged .tf files.
+        # A simpler alternative is to run on all .tf files, but can be slow.
+        # entry: tofu fmt -check -recursive . # Use -check for linting, remove for formatting
+      - id: opentofu-validate
+        name: "OpenTofu Validate (tofu validate)"
+        description: "Validates OpenTofu configuration files."
+        entry: bash -c 'tofu validate -no-color' # Run in each directory with .tf files or main dir
+        language: system
+        files: \.tf$ # Or run once per commit if it traverses
+        pass_filenames: false # Usually validate runs on the whole configuration
+        # This hook needs careful scoping if you have multiple independent Tofu configs in one repo.
+        # Often better run in CI or per-directory manually.
+
+  # == Commit Message Linting (via commit-msg hook) ==
+  # Requires Node.js, npm/npx, and commitlint installed globally or in the project.
+  # Onboarding scripts should handle commitlint setup.
+  # This hook runs on the commit message, not staged files.
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: "Commitlint"
+        entry: commitlint
+        args: ['--edit'] # pre-commit passera le chemin du fichier de message ici
+        language: node
+        stages: [commit-msg]
+        # Ensure commitlint.config.js is present at the root.
+        # SSoT for config: devops-standards/tooling/configs/commitlint.config.js
+
+  # == Python Linting & Formatting (Example) ==
+  # - repo: https://github.com/psf/black-pre-commit-mirror
+  #   rev: 24.4.2
+  #   hooks:
+  #   - id: black
+  #     language_version: python3.9 # Specify your target Python version
+  # - repo: https://github.com/PyCQA/flake8
+  #   rev: 7.1.0
+  #   hooks:
+  #   - id: flake8
+  #     # args: ["--config=.flake8"] # If you have a .flake8 config file
+
+  # == Add other language-specific linters/formatters as needed ==
+  # For example, ESLint/Prettier for JavaScript/TypeScript, etc.
+
+# To use this configuration:
+# 1. Ensure pre-commit is installed (`pip install pre-commit`).
+# 2. Place this file as `.pre-commit-config.yaml` in the root of your repository.
+# 3. Place referenced config files (e.g., .markdownlint.yaml, commitlint.config.js) in the root.
+# 4. Run `pre-commit install` to set up the git hooks for this repository.
+# 5. Run `pre-commit install --hook-type commit-msg` to set up commit-msg hooks.

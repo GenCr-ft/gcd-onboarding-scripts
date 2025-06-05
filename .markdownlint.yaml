@@ -1,0 +1,161 @@
+# Gencraft Standard .markdownlint.yaml (v1.2 - Approved)
+# SSoT: devops-standards/linting/configs/.markdownlint.yaml
+#
+# This template defines the standard Markdown linting rules for Gencraft projects.
+# It MUST be used by the markdownlint-cli tool, typically via pre-commit hooks.
+# This configuration MUST be kept in sync with the Gencraft KB-Contribution-And-Style-Guide.md.
+# Rules are based on https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+#
+# Default state for all rules is 'true' unless explicitly set to 'false' or configured otherwise.
+default: true
+
+# MD001: Header levels should only increment by one level at a time
+# Rationale: Ensures logical document structure. Consistent with KB Style Guide.
+MD001: true
+
+# MD003: Header style
+# Rationale: Prefer consistent ATX style (hashes). Aligned with KB Style Guide.
+MD003:
+  style: "atx"
+
+# MD004: Unordered list style
+# Rationale: Prefer consistent dash for unordered lists. Aligned with KB Style Guide.
+MD004:
+  style: "dash"
+
+# MD007: Unordered list indentation
+# Rationale: Consistent indentation for sub-lists (2 spaces). Aligned with KB Style Guide.
+MD007:
+  indent: 2
+
+# MD009: Trailing spaces
+# Rationale: Cleanliness. No trailing spaces for hard breaks by default.
+MD009:
+  br_spaces: 0 # Use <br /> or ensure markdown processor supports double-space line breaks if needed.
+  list_item_empty_lines: false # Disallow empty lines in list items for tighter lists.
+  # strict: true # Consider enabling for very strict trailing space checks.
+
+# MD010: Hard tabs
+# Rationale: Use spaces instead of tabs for consistency. Aligned with KB Style Guide.
+MD010: true
+
+# MD012: Multiple consecutive blank lines
+# Rationale: Cleanliness, allow maximum 1 blank line.
+MD012:
+  maximum: 1
+
+# MD013: Line length
+# Rationale: Readability in various editors and diffs. Aligned with KB Style Guide.
+MD013:
+  line_length: 120         # Standard line length for prose.
+  heading_line_length: 80  # Shorter for headings for better ToC/outline visibility.
+  code_blocks: false       # Code blocks are not checked for line length by default.
+  tables: false            # Tables are not checked for line length by default.
+  headings: true           # Apply heading_line_length to all headings.
+  # strict: false # Use if occasional long lines (non-code/table) are acceptable.
+  # stern: false  # Use if all lines (including code/table if not false) must adhere.
+
+# MD022: Headers should be surrounded by blank lines
+# Rationale: Readability. Aligned with KB Style Guide.
+MD022:
+  lines_above: 1
+  lines_below: 1
+
+# MD024: Multiple headers with the same content
+# Rationale: Avoids duplicate section titles which can be confusing.
+MD024:
+  allow_different_nesting: true # Allow "Title" as H2 and later as H3.
+
+# MD025: Multiple top-level headers in the same document
+# Rationale: Documents should have a single H1, typically the title.
+MD025:
+  level: 1 # Only one H1 is allowed.
+  front_matter_title: "" # Allows H1 in YAML front matter if `front_matter_title` is not empty.
+                         # If Gencraft docs have title in front matter and then H1 in body, adjust this.
+                         # Example: `front_matter_title: "^\\s*title\\s*:"` to ignore H1 if front matter has a title.
+
+# MD026: Trailing punctuation in header
+# Rationale: Cleanliness; headers usually don't need terminal punctuation.
+MD026:
+  punctuation: ".,;:!?" # Default allowed. KB Style Guide may restrict this further (e.g., to "").
+
+# MD029: Ordered list item prefix
+# Rationale: Consistent numbering for clarity. Aligned with KB Style Guide.
+MD029:
+  style: "ordered" # Enforces 1. 2. 3. style.
+
+# MD030: Spaces after list markers
+# Rationale: Consistency in list item spacing.
+MD030:
+  ul_single: 1 # Single space for unordered lists.
+  ol_single: 1 # Single space for ordered lists.
+  ul_multi: 1  # Consistent for multi-line items.
+  ol_multi: 1  # Consistent for multi-line items.
+
+# MD033: Inline HTML
+# Rationale: Generally discourage raw HTML for portability and security.
+# Allowed elements MUST be explicitly listed and approved by Cerberus and Iris.
+# This list is critical and needs to be aligned with actual Gencraft Markdown usage.
+MD033:
+  allowed_elements: [
+    "br",   # Line breaks
+    "sub",  # Subscript
+    "sup",  # Superscript
+    "kbd",  # Keyboard input
+    "details", # Collapsible sections
+    "summary", # Title for collapsible sections
+    "del",  # Strikethrough - semantic
+    "ins",  # Inserted text - semantic
+    "mark", # Highlighted text - semantic
+    # "immersive", # Example for Gencraft custom tags - ADD GENCRAFT SPECIFIC TAGS HERE
+    # "selection-tag" # Example
+    ]
+
+# MD034: Bare URL used
+# Rationale: URLs should be properly formatted as links for better readability and interaction.
+MD034: true
+
+# MD035: Horizontal rule style
+# Rationale: Consistency. Aligned with KB Style Guide.
+MD035:
+  style: "---" # Consistent HR style (e.g., three hyphens)
+
+# MD038: Spaces inside code span elements
+# Rationale: Cleanliness, `code` vs ` code `
+MD038: true
+
+# MD040: Fenced code blocks should have a language specified
+# Rationale: Improves syntax highlighting, rendering, and accessibility.
+MD040: true
+
+# MD041: First line in file should be a top-level header
+# Rationale: Common practice for document titles.
+# Set to false if documents typically start with YAML front matter or other directives.
+# KB Style Guide to confirm.
+MD041: false
+
+# MD046: Code block style
+# Rationale: Prefer consistent fenced code blocks over indented ones. Aligned with KB Style Guide.
+MD046:
+  style: "fenced"
+
+# MD047: Files should end with a single newline character
+# Rationale: POSIX compliance, common Git best practice.
+MD047: true
+
+# MD048: Code fence style
+# Rationale: Consistency in using backticks or tildes for fenced code blocks. Aligned with KB Style Guide.
+MD048:
+  style: "backtick" # Prefer ``` over ~~~
+
+# MD051: Link fragments should be valid
+# Rationale: Avoid broken internal links (e.g., #section-header).
+MD051: true
+
+# MD052: Reference links and images should use a label that is defined
+# Rationale: Avoid broken reference-style links and images.
+MD052: true
+
+# MD053: Link/image reference definitions should be unused
+# Rationale: Keep document clean from unused link/image reference definitions.
+MD053: true

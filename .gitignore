@@ -1,0 +1,30 @@
+# Fichiers de log
+*.log
+npm-debug.log*
+
+# Dépendances Node.js
+node_modules/
+/dist/ # Dossier de build
+
+# Fichiers de configuration sensibles
+.env
+.env.local
+
+# Fichiers système et de cache (macOS)
+.DS_Store
+
+# Fichiers temporaires des éditeurs
+*~
+*.swp
+.vscode/ # Pour ignorer les paramètres spécifiques de VS Code si non partagés
+
+# Fichiers de build Java
+*.class
+*.jar
+
+# Fichiers générés par Python
+__pycache__/
+*.pyc
+
+# Fichiers d'historique de shell (commitlint, pre-commit)
+.git/.last_commit_message

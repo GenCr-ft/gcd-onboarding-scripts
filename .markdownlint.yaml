@@ -64,7 +64,7 @@ MD022:
 # MD024: Multiple headers with the same content
 # Rationale: Avoids duplicate section titles which can be confusing.
 MD024:
-  allow_different_nesting: true # Allow "Title" as H2 and later as H3.
+  siblings_only: true # Allow "Title" as H2 and later as H3.
 
 # MD025: Multiple top-level headers in the same document
 # Rationale: Documents should have a single H1, typically the title.

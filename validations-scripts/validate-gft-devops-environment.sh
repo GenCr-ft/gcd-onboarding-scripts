@@ -15,7 +15,7 @@ EXPECTED_PYTHON_VERSION_MAJOR=3
 EXPECTED_PYTHON_VERSION_MINOR=8 # pre-commit often needs a reasonably modern Python for all its hooks
 EXPECTED_PIP_VERSION_MAJOR=20   # Example, ensure pip is functional and can install pre-commit
 EXPECTED_GIT_VERSION_MAJOR=2
-EXPECTED_GH_VERSION_MAJOR=2 
+EXPECTED_GH_VERSION_MAJOR=2
 EXPECTED_PRECOMMIT_VERSION_MAJOR=2 # Version de pre-commit, par exemple v2.x.x ou v3.x.x
 ORGANIZATION="GenCr-ft"
 
@@ -51,8 +51,8 @@ check_command_exists() {
     local cmd="$1"
     local desc="$2"
     local ref="$3"
-    local install_suggestion_ubuntu="$4" 
-    local install_suggestion_other="$5"  
+    local install_suggestion_ubuntu="$4"
+    local install_suggestion_other="$5"
     local msg_base="$desc ($cmd)"
     local msg_detail
 
@@ -180,7 +180,7 @@ if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005
     fi
     # Removed detailed permissions check, as it's too complex for this script and better handled by context.
     # The original detailed permission check note remains valid for manual verification by the user.
-    print_status "  Référence pour les permissions: gcs-studio-handbook/02-Knowledge-Base-Hub/KB-Domain-Security/Access-Control-Policy.md" "INFO"
+    print_status "  Référence pour les permissions: gcs-studio-handbook/02-knowledge-base-hub/02-knowledge-base-hub/kb-domain-security/access-control-policy.md" "INFO"
 
 fi
 
@@ -196,14 +196,14 @@ check_command_exists "jq" "jq (JSON processor)" "gcs-devops-standards/tooling/TO
 
 # 5. Outils de Linting et Qualité de Code
 print_header "5" "Outils de Linting et Qualité"
-check_command_exists "mdl" "Markdownlint (mdl)" "gcs-studio-handbook/04-Tooling-And-Automation-Hub/Tools/GCT-TOOL-MDLINT-V1.md" "sudo apt install ruby-full build-essential -y && sudo gem install mdl" "brew install mdl"
-check_command_exists "tflint" "TFLint (OpenTofu Linter)" "gcs-devops-standards/iac/IAC_007_IaC_Static_Analysis_Standard.md" "Consultez https://github.com/terraform-linters/tflint#installation"
-check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "gcs-devops-standards/iac/IAC_007_IaC_Static_Analysis_Standard.md" "Consultez https://aquasecurity.github.io/tfsec/latest/getting-started/installation/" "brew install tfsec"
+check_command_exists "mdl" "Markdownlint (mdl)" "gcs-studio-handbook/04-tooling-and-automation-hub/Tools/GCT-TOOL-MDLINT-V1.md" "sudo apt install ruby-full build-essential -y && sudo gem install mdl" "brew install mdl"
+check_command_exists "tflint" "TFLint (OpenTofu Linter)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "Consultez https://github.com/terraform-linters/tflint#installation"
+check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "Consultez https://aquasecurity.github.io/tfsec/latest/getting-started/installation/" "brew install tfsec"
 # check_command_exists "checkov" "Checkov (Alternative IaC Scanner)" "" "pip3 install checkov" "pip3 install checkov"
 
 if check_command_exists "python3" "Python 3" "" "sudo apt install python3 python3-pip python3-venv -y"; then
     check_version "python3 --version" "Python 3" "$EXPECTED_PYTHON_VERSION_MAJOR" "$EXPECTED_PYTHON_VERSION_MINOR" 'Python \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
-    if check_command_exists "pip3" "pip3 (Python Package Installer)"; then 
+    if check_command_exists "pip3" "pip3 (Python Package Installer)"; then
         # Check for pre-commit
         if check_command_exists "pre-commit" "Pre-commit framework" "gcs-devops-standards/tooling/TOOL_004_Git_Hooks_Standard.md" "pip3 install pre-commit" "pip3 install pre-commit"; then
              check_version "pre-commit --version" "Pre-commit" "$EXPECTED_PRECOMMIT_VERSION_MAJOR" 0 'pre-commit \K([0-9]+\.[0-9]+(\.[0-9]+)?)'

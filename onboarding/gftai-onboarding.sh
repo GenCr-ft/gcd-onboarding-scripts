@@ -3,7 +3,7 @@
 # G@FT.ai Studio - Developer Onboarding Script
 # Version: 1.3.2 (Full repo clone, pre-commit install & hook setup, Cline VSCode ext, .env example refined)
 # Maintainer: Camille (Gem AB - Automation Specialist)
-# SSoT: gcd-onboarding-scripts/onboarding/gftai_onboarding.sh 
+# SSoT: gcd-onboarding-scripts/onboarding/gftai_onboarding.sh
 # Based on previous version: 1.3.1
 
 # --- Configuration & Globals (Defaults) ---
@@ -11,16 +11,16 @@ readonly COLOR_BLUE="\033[1;34m"; readonly COLOR_GREEN="\033[1;32m"; readonly CO
 readonly COLOR_YELLOW="\033[1;33m"; readonly COLOR_RESET="\033[0m";
 
 GFTAI_ORG_NAME_DEFAULT="GenCr-ft"
-GFTAI_WORKSPACE_PARENT_DIR_DEFAULT="${HOME}/gftai_studio_workspace" 
-GFTAI_PROJECTS_DIR_NAME_DEFAULT="" 
+GFTAI_WORKSPACE_PARENT_DIR_DEFAULT="${HOME}/gftai_studio_workspace"
+GFTAI_PROJECTS_DIR_NAME_DEFAULT=""
 GFTAI_VSCODE_WORKSPACE_FILENAME_DEFAULT="${GFTAI_ORG_NAME_DEFAULT}.code-workspace"
 GIT_USER_NAME_ENV_DEFAULT=""
 GIT_USER_EMAIL_ENV_DEFAULT=""
-GIT_DEFAULT_BRANCH_NAME_ENV_DEFAULT="main" 
+GIT_DEFAULT_BRANCH_NAME_ENV_DEFAULT="main"
 AUTO_INSTALL_TOOLS_DEFAULT=true
 AUTO_GENERATE_SSH_KEY_DEFAULT=true
 AUTO_ADD_SSH_KEY_TO_GITHUB_DEFAULT=true
-AUTO_CLONE_REPOS_DEFAULT=true 
+AUTO_CLONE_REPOS_DEFAULT=true
 AUTO_CREATE_WORKSPACE_DEFAULT=true
 AUTO_INSTALL_VSCODE_EXTENSIONS_DEFAULT=true
 AUTO_OPEN_VSCODE_DEFAULT=true
@@ -29,74 +29,74 @@ AUTO_OPEN_VSCODE_DEFAULT=true
 # Excluding .github and .github-private (special GitHub repos).
 # 'gencraft-operations' name to be clarified/migrated per ADR-001 later if needed.
 GFTAI_REPOS_TO_CLONE_DEFAULT=(
-    "gcp-aethel-architecture"        
-    "gcs-devops-standards"         
-    "gct-repo-template-standard"   
+    "gcp-aethel-architecture"
+    "gcs-devops-standards"
+    "gct-repo-template-standard"
     "gencraft-iac"                 # Using current name as per Lug's instruction
-    "gcp-aethel-docs-external"     
-    "gcp-aethel-qa"                
-    "gcp-aethel-backlog"           
-    "gcp-aethel-docs-req"          
-    "gcs-project-management"       
-    "gcp-aethel-docs-gdd"          
-    "gcs-plt-architecture"         
-    "gcs-plt-gemop"                
-    "gcs-plt-gembp"                
-    "gcs-plt-crewwkf"              
-    "gcs-security-core"            
-    "gcs-plt-backlog"              
-    "gcs-plt-assets"               
-    "gcs-plt-tools"                
-    "gcs-global-assets"            
-    "gcs-studio-legal"             
-    "gcl-voxel-engine"             
-    "gcl-ui-components"            
-    "gct-service-template-py"      
-    "gct-repo-template-backlog"    
-    "gcd-shared-actions"           
+    "gcp-aethel-docs-external"
+    "gcp-aethel-qa"
+    "gcp-aethel-backlog"
+    "gcp-aethel-docs-req"
+    "gcs-project-management"
+    "gcp-aethel-docs-gdd"
+    "gcs-plt-architecture"
+    "gcs-plt-gemop"
+    "gcs-plt-gembp"
+    "gcs-plt-crewwkf"
+    "gcs-security-core"
+    "gcs-plt-backlog"
+    "gcs-plt-assets"
+    "gcs-plt-tools"
+    "gcs-global-assets"
+    "gcs-studio-legal"
+    "gcl-voxel-engine"
+    "gcl-ui-components"
+    "gct-service-template-py"
+    "gct-repo-template-backlog"
+    "gcd-shared-actions"
     "gcd-onboarding-scripts"       # This script's home repository
-    "gcs-plt-docs-req"             
-    "gci-k8s-cluster-main"         
-    "gci-aws-foundations"          
-    "gcp-aethel-assets-char"       
-    "gcp-aethel-assets-audio"      
-    "gcd-backup-utilities"         
+    "gcs-plt-docs-req"
+    "gci-k8s-cluster-main"
+    "gci-aws-foundations"
+    "gcp-aethel-assets-char"
+    "gcp-aethel-assets-audio"
+    "gcd-backup-utilities"
     "gencraft-operations"          # Name to be clarified/migrated later if needed
-    "gcs-studio-handbook"          
-    "gcl-api-contracts"            
-    "gcl-srv-persistence"          
-    "gcl-srv-authentication"       
-    "gcp-aethel-pcg"               
-    "gcp-aethel-server"            
-    "gcp-aethel-client"            
+    "gcs-studio-handbook"
+    "gcl-api-contracts"
+    "gcl-srv-persistence"
+    "gcl-srv-authentication"
+    "gcp-aethel-pcg"
+    "gcp-aethel-server"
+    "gcp-aethel-client"
 )
 
 VSCODE_EXTENSIONS_TO_INSTALL=(
-    "hashicorp.terraform"      
-    "redhat.vscode-yaml"       
-    "timonwong.shellcheck"     
-    "ms-vscode.powershell"     
-    "ms-python.python"         
-    "ms-python.flake8"         
+    "hashicorp.terraform"
+    "redhat.vscode-yaml"
+    "timonwong.shellcheck"
+    "ms-vscode.powershell"
+    "ms-python.python"
+    "ms-python.flake8"
     "ms-python.black-formatter"
     "ms-azuretools.vscode-docker"
-    "GitHub.copilot"           
-    "GitHub.copilot-chat"      
-    "eamodio.gitlens"          
+    "GitHub.copilot"
+    "GitHub.copilot-chat"
+    "eamodio.gitlens"
     "yzhang.markdown-all-in-one"
     "davidanson.vscode-markdownlint"
     "bierner.markdown-preview-github-styles"
     "donjayamanne.githistory"
-    "mhutchie.git-graph"       
+    "mhutchie.git-graph"
     "EditorConfig.EditorConfig"
     "mutantdino.resourcemonitor"
-    "ms-vscode.cpptools"       
-    "usernamehw.errorlens"     
+    "ms-vscode.cpptools"
+    "usernamehw.errorlens"
     "wayou.vscode-todo-highlight"
-    "VisualStudioExptTeam.intellicode-api-usage-examples" 
+    "VisualStudioExptTeam.intellicode-api-usage-examples"
     "github.vscode-pull-request-github"
-    "ms-dotnettools.csdevkit" 
-    "llvm-vs-code-extensions.vscode-clangd" 
+    "ms-dotnettools.csdevkit"
+    "llvm-vs-code-extensions.vscode-clangd"
     "saoudrizwan.claude-dev" # Added Cline as per Lug's request
 )
 
@@ -119,11 +119,11 @@ AUTO_CLONE_REPOS=true
 AUTO_CREATE_WORKSPACE=true
 AUTO_INSTALL_VSCODE_EXTENSIONS=true
 AUTO_OPEN_VSCODE=true
-NVM_DIR="" 
-NVM_INSTALLED_NOW=false 
+NVM_DIR=""
+NVM_INSTALLED_NOW=false
 PYENV_ROOT=""
 PYENV_INSTALLED_NOW=false
-VSCODE_CLI_AVAILABLE=false 
+VSCODE_CLI_AVAILABLE=false
 VSCODE_WORKSPACE_CREATED_OR_UPDATED=false
 declare -g GH_AUTH_OK_FOR_ORG=false # NEW global flag for gh auth status
 
@@ -173,7 +173,7 @@ load_env_file() {
 } # logic adapted and improved
 
 # --- Utility Functions (Copied from validate_gft_devops_environment.sh v1.5.0 for robustness) ---
-FAIL_COUNT_ONBOARDING=0 
+FAIL_COUNT_ONBOARDING=0
 WARN_COUNT_ONBOARDING=0
 
 _onboarding_print_status() {
@@ -182,48 +182,48 @@ _onboarding_print_status() {
     local prefix
     case "$status" in
         OK)       prefix="[${COLOR_GREEN}OK${COLOR_RESET}]     ";;
-        ERROR)    prefix="[${COLOR_RED}ERROR${COLOR_RESET}]  "; ((FAIL_COUNT_ONBOARDING++));; 
+        ERROR)    prefix="[${COLOR_RED}ERROR${COLOR_RESET}]  "; ((FAIL_COUNT_ONBOARDING++));;
         WARN)     prefix="[${COLOR_YELLOW}WARN${COLOR_RESET}]   "; ((WARN_COUNT_ONBOARDING++));;
         INFO)     prefix="[${COLOR_CYAN}INFO${COLOR_RESET}]   ";;
-        STEP)     prefix="[${COLOR_BLUE}STEP${COLOR_RESET}]   ";; 
-        ACTION)   prefix="${COLOR_YELLOW}ACTION${COLOR_RESET}: ";; 
-        SUCCESS)  prefix="[${COLOR_GREEN}SUCCESS${COLOR_RESET}]";; 
+        STEP)     prefix="[${COLOR_BLUE}STEP${COLOR_RESET}]   ";;
+        ACTION)   prefix="${COLOR_YELLOW}ACTION${COLOR_RESET}: ";;
+        SUCCESS)  prefix="[${COLOR_GREEN}SUCCESS${COLOR_RESET}]";;
         *)        prefix="[????]   ";;
     esac
     echo -e "$prefix$message"
 }
 
 success() { _onboarding_print_status "$1" "SUCCESS"; }
-error() { _onboarding_print_status "$1" "ERROR"; } 
-warning() { _onboarding_print_status "$1" "WARN"; } 
+error() { _onboarding_print_status "$1" "ERROR"; }
+warning() { _onboarding_print_status "$1" "WARN"; }
 info() { _onboarding_print_status "$1" "INFO"; }
 step_info() { _onboarding_print_status "$1" "STEP"; }
 
 command_exists() { command -v "$1" &>/dev/null; }
-ensure_dir() { 
-    if [ ! -d "$1" ]; then 
+ensure_dir() {
+    if [ ! -d "$1" ]; then
         if mkdir -p "$1"; then
             info "Created directory: $1"
         else
             error "Failed to create directory: $1 ! Please check permissions or path."
         fi
-    fi 
+    fi
 }
 
 confirm_action() {
     local question="$1"
-    local default_answer="${2:-yes}" 
+    local default_answer="${2:-yes}"
     local prompt_options="[Y/n]"
     if [[ "$default_answer" =~ ^(no|n|N)$ ]]; then prompt_options="[y/N]"; fi
 
     while true; do
-        _onboarding_print_status "$question $prompt_options " "ACTION" 
-        read -r answer 
+        _onboarding_print_status "$question $prompt_options " "ACTION"
+        read -r answer
         answer="${answer:-$default_answer}"
         case "$answer" in
             [Yy]|[Yy][Ee][Ss]) return 0 ;;
             [Nn]|[Nn][Oo]) return 1 ;;
-            *) error "Invalid response. Please answer 'yes' or 'no'." ;; 
+            *) error "Invalid response. Please answer 'yes' or 'no'." ;;
         esac
     done
 }
@@ -231,17 +231,17 @@ confirm_action() {
 # --- Tool Installation Functions ---
 check_and_install_homebrew() {
     step_info "A1: Checking/Installing Homebrew (for macOS)..."
-    if [[ "$OS_TYPE" == "Darwin" ]]; then 
+    if [[ "$OS_TYPE" == "Darwin" ]]; then
         if ! command_exists brew; then
             if $AUTO_INSTALL_TOOLS || confirm_action "Homebrew not found. Install it now?"; then
                 info "Installing Homebrew..."
                 if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
                     success "Homebrew installed successfully."
                     info "Ensuring Homebrew is in PATH for this session..."
-                    if [ -x "/opt/homebrew/bin/brew" ]; then 
+                    if [ -x "/opt/homebrew/bin/brew" ]; then
                         export PATH="/opt/homebrew/bin:$PATH"
                         info "Homebrew (Apple Silicon) added to PATH for this session."
-                    elif [ -x "/usr/local/bin/brew" ]; then 
+                    elif [ -x "/usr/local/bin/brew" ]; then
                          export PATH="/usr/local/bin:$PATH"
                          info "Homebrew (Intel Mac) added to PATH for this session."
                     fi
@@ -260,7 +260,7 @@ check_and_install_homebrew() {
         info "Not macOS. Skipping Homebrew check."
     fi
     echo "-------------------------------------------------------------------"
-} 
+}
 
 check_and_install_git() {
     step_info "A2: Checking/Installing Git..."
@@ -269,10 +269,10 @@ check_and_install_git() {
         if $AUTO_INSTALL_TOOLS || confirm_action "Git not found. Install it now?"; then
             info "Attempting to install Git..."
             case "$OS_TYPE" in
-                Linux) 
+                Linux)
                     if sudo apt update -qq && sudo apt install -y -qq git; then git_ok=true; else error "apt install git failed."; fi ;;
-                Darwin) 
-                    if command_exists brew; then 
+                Darwin)
+                    if command_exists brew; then
                         if brew install git; then git_ok=true; else error "brew install git failed."; fi
                     else error "Brew not found, cannot install Git via brew."; fi ;;
                 *) error "Unsupported OS for automatic Git installation: $OS_TYPE" ;;
@@ -283,34 +283,34 @@ check_and_install_git() {
         fi
     else
         success "Git found: $(git --version 2>/dev/null | head -n1)"
-        git_ok=true 
+        git_ok=true
     fi
     echo "-------------------------------------------------------------------"
-} 
+}
 
 
 
 check_and_install_nvm_node() {
     step_info "A4: Checking/Installing NVM, Node.js, npm, and global Node packages (commitlint)..."
     if $AUTO_INSTALL_TOOLS || confirm_action "Node.js (via NVM is recommended) & core Node packages. Install/Verify?"; then
-        export NVM_DIR="${NVM_DIR:-$HOME/.nvm}" 
+        export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
         if [ -s "$NVM_DIR/nvm.sh" ]; then
             info "NVM already installed. Sourcing NVM..."
             # shellcheck source=/dev/null
             source "$NVM_DIR/nvm.sh"
-            if ! command_exists nvm; then 
+            if ! command_exists nvm; then
                  warning "Sourcing NVM did not make 'nvm' command available. Manual shell restart/profile source might be needed."
             else
                 success "NVM sourced."
             fi
         else
             info "Installing NVM (Node Version Manager)..."
-            if curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; then 
+            if curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; then
                 success "NVM installation script downloaded and executed."
-                export NVM_DIR="$HOME/.nvm" 
+                export NVM_DIR="$HOME/.nvm"
                 # shellcheck source=/dev/null
-                [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
-                NVM_INSTALLED_NOW=true 
+                [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                NVM_INSTALLED_NOW=true
             else
                 error "Failed to download or execute NVM installation script."
             fi
@@ -318,7 +318,7 @@ check_and_install_nvm_node() {
 
         if command_exists nvm; then
             info "Using NVM to install/verify Node.js LTS..."
-            if nvm install --lts && nvm use --lts && nvm alias default lts/*; then 
+            if nvm install --lts && nvm use --lts && nvm alias default lts/*; then
                 success "Node.js LTS installed and set as default via NVM."
                 success "Node version: $(node --version 2>/dev/null || echo "N/A")"
                 success "npm version: $(npm --version 2>/dev/null || echo "N/A")"
@@ -335,14 +335,14 @@ check_and_install_nvm_node() {
             fi
         elif [ "$NVM_INSTALLED_NOW" != true ]; then
              warning "NVM command not available. Skipping Node.js LTS installation via NVM."
-        elif $NVM_INSTALLED_NOW; then 
+        elif $NVM_INSTALLED_NOW; then
              info "NVM was just installed. A terminal restart is likely needed to use the 'nvm' command."
         fi
     else
         warning "Skipping NVM/Node.js and global Node packages installation."
     fi
     echo "-------------------------------------------------------------------"
-} 
+}
 
 check_and_install_docker() {
      step_info "A6: Checking/Installing Docker..."
@@ -356,7 +356,7 @@ check_and_install_docker() {
                     info "Following official Docker CE for Ubuntu installation steps."
                     if ! command_exists curl; then sudo apt update -qq && sudo apt install -y -qq curl || { error "curl is required to install Docker."; return 1; }; fi
                     if ! command_exists gpg; then sudo apt update -qq && sudo apt install -y -qq gpg || { error "gpg is required to install Docker."; return 1; }; fi
-                    
+
                     sudo install -m 0755 -d /etc/apt/keyrings
                     if curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg; then
                         sudo chmod a+r /etc/apt/keyrings/docker.gpg
@@ -386,7 +386,7 @@ check_and_install_docker() {
         fi
     else
         success "Docker found: $(docker --version 2>/dev/null || echo "version not parsable")"
-        docker_ok=true 
+        docker_ok=true
     fi
 
     if $docker_ok; then
@@ -400,7 +400,7 @@ check_and_install_docker() {
                         error "Failed to add user to docker group."
                     fi
                 fi
-            else 
+            else
                  warning "Docker command found, but Docker daemon does not seem to be running or responsive."
             fi
             info "Ensure Docker Desktop is running (macOS/Windows) or Docker service is active and user has permissions (Linux)."
@@ -409,12 +409,12 @@ check_and_install_docker() {
         fi
     fi
     echo "-------------------------------------------------------------------"
-} 
+}
 
 # ensure_gh_authenticated (Identique à la v1.3.4)
 ensure_gh_authenticated() {
     info "Verifying GitHub CLI authentication and access to organization '${GFTAI_ORG_NAME}'..."
-    local gh_user 
+    local gh_user
 
     if ! command_exists gh ; then
         error "'gh' command not found. Cannot perform authentication check or operations."
@@ -432,12 +432,12 @@ ensure_gh_authenticated() {
             info "  [X] workflow      (Manage GitHub Actions workflows)"
             info "  [X] read:user     (Grants read access to user profile data)"
             info "  [X] write:public_key (Allows adding SSH public keys)"
-            echo 
+            echo
             local gh_auth_method_pref="web"; # Default to web as it's generally easier
             _onboarding_print_status "How would you like to authenticate GitHub CLI? (Type 'web' for Web Browser/HTTPS, or 'ssh' for SSH key) [default: web]: " "ACTION"
             read -r gh_auth_input
-            gh_auth_method_choice="${gh_auth_input:-web}" 
-            gh_auth_method_choice=$(echo "$gh_auth_method_choice" | tr '[:upper:]' '[:lower:]') 
+            gh_auth_method_choice="${gh_auth_input:-web}"
+            gh_auth_method_choice=$(echo "$gh_auth_method_choice" | tr '[:upper:]' '[:lower:]')
             if [[ "$gh_auth_method_choice" != "web" && "$gh_auth_method_choice" != "ssh" ]]; then
                 warning "Invalid selection, defaulting to 'web' authentication."
                 gh_auth_method_choice="web"
@@ -453,12 +453,12 @@ ensure_gh_authenticated() {
                 info "You NEED TO MANUALLY open that URL in your Windows browser and enter the code."
                 info "If you encountered a 'slow_down' error, please wait a few minutes before trying 'gh auth login' again manually from your terminal."
                 GH_AUTH_OK_FOR_ORG=false
-                return 1 
+                return 1
             fi
         else
             warning "Skipping 'gh auth login'. Some operations might fail."
             GH_AUTH_OK_FOR_ORG=false
-            return 1 
+            return 1
         fi
     fi
 
@@ -486,15 +486,15 @@ check_and_install_gh() { # MODIFIED: ensure gh_found_or_installed correctly infl
         if $AUTO_INSTALL_TOOLS || confirm_action "GitHub CLI (gh) not found. Install it now?"; then
             info "Attempting to install GitHub CLI (gh)..."
             case "$OS_TYPE" in
-                Linux) 
+                Linux)
                     if type -p curl >/dev/null || (sudo apt update -qq && sudo apt install -y -qq curl); then
                         info "Attempting gh installation using official Linux script..."
                         if curl -fsSL https://cli.github.com/packages/install.sh | sudo bash; then gh_found_or_installed=true; else error "gh install script failed."; fi
                     else
                         error "curl is not available. Cannot download gh installation script."
                     fi ;;
-                Darwin) 
-                    if command_exists brew; then 
+                Darwin)
+                    if command_exists brew; then
                         if brew install gh; then gh_found_or_installed=true; else error "brew install gh failed."; fi
                     else error "Brew not found, cannot install gh."; fi ;;
                 *) error "Unsupported OS for automatic gh installation: $OS_TYPE" ;;
@@ -511,10 +511,10 @@ check_and_install_gh() { # MODIFIED: ensure gh_found_or_installed correctly infl
     if $gh_found_or_installed; then
         ensure_gh_authenticated # Call the auth check/login function
     else
-        GH_AUTH_OK_FOR_ORG=false 
+        GH_AUTH_OK_FOR_ORG=false
     fi
     echo "-------------------------------------------------------------------"
-} 
+}
 
 
 # MODIFIED: check_and_install_pyenv_python to install build dependencies for Python
@@ -541,7 +541,7 @@ check_and_install_pyenv_python() {
     local pip3_available=false
 
     if $AUTO_INSTALL_TOOLS || confirm_action "Python ${EXPECTED_PYTHON_VERSION_MAJOR}.${EXPECTED_PYTHON_VERSION_MINOR}+ (via pyenv is recommended) & pre-commit. Install/Verify?"; then
-        export PYENV_ROOT="${PYENV_ROOT:-$HOME/.pyenv}" 
+        export PYENV_ROOT="${PYENV_ROOT:-$HOME/.pyenv}"
         export PATH="$PYENV_ROOT/bin:$PATH"
 
         if ! command_exists pyenv; then
@@ -550,9 +550,9 @@ check_and_install_pyenv_python() {
             if curl https://pyenv.run | bash; then
                 success "pyenv installation script downloaded and executed."
                 if [[ -z "$PYENV_SHELL" ]]; then export PYENV_SHELL="$SHELL"; fi
-                eval "$(pyenv init --path)" 
+                eval "$(pyenv init --path)"
                 eval "$(pyenv init -)"
-                eval "$(pyenv virtualenv-init -)" 
+                eval "$(pyenv virtualenv-init -)"
                 info "pyenv added to PATH and initialized for current session."
                 info "For permanent effect, ensure the following are in your shell profile (e.g., ~/.bashrc, ~/.zshrc):"
                 echo -e "  export PYENV_ROOT=\"\$HOME/.pyenv\"\n  command -v pyenv >/dev/null || export PATH=\"\$PYENV_ROOT/bin:\$PATH\"\n  eval \"\$(pyenv init -)\""
@@ -562,10 +562,10 @@ check_and_install_pyenv_python() {
             fi
         else
             success "pyenv found."
-            if ! type pyenv | head -1 | grep -q 'function'; then 
-                 eval "$(pyenv init --path)" 
+            if ! type pyenv | head -1 | grep -q 'function'; then
+                 eval "$(pyenv init --path)"
                  eval "$(pyenv init -)"
-                 eval "$(pyenv virtualenv-init -)" 
+                 eval "$(pyenv virtualenv-init -)"
             fi
         fi
 
@@ -578,11 +578,11 @@ check_and_install_pyenv_python() {
             fi
 
             local target_py_install_version="${PYTHON_VERSION_FOR_PYENV:-3.11.9}" # Use specific full version
-            
+
             info "Checking for Python version ${target_py_install_version} in pyenv..."
             if ! pyenv versions --bare | grep -Fxq "${target_py_install_version}"; then
                 info "Python ${target_py_install_version} not found in pyenv. Attempting to install..."
-                if pyenv install "${target_py_install_version}" -s; then 
+                if pyenv install "${target_py_install_version}" -s; then
                     success "Python ${target_py_install_version} installed successfully via pyenv."
                 else
                     error "Failed to install Python ${target_py_install_version} via pyenv."
@@ -593,7 +593,7 @@ check_and_install_pyenv_python() {
             else
                 info "Python ${target_py_install_version} is already installed via pyenv."
             fi
-            
+
             # Set global or local version
             current_global=$(pyenv global 2>/dev/null || echo "system")
             if [[ "$current_global" != "$target_py_install_version" ]] && pyenv versions --bare | grep -Fxq "${target_py_install_version}"; then # Only if successfully installed
@@ -607,13 +607,13 @@ check_and_install_pyenv_python() {
             elif pyenv versions --bare | grep -Fxq "${target_py_install_version}"; then
                  info "Python $(pyenv global) is already the pyenv global version (or a version matching ${target_py_install_version})."
             fi
-            pyenv rehash 
+            pyenv rehash
         elif [ "$PYENV_INSTALLED_NOW" != true ]; then
             warning "pyenv command not available. System Python will be checked."
         elif $PYENV_INSTALLED_NOW; then
             info "pyenv was just installed. A terminal restart or sourcing shell profile is likely needed."
         fi
-        
+
         # General Python3 and Pip3 check (should now pick up pyenv version if global is set)
         if command_exists python3; then
             current_py_version=$(python3 --version 2>&1 | awk '{print $2}')
@@ -635,13 +635,13 @@ check_and_install_pyenv_python() {
         if command_exists pip3; then
             success "pip3 command found: $(pip3 --version 2>&1 | head -n1)"
             pip3_available=true
-        else 
+        else
             warning "pip3 command not found. Attempting to ensure pip with Python 3..."
             if $python_setup_ok; then
                 if (python3 -m ensurepip --user --upgrade || \
                    (curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && python3 get-pip.py --user && rm get-pip.py)); then
                     if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then export PATH="$HOME/.local/bin:$PATH"; fi
-                    if command_exists pip3; then success "pip3 installed/ensured successfully."; pip3_available=true; 
+                    if command_exists pip3; then success "pip3 installed/ensured successfully."; pip3_available=true;
                     else error "Still failed to make pip3 available."; fi
                 else
                      error "Could not install/ensure pip3. Some Python package installations might fail."
@@ -657,7 +657,7 @@ check_and_install_pyenv_python() {
                     if pip3 install --user --upgrade pre-commit; then
                         success "Pre-commit installed/updated successfully."
                         if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-                            export PATH="$HOME/.local/bin:$PATH" 
+                            export PATH="$HOME/.local/bin:$PATH"
                             warning "\$HOME/.local/bin was not in your PATH. Added for this session."
                             info "Add 'export PATH=\"\$HOME/.local/bin:\$PATH\"' to your shell profile for permanent effect."
                         fi
@@ -678,7 +678,7 @@ check_and_install_pyenv_python() {
         warning "Skipping Python/pyenv/pre-commit setup."
     fi
     echo "-------------------------------------------------------------------"
-} 
+}
 
 # MODIFIED: setup_ssh_for_github to use the GH_AUTH_OK_FOR_ORG flag more directly
 setup_ssh_for_github() {
@@ -688,11 +688,11 @@ setup_ssh_for_github() {
 
     local ssh_dir="$HOME/.ssh"
     local id_ed25519_file="${ssh_dir}/id_ed25519"
-    local id_rsa_file="${ssh_dir}/id_rsa" 
+    local id_rsa_file="${ssh_dir}/id_rsa"
     local ssh_key_file=""
 
     ensure_dir "$ssh_dir"
-    chmod 700 "$ssh_dir" 
+    chmod 700 "$ssh_dir"
 
     if [ -f "$id_ed25519_file" ]; then
         info "Existing Ed25519 SSH key found: $id_ed25519_file"
@@ -706,14 +706,14 @@ setup_ssh_for_github() {
         if $AUTO_GENERATE_SSH_KEY || confirm_action "No existing SSH key found. Generate a new Ed25519 SSH key for GitHub now?"; then
             # ... (Key generation logic unchanged from v1.3.4) ...
             info "Generating a new Ed25519 SSH key..."
-            local key_email="${GIT_USER_EMAIL:-}" 
+            local key_email="${GIT_USER_EMAIL:-}"
             if [ -z "$key_email" ]; then
                 _onboarding_print_status "Enter your email for the SSH key comment (associated with GitHub on ${GFTAI_ORG_NAME}): " "ACTION"
                 read -r key_email_input
                 if [ -z "$key_email_input" ]; then error "Email cannot be empty for SSH key generation."; echo "-------------------------------------------------------------------"; return 1; fi
                 key_email="$key_email_input"
             fi
-            if ssh-keygen -t ed25519 -C "$key_email" -f "$id_ed25519_file" -N ""; then 
+            if ssh-keygen -t ed25519 -C "$key_email" -f "$id_ed25519_file" -N ""; then
                 success "New Ed25519 SSH key generated successfully at ${id_ed25519_file}"
                 ssh_key_file="$id_ed25519_file"
                 chmod 600 "$id_ed25519_file" "$id_ed25519_file.pub"
@@ -730,7 +730,7 @@ setup_ssh_for_github() {
     if [ -n "$ssh_key_file" ] && [ -f "${ssh_key_file}.pub" ]; then
         info "Your public SSH key (${ssh_key_file}.pub) content:"
         cat "${ssh_key_file}.pub"
-        echo 
+        echo
         if $AUTO_ADD_SSH_KEY_TO_GITHUB; then
             if $GH_AUTH_OK_FOR_ORG && command_exists gh; then # Check the global flag
                 if confirm_action "Add this public key to your GitHub account now using 'gh'?"; then
@@ -748,10 +748,10 @@ setup_ssh_for_github() {
                  info "Cannot automatically add key to GitHub because 'gh' is not available or not authenticated for organization '${GFTAI_ORG_NAME}' (GH_AUTH_OK_FOR_ORG=${GH_AUTH_OK_FOR_ORG})."
                  info "Please add it manually: https://github.com/settings/ssh/new"
             fi
-        else 
+        else
             info "To add this key to GitHub manually, copy the public key content above and paste it at: https://github.com/settings/ssh/new"
         fi
-        
+
         info "Attempting to start ssh-agent (if not running) and add the SSH key..."
         if ! ssh-add -l &>/dev/null || ! ssh-add -l | grep -qF "$(ssh-keygen -lf "${ssh_key_file}" | awk '{print $2}')"; then
             if ssh-add "${ssh_key_file}"; then
@@ -764,7 +764,7 @@ setup_ssh_for_github() {
         fi
     fi
     echo "-------------------------------------------------------------------"
-} 
+}
 
 configure_git() {
     step_info "B2: Configuring Git Global Settings..."
@@ -772,15 +772,15 @@ configure_git() {
     local git_config_changed_name=false
     local git_config_changed_email=false
 
-    if [[ -z "$GIT_USER_NAME" ]]; then 
+    if [[ -z "$GIT_USER_NAME" ]]; then
         if confirm_action "Git global user.name is not set or empty. Set it now?"; then
             _onboarding_print_status "Enter your full name for Git commits: " "ACTION"
             read -r git_name_input
             if [[ -n "$git_name_input" ]]; then
-                if git config --global user.name "$git_name_input"; then 
-                    GIT_USER_NAME="$git_name_input"; git_config_changed_name=true; 
+                if git config --global user.name "$git_name_input"; then
+                    GIT_USER_NAME="$git_name_input"; git_config_changed_name=true;
                     success "Git global user.name set to: $GIT_USER_NAME"
-                else 
+                else
                     error "Failed to set Git global user.name."
                 fi
             else
@@ -793,7 +793,7 @@ configure_git() {
         info "Git global user.name already configured as: $GIT_USER_NAME"
     fi
 
-    if [[ -z "$GIT_USER_EMAIL" ]]; then 
+    if [[ -z "$GIT_USER_EMAIL" ]]; then
         if confirm_action "Git global user.email is not set or empty. Set it now?"; then
             _onboarding_print_status "Enter your email for Git commits (must match your GitHub verified email): " "ACTION"
             read -r git_email_input
@@ -822,14 +822,14 @@ configure_git() {
     if git config --global core.editor "code --wait"; then success "Git core.editor set to 'code --wait'."; else warning "Failed to set core.editor (VS Code 'code' command might not be in PATH or not installed)."; fi
     if git config --global pull.rebase false; then success "Git pull.rebase set to 'false' (merge strategy)."; else error "Failed to set pull.rebase."; fi
     if git config --global init.defaultBranch "${GIT_DEFAULT_BRANCH_NAME}"; then success "Git init.defaultBranch set to '${GIT_DEFAULT_BRANCH_NAME}'."; else error "Failed to set init.defaultBranch."; fi
-    
+
     echo "-------------------------------------------------------------------"
-} 
+}
 
 clone_studio_repos() {
     step_info "C: Cloning ALL ${#GFTAI_REPOS_TO_CLONE[@]} Configured GenCr@ft Studio Repositories..."
     echo "-----------------------------------------------------------------------------------"
-    if ! $AUTO_CLONE_REPOS ; then 
+    if ! $AUTO_CLONE_REPOS ; then
         if ! confirm_action "Proceed with cloning ALL ${#GFTAI_REPOS_TO_CLONE[@]} repositories now?"; then
             info "Skipping repository cloning."
             echo "-----------------------------------------------------------------------------------"
@@ -838,16 +838,16 @@ clone_studio_repos() {
     fi
 
     # ensure_gh_authenticated should have set GH_AUTH_OK_FOR_ORG
-    if ! $GH_AUTH_OK_FOR_ORG ; then 
+    if ! $GH_AUTH_OK_FOR_ORG ; then
         error "GitHub CLI 'gh' is not properly authenticated for organization '${GFTAI_ORG_NAME}'."
         error "Cannot clone repositories. Please ensure 'gh auth login' was successful in the previous step with necessary org access and scopes."
         echo "-----------------------------------------------------------------------------------"
         return
     fi
-    
-    local projects_base_path="${GFTAI_WORKSPACE_PARENT_DIR}" 
+
+    local projects_base_path="${GFTAI_WORKSPACE_PARENT_DIR}"
     ensure_dir "${projects_base_path}"
-    
+
     info "Cloning repositories into '${projects_base_path}'. This may take a significant amount of time."
     local all_cloned_successfully=true
     local count_cloned=0
@@ -863,13 +863,13 @@ clone_studio_repos() {
             repo_name_only="$repo_name_from_list"
         fi
         if [ -z "$repo_name_only" ]; then continue; fi
-        local target_dir="${projects_base_path}/${repo_name_only}" 
+        local target_dir="${projects_base_path}/${repo_name_only}"
 
-        if [ -d "${target_dir}/.git" ]; then 
+        if [ -d "${target_dir}/.git" ]; then
             info "Repository '${repo_name_only}' already exists at '${target_dir}'. Skipping clone."
             ((count_skipped++))
         else
-            ensure_dir "$(dirname "${target_dir}")" 
+            ensure_dir "$(dirname "${target_dir}")"
             info "Cloning '${GFTAI_ORG_NAME}/${repo_name_only}' into '${target_dir}'..."
             if gh repo clone "${GFTAI_ORG_NAME}/${repo_name_only}" "${target_dir}" -- --depth 1 --single-branch --no-tags; then
                 # ... (rest of the cloning success logic, including pre-commit hook install - unchanged from v1.3.4) ...
@@ -880,7 +880,7 @@ clone_studio_repos() {
                 fi
                 if command_exists pre-commit && [ -f "${target_dir}/.pre-commit-config.yaml" ]; then
                     info "Found .pre-commit-config.yaml in ${repo_name_only}. Installing pre-commit hooks..."
-                    if (cd "${target_dir}" && pre-commit install && pre-commit install --hook-type commit-msg && pre-commit install --hook-type pre-push); then 
+                    if (cd "${target_dir}" && pre-commit install && pre-commit install --hook-type commit-msg && pre-commit install --hook-type pre-push); then
                         success "Pre-commit hooks (commit-msg, pre-commit, pre-push) installed successfully for ${repo_name_only}."
                     else
                         warning "Failed to install some pre-commit hooks for ${repo_name_only}."
@@ -914,9 +914,9 @@ create_vscode_workspace() {
         return
     fi
 
-    local projects_base_path="${GFTAI_WORKSPACE_PARENT_DIR}" 
-    local workspace_file_path="${projects_base_path}/${GFTAI_VSCODE_WORKSPACE_FILENAME}" 
-    
+    local projects_base_path="${GFTAI_WORKSPACE_PARENT_DIR}"
+    local workspace_file_path="${projects_base_path}/${GFTAI_VSCODE_WORKSPACE_FILENAME}"
+
     local workspace_content="{\n\t\"folders\": ["
     local first_folder=true
 
@@ -932,7 +932,7 @@ create_vscode_workspace() {
 
         local repo_actual_path="${projects_base_path}/${repo_name_only}"
 
-        if [ -d "$repo_actual_path/.git" ]; then 
+        if [ -d "$repo_actual_path/.git" ]; then
             if [ "$first_folder" = true ]; then
                 first_folder=false
             else
@@ -943,7 +943,7 @@ create_vscode_workspace() {
             info "Repository folder '${repo_name_only}' not found or not a git repo in '${projects_base_path}'. Not adding to workspace."
         fi
     done
-    
+
     workspace_content+="\n\t],\n\t\"settings\": {\n"
     workspace_content+="\t\t\"workbench.colorTheme\": \"Default Dark+\",\n"
     workspace_content+="\t\t\"workbench.iconTheme\": \"vscode-icons\",\n"
@@ -991,13 +991,13 @@ install_vscode_extensions() {
         local failed_count=0
 
         for ext_id in "${VSCODE_EXTENSIONS_TO_INSTALL[@]}"; do
-            if [ -n "$ext_id" ]; then 
+            if [ -n "$ext_id" ]; then
                 info "Processing extension: $ext_id"
-                if code --list-extensions | grep -qi "^${ext_id}$"; then 
+                if code --list-extensions | grep -qi "^${ext_id}$"; then
                     success " --> '$ext_id' already installed."
                     ((already_installed_count++))
                 else
-                    if code --install-extension "$ext_id" --force; then 
+                    if code --install-extension "$ext_id" --force; then
                         success " --> '$ext_id' installed successfully."
                         ((installed_count++))
                     else
@@ -1008,7 +1008,7 @@ install_vscode_extensions() {
                 fi
             fi
         done
-        
+
         info "VS Code extension phase summary: ${installed_count} newly installed, ${already_installed_count} already present, ${failed_count} failed."
         if ! $all_ext_ok; then
             warning "Some VS Code extensions had issues during installation. Please check logs."
@@ -1022,13 +1022,13 @@ install_vscode_extensions() {
         warning "VS Code CLI 'code' not found. Skipping VS Code extension installation."
     fi
     echo "-----------------------------------------------------"
-} 
+}
 
 final_steps_and_summary() {
     step_info "F: Final Steps & Summary"
     echo "-------------------------------------------------------------------"
     info "G@FT.ai Developer Environment Onboarding Script has processed all selected steps."
-    
+
     local projects_base_path="${GFTAI_WORKSPACE_PARENT_DIR}"
     local workspace_file_path="${projects_base_path}/${GFTAI_VSCODE_WORKSPACE_FILENAME}"
 
@@ -1053,7 +1053,7 @@ final_steps_and_summary() {
         else
              info "Please open the G@FT.ai Studio workspace manually with VS Code: File > Open Workspace from File... > ${workspace_file_path}"
         fi
-    elif [ "$VSCODE_CLI_AVAILABLE" = false ] && $AUTO_CREATE_WORKSPACE_DEFAULT; then 
+    elif [ "$VSCODE_CLI_AVAILABLE" = false ] && $AUTO_CREATE_WORKSPACE_DEFAULT; then
         info "VS Code CLI 'code' was not found. If the workspace was intended to be created, please open the parent folder '${projects_base_path}' in VS Code and look for the .code-workspace file or create one."
     fi
 
@@ -1079,40 +1079,40 @@ final_steps_and_summary() {
     info "    pre-commit install --hook-type pre-push"
     info "- Review any WARNING or ERROR messages above for manual follow-up."
     echo
-} 
+}
 
 # --- Main Function ---
 main() {
     # ... (Définition des variables globales de statut comme dans v1.3.2) ...
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     ENV_FILE_LOADED=false
-    VSCODE_WORKSPACE_CREATED_OR_UPDATED=false 
+    VSCODE_WORKSPACE_CREATED_OR_UPDATED=false
     VSCODE_CLI_AVAILABLE=$(command_exists code && echo true || echo false)
-    NVM_INSTALLED_NOW=false 
+    NVM_INSTALLED_NOW=false
     PYENV_INSTALLED_NOW=false
     # declare -g GH_AUTH_OK_FOR_ORG=false # Moved to top level global vars
-    declare -g installed_count=0 
+    declare -g installed_count=0
     declare -g already_installed_count=0
     declare -g failed_count=0
 
-    clear 
+    clear
     echo -e "${COLOR_BLUE}======================================================================${COLOR_RESET}"
     echo -e "${COLOR_GREEN} G@FT.ai Studio - Developer Environment Onboarding Script v1.3.3 ${COLOR_RESET}" # Updated version
     echo -e "${COLOR_BLUE}======================================================================${COLOR_RESET}"
     # ... (reste du main comme dans v1.3.2, s'assurant que ensure_gh_authenticated est appelé AVANT setup_ssh_for_github si AUTO_ADD_SSH_KEY_TO_GITHUB est vrai, et AVANT clone_studio_repos)
 
-    load_env_file 
+    load_env_file
     # ... (affichage de la configuration) ...
 
-    OS_TYPE=$(uname -s) 
+    OS_TYPE=$(uname -s)
     info "Detected OS Type: $OS_TYPE"
 
     step_info "SECTION A: Prerequisite Tools Installation..."
-    check_and_install_homebrew 
+    check_and_install_homebrew
     check_and_install_git
     check_and_install_gh # This now includes ensure_gh_authenticated
-    check_and_install_nvm_node 
-    check_and_install_pyenv_python 
+    check_and_install_nvm_node
+    check_and_install_pyenv_python
     check_and_install_docker
 
     step_info "SECTION B: Git & GitHub Setup..."
@@ -1130,16 +1130,16 @@ main() {
     else
         info "Skipping SSH Key setup."
     fi
-    
-    configure_git 
 
-    if $AUTO_CLONE_REPOS; then 
+    configure_git
+
+    if $AUTO_CLONE_REPOS; then
         if ! $GH_AUTH_OK_FOR_ORG; then # Check again specifically before cloning
              warning "Cannot clone repositories as GitHub CLI is not properly authenticated for organization '${GFTAI_ORG_NAME}'."
         else
             clone_studio_repos
         fi
-    else 
+    else
         # ... (prompt user for cloning)
         if confirm_action "Clone ALL ${#GFTAI_REPOS_TO_CLONE[@]} configured G@FT.ai Studio repositories now?"; then
             if ! $GH_AUTH_OK_FOR_ORG; then # Check again
@@ -1151,9 +1151,9 @@ main() {
             info "Skipping repository cloning. You can clone them manually later."
         fi
     fi
-    
+
     # ... (reste du main comme dans v1.3.2)
-    if $AUTO_CREATE_WORKSPACE; then 
+    if $AUTO_CREATE_WORKSPACE; then
         create_vscode_workspace
     else
         if confirm_action "Create/Update VS Code workspace file now?"; then
@@ -1163,8 +1163,8 @@ main() {
             VSCODE_WORKSPACE_CREATED_OR_UPDATED=false
         fi
     fi
-    
-    if $AUTO_INSTALL_VSCODE_EXTENSIONS; then 
+
+    if $AUTO_INSTALL_VSCODE_EXTENSIONS; then
         install_vscode_extensions
     else
         if confirm_action "Install/Verify recommended VS Code extensions now?"; then
@@ -1179,14 +1179,14 @@ main() {
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Initialize global flags
-    GH_AUTH_OK_FOR_ORG=false 
+    GH_AUTH_OK_FOR_ORG=false
     NVM_INSTALLED_NOW=false
     PYENV_INSTALLED_NOW=false
-    VSCODE_WORKSPACE_CREATED_OR_UPDATED=false 
-    VSCODE_CLI_AVAILABLE=false 
-    declare -g installed_count=0 
+    VSCODE_WORKSPACE_CREATED_OR_UPDATED=false
+    VSCODE_CLI_AVAILABLE=false
+    declare -g installed_count=0
     declare -g already_installed_count=0
     declare -g failed_count=0
 
-    main "$@" 
+    main "$@"
 fi

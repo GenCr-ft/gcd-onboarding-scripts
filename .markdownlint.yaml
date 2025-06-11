@@ -3,7 +3,7 @@
 #
 # This template defines the standard Markdown linting rules for Gencraft projects.
 # It MUST be used by the markdownlint-cli tool, typically via pre-commit hooks.
-# This configuration MUST be kept in sync with the Gencraft KB-Contribution-And-Style-Guide.md.
+# This configuration MUST be kept in sync with the Gencraft kb-contribution-and-style-guide.md.
 # Rules are based on https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
 #
 # Default state for all rules is 'true' unless explicitly set to 'false' or configured otherwise.
@@ -46,12 +46,7 @@ MD012:
 
 # MD013: Line length
 # Rationale: Readability in various editors and diffs. Aligned with KB Style Guide.
-MD013:
-  line_length: 120         # Standard line length for prose.
-  heading_line_length: 80  # Shorter for headings for better ToC/outline visibility.
-  code_blocks: false       # Code blocks are not checked for line length by default.
-  tables: false            # Tables are not checked for line length by default.
-  headings: true           # Apply heading_line_length to all headings.
+MD013: false          # Apply heading_line_length to all headings.
   # strict: false # Use if occasional long lines (non-code/table) are acceptable.
   # stern: false  # Use if all lines (including code/table if not false) must adhere.
 

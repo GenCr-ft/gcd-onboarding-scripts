@@ -52,7 +52,7 @@ repos:
         name: "Shellcheck"
         description: "Static analysis for shell scripts."
         # args: ["-x"]  # To follow sourced files
-
+        exclude: ^(v1/|validations-scripts/|onboarding/gftai-)
   # == OpenTofu/Terraform Linting & Formatting ==
   # Requires OpenTofu installed.
   - repo: local

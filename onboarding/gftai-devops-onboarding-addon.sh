@@ -19,8 +19,8 @@ YQ_VERSION_TARGET="${YQ_VERSION_TARGET:-v4.40.5}" # Example, yq versioning is of
 PRECOMMIT_VERSION_TARGET_MAJOR="${PRECOMMIT_VERSION_TARGET_MAJOR:-2}" # For pre-commit check
 
 GFTAI_ORG_NAME_DEFAULT="GenCr-ft"
-GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT="${HOME}/gftai_studio_workspace" 
-DEVOPS_TOOLS_PARENT_DIR_DEFAULT="${GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT}/devops_tools" 
+GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT="${HOME}/gftai_studio_workspace"
+DEVOPS_TOOLS_PARENT_DIR_DEFAULT="${GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT}/devops_tools"
 DEVOPS_PYTHON_VENV_NAME_DEFAULT=".venv-devops-tools"
 
 AWS_DEFAULT_PROFILE_DEFAULT="default"
@@ -56,31 +56,31 @@ _devops_addon_print_status() {
     local message="$1"; local status="$2"; local prefix;
     case "$status" in
         OK)       prefix="[${COLOR_GREEN}OK${COLOR_RESET}]     ";;
-        ERROR)    prefix="[${COLOR_RED}ERROR${COLOR_RESET}]  "; ((FAIL_COUNT_DEVOPS_ADDON++));; 
+        ERROR)    prefix="[${COLOR_RED}ERROR${COLOR_RESET}]  "; ((FAIL_COUNT_DEVOPS_ADDON++));;
         WARN)     prefix="[${COLOR_YELLOW}WARN${COLOR_RESET}]   "; ((WARN_COUNT_DEVOPS_ADDON++));;
         INFO)     prefix="[${COLOR_CYAN}INFO${COLOR_RESET}]   ";;
-        STEP)     prefix="[${COLOR_BLUE}STEP${COLOR_RESET}]   ";; 
-        ACTION)   prefix="${COLOR_YELLOW}ACTION${COLOR_RESET}: ";; 
-        SUCCESS)  prefix="[${COLOR_GREEN}SUCCESS${COLOR_RESET}]";; 
+        STEP)     prefix="[${COLOR_BLUE}STEP${COLOR_RESET}]   ";;
+        ACTION)   prefix="${COLOR_YELLOW}ACTION${COLOR_RESET}: ";;
+        SUCCESS)  prefix="[${COLOR_GREEN}SUCCESS${COLOR_RESET}]";;
         *)        prefix="[????]   ";;
     esac; echo -e "$prefix$message";
 }
 
 d_success() { _devops_addon_print_status "$1" "SUCCESS"; }
-d_error() { _devops_addon_print_status "$1" "ERROR"; } 
-d_warning() { _devops_addon_print_status "$1" "WARN"; } 
+d_error() { _devops_addon_print_status "$1" "ERROR"; }
+d_warning() { _devops_addon_print_status "$1" "WARN"; }
 d_info() { _devops_addon_print_status "$1" "INFO"; }
 d_step_info() { _devops_addon_print_status "$1" "STEP"; }
 
 command_exists() { command -v "$1" &>/dev/null; }
-ensure_dir() { 
-    if [ ! -d "$1" ]; then 
+ensure_dir() {
+    if [ ! -d "$1" ]; then
         if mkdir -p "$1"; then
             d_info "Created directory: $1"
         else
             d_error "Failed to create directory: $1 ! Please check permissions or path."
         fi
-    fi 
+    fi
 }
 d_confirm_action() { # Renamed to avoid conflict if sourced
     local question="$1"; local default_answer="${2:-yes}"; local prompt_options="[Y/n]";
@@ -183,19 +183,19 @@ setup_devops_python_venv() { # MODIFIED to include pre-commit if not globally av
     d_info "Activating DevOps Python venv and installing/upgrading packages..."
     # shellcheck source=/dev/null
     source "${DEVOPS_PYTHON_VENV_PATH}/bin/activate"
-    
+
     local py_packages=("python-terraform" "ansible" "boto3" "pre-commit") # Added pre-commit
     local all_py_ok=true
     for pkg in "${py_packages[@]}"; do
         d_info "Installing/Updating ${pkg} in venv..."
-        if pip3 install --upgrade "${pkg}"; then 
+        if pip3 install --upgrade "${pkg}"; then
             d_success "${pkg} installed/updated."
         else
             d_error "Failed to install/update ${pkg}."
             all_py_ok=false
         fi
     done
-    
+
     deactivate # Deactivate after installations
     if $all_py_ok; then d_success "DevOps Python tools setup complete in venv."; else d_warning "Some Python tools for DevOps venv had issues."; fi
     d_info "To use these tools, activate the venv: source \"${DEVOPS_PYTHON_VENV_PATH}/bin/activate\""
@@ -214,12 +214,12 @@ clone_devops_repos() { # MODIFIED for new repo names and pre-commit hook install
     # Use GFTAI_ORG_NAME which should be set by main onboarding script or its .env
     local org_name="${GFTAI_ORG_NAME:-$GFTAI_ORG_NAME_DEFAULT}"
     local workspace_dir="${GFTAI_WORKSPACE_PARENT_DIR:-$GFTAI_MAIN_WORKSPACE_PARENT_DIR_DEFAULT}"
-    
-    local repo_iac_name="${REPO_IAC_NAME_OVERRIDE:-$REPO_IAC_NAME_DEFAULT}" 
+
+    local repo_iac_name="${REPO_IAC_NAME_OVERRIDE:-$REPO_IAC_NAME_DEFAULT}"
     local repo_devops_automation_name="${REPO_DEVOPS_AUTOMATION_NAME_OVERRIDE:-$REPO_DEVOPS_AUTOMATION_NAME_DEFAULT}"
 
     ensure_dir "${workspace_dir}" # Ensure the main workspace parent exists
-    
+
     local repos_to_clone_devops=()
     if [[ -n "$repo_iac_name" ]]; then repos_to_clone_devops+=("${repo_iac_name}"); fi
     if [[ -n "$repo_devops_automation_name" ]]; then repos_to_clone_devops+=("${repo_devops_automation_name}"); fi
@@ -229,7 +229,7 @@ clone_devops_repos() { # MODIFIED for new repo names and pre-commit hook install
         echo "---------------------------------------------------------"
         return
     fi
-    
+
     d_info "Target base directory for DevOps repos: ${workspace_dir}"
     d_info "Organization: ${org_name}"
 
@@ -272,7 +272,7 @@ devops_main() {
     SCRIPT_DIR_DEVOPS_ADDON="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     # Load .env if present (for overrides of REPO_IAC_NAME_DEFAULT etc.)
     if [ -f "${SCRIPT_DIR_DEVOPS_ADDON}/.env" ]; then source "${SCRIPT_DIR_DEVOPS_ADDON}/.env"; fi
-    
+
     # Populate globalish vars for this script from defaults or .env
     TOFU_VERSION="${TOFU_VERSION_OVERRIDE:-$TOFU_VERSION_TARGET}"
     AWS_CLI_VERSION="${AWS_CLI_VERSION_OVERRIDE:-$AWS_CLI_VERSION_TARGET}"

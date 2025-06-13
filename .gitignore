@@ -1,33 +1,41 @@
-# Fichiers de log
+# Gencraft Studio - Standard .gitignore (v1.0)
+# This file is part of gct-repo-template-standard and should be the base for all new repositories.
+
+# Node.js
+# Dependencies are managed by package managers, do not commit them.
+node_modules/
+# Build output
+dist/
+build/
+# Logs
 *.log
 npm-debug.log*
+yarn-error.log*
 
-# Dépendances Node.js
-node_modules/
-/dist/ # Dossier de build
+# Python
+# Cache and compiled files
+__pycache__/
+*.py[cod]
+# Virtual environments
+.venv/
+venv/
+env/
 
-# Fichiers de configuration sensibles
+# Sensitive Environment Variables
+# NEVER commit .env files. Use a .env.example as a template if needed.
 .env
 .env.local
+.env.*.local
 
-# Fichiers système et de cache (macOS)
+# OS & Editor Specific
+# macOS
 .DS_Store
-
-# Fichiers temporaires des éditeurs
+# Vim
 *~
 *.swp
-.vscode/ # Pour ignorer les paramètres spécifiques de VS Code si non partagés
+# VSCode
+.vscode/
 
-# Fichiers de build Java
+# Java (for completeness)
 *.class
 *.jar
-
-# Fichiers générés par Python
-__pycache__/
-*.pyc
-
-# Fichiers d'historique de shell (commitlint, pre-commit)
-.git/.last_commit_message
-
-#npm lock file
-package-lock.json

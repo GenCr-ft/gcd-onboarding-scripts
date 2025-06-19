@@ -1,26 +1,24 @@
 ---
-docId: GC-README-IDX-030
+docId: DEV-REFE-001
 title: Readme
 version: 1.0.0
 status: Draft
 authors:
-  - AI Compliance Agent
+- AI Compliance Agent
 reviewers:
-  - ReviewTeamPlaceholder
+- ReviewTeamPlaceholder
 creation_date: '2025-05-25'
 language: en
-summary: This directory houses DevOps automation scripts for the GenCr@ft project, streamlining onboarding and other development workflows. Scripts are provided for automating tasks and improving efficiency within the GenCr@ft ecosystem.
-tags:
-  - devops-automation
-  - gencraft
-  - onboarding
-  - scripts
-  - automation
-  - devops
-  - gencraft
+summary: This directory houses DevOps automation scripts for the GenCr@ft project,
+  streamlining onboarding and other development workflows. Scripts are provided for
+  automating tasks and improving efficiency within the GenCr@ft ecosystem.
 last_updated_date: '2025-06-05'
+knowledgeGuardian: []
+metadata:
+  scope: studio
+  domain: devops
+  doc-type: reference
 ---
-
 # GenCr@t Studio - Onboarding Scripts
 
 ![Status: V2 Approved](https://img.shields.io/badge/status-V2%20Approved-brightgreen)

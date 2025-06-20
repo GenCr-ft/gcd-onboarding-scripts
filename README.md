@@ -9,9 +9,7 @@ reviewers:
 - ReviewTeamPlaceholder
 creation_date: '2025-05-25'
 language: en
-summary: This directory houses DevOps automation scripts for the GenCr@ft project,
-  streamlining onboarding and other development workflows. Scripts are provided for
-  automating tasks and improving efficiency within the GenCr@ft ecosystem.
+summary: This directory houses DevOps automation scripts for the GenCr@ft project, streamlining onboarding and other development workflows. Scripts are provided for automating tasks and improving efficiency within the GenCr@ft ecosystem.
 last_updated_date: '2025-06-05'
 knowledgeGuardian: []
 metadata:

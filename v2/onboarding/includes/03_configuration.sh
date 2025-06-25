@@ -137,3 +137,16 @@ clone_repositories_for_role() {
         log_warn "Repository cloning skipped by user."
     fi
 }
+
+# Configures the gft-cli tool by running its setup command.
+configure_gft_cli() {
+    if ! command -v gft &> /dev/null; then
+        log_warn "gft-cli command not found. Skipping its configuration. Please ensure it was installed correctly."
+        return
+    fi
+
+    log_info "Running gft-cli first-time setup..."
+    # This command should be interactive and guide the user.
+    gft config setup
+    log_success "gft-cli configuration complete."
+}

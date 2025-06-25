@@ -33,87 +33,88 @@ install_with_package_manager() {
     fi
 }
 
-# Handles instructions for tools that require manual installation.
-# $1: Package name (e.g., "Docker Desktop")
-# $2: Recommended version
-handle_manual_install() {
-    local package_name="$1"
-    local version="$2"
-    log_warn "Tool '$package_name' requires manual installation."
-    log_warn "Please install version '$version' or newer from its official website."
-    if ! confirm_action "Have you installed '$package_name' manually and wish to continue?"; then
-        log_error "Onboarding process aborted by user."
-        exit 1
+# --- Specific Tool Installers ---
+
+install_tofu() {
+    if command -v tofu &> /dev/null; then
+        log_info "OpenTofu is already installed."
+        return
     fi
+    log_info "Installing OpenTofu (via tfenv)..."
+    if ! command -v tfenv &> /dev/null; then
+        log_info "tfenv not found, installing it..."
+        git clone --depth=1 "https://github.com/tofuutils/tfenv.git" ~/.tfenv
+        # This PATH change is for the current session only.
+        # The main script should handle adding it to the shell profile permanently.
+        export PATH="$HOME/.tfenv/bin:$PATH"
+    fi
+    log_info "Installing the latest version of OpenTofu..."
+    tfenv install latest
+    tfenv use latest
+    log_success "OpenTofu installed."
 }
 
-# --- Main Installation Dispatcher Functions ---
+install_shellcheck() {
+    log_info "Installing shellcheck..."
+    install_with_package_manager "shellcheck"
+}
 
-# Reads the spec for a given tool and calls the appropriate installer.
-# $1: Logical tool name (e.g., "python")
+install_commitlint() {
+    if ! command -v npm &> /dev/null; then
+        log_error "npm (part of Node.js) is required to install commitlint. Please ensure Node.js is installed first."
+        return 1
+    fi
+    log_info "Installing global npm packages for commitlint..."
+    npm install -g @commitlint/cli @commitlint/config-conventional
+    log_success "commitlint dependencies installed globally."
+}
+
+# --- Main Installation Dispatcher Function ---
+
+# Reads the tool name and calls the appropriate installer function.
+# $1: Logical tool name (e.g., "python", "opentofu")
 install_tool() {
     local tool_name="$1"
     log_info "--------------------------------------------------"
-    log_info "Processing tool: $tool_name"
+    log_info "Processing tool requirement: $tool_name"
 
-    # Find the tool's specification in the tooling YAML data
-    local tool_spec
-    tool_spec=$(echo "$TOOLING_SPECS_YAML" | yq ".tools[] | select(.name == \"$tool_name\")")
-
-    if [[ -z "$tool_spec" ]]; then
-        log_warn "No specification found for tool '$tool_name' in SSoT. Skipping."
-        return
-    fi
-
-    local method package version
-    method=$(echo "$tool_spec" | yq -r '.method')
-    package=$(echo "$tool_spec" | yq -r '.package')
-    version=$(echo "$tool_spec" | yq -r '.version')
-
-    case "$method" in
-        package-manager)
-            install_with_package_manager "$package"
+    case "$tool_name" in
+        git|github-cli|docker|prettier|yq)
+            install_with_package_manager "$tool_name"
             ;;
-        nvm)
-            log_info "Installing Node.js '$package' with nvm..."
-            # shellcheck source=/dev/null
-            . "$HOME/.nvm/nvm.sh"
-            nvm install "$package"
-            log_success "Node.js '$package' installed via nvm."
-            ;;
-        pyenv)
-            log_info "Installing Python '$package' with pyenv..."
-            if pyenv versions --bare | grep -q "^$package$"; then
-                log_info "Python version $package is already installed by pyenv."
+        node-lts)
+            log_info "Installing Node.js LTS with nvm..."
+            # Assuming nvm is installed as a prerequisite for this logic
+            if [ -s "$HOME/.nvm/nvm.sh" ]; then
+                # shellcheck source=/dev/null
+                . "$HOME/.nvm/nvm.sh"
+                nvm install --lts
+                log_success "Node.js LTS installed."
             else
-                pyenv install "$package"
-                log_success "Python '$package' installed via pyenv."
+                log_error "nvm is not sourced correctly. Cannot install Node.js."
             fi
             ;;
-        tfenv)
-            log_info "Installing OpenTofu '$package' with tfenv..."
-            if tfenv list | grep -q "$package"; then
-                 log_info "OpenTofu version $package is already installed by tfenv."
+        python)
+            log_info "Ensuring Python is available..."
+            # For now, we assume a system python is sufficient or pyenv is handled separately.
+            if ! command -v python3 &>/dev/null; then
+                log_warn "python3 command not found. Installation may be required."
+                install_with_package_manager "python3"
             else
-                tfenv install "$package"
-                tfenv use "$package"
-                log_success "OpenTofu '$package' installed via tfenv."
+                log_info "python3 command found."
             fi
             ;;
-        npm)
-             log_info "Installing global npm package '$package'..."
-             if npm list -g | grep -q "$package@"; then
-                log_info "npm package '$package' is already installed globally."
-             else
-                npm install -g "$package"
-                log_success "'$package' installed globally via npm."
-             fi
-             ;;
-        manual)
-            handle_manual_install "$package" "$version"
+        opentofu)
+            install_tofu
+            ;;
+        shellcheck)
+            install_shellcheck
+            ;;
+        commitlint)
+            install_commitlint
             ;;
         *)
-            log_warn "Unknown installation method '$method' for tool '$tool_name'. Skipping."
+            log_warn "No specific installation logic defined for tool '$tool_name' in this script. Skipping."
             ;;
     esac
 }
@@ -126,11 +127,11 @@ install_tools_for_role() {
     log_info "Fetching required tool list for role: $role_name"
 
     # Use yq to get the list of tool names for the selected role, including inherited ones
-    local required_tools
     mapfile -t required_tools < <(echo "$ROLE_MATRIX_YAML" | yq -r "
-        (.roles[] | select(.name == \"$role_name\") | .tools[].name?),
-        (.roles[] | select(.name == \"$role_name\") | .inherits | select(. != null) | . as \$base_role | .roles[] | select(.name == \$base_role) | .tools[].name?)
-    " | sort -u | sed '/^$/d') # sort -u to deduplicate, sed to remove empty lines
+        (.roles[] | select(.name == \"common-base\") | .tools[]?),
+        (.roles[] | select(.name == \"$role_name\") | .tools[]?),
+        (.roles[] | select(.name == \"$role_name\") | .inherits | select(. != null) | . as \$base_role | .roles[] | select(.name == \$base_role) | .tools[]?)
+    " | sort -u | sed '/^$/d' | sed '/null/d')
 
     if [[ ${#required_tools[@]} -eq 0 ]]; then
         log_info "No specific command-line tools to install for this role."

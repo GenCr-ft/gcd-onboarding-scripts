@@ -2,7 +2,7 @@
 
 # ==============================================================================
 # GenCr@t Studio - Onboarding Script V2 (Main Orchestrator)
-# Version: 2.0.0-alpha.3
+# Version: 2.1.0-dev
 # ==============================================================================
 
 # --- Script Configuration and Robustness ---
@@ -22,6 +22,10 @@ source "${INCLUDES_DIR}/02_installers.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/03_configuration.sh"
 
+# --- SSoT Configuration ---
+readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-devops-standards.git"
+readonly GFT_SSOT_PATH="/tmp/gft-ssot-onboarding"
+
 # --- Main Orchestration ---
 main() {
     log_info "Welcome to the GenCr@t Studio Onboarding Script V2!"
@@ -36,17 +40,20 @@ main() {
 
     # --- Role Selection ---
     local selected_role_name
-    selected_role_name=$(select_user_role) # Function now returns the role name
+    selected_role_name=$(select_user_role)
 
     # --- Execution Flow ---
     install_tools_for_role "$selected_role_name"
 
-    # --- NEW IN PART 3 ---
+    # --- Configuration Flow ---
     configure_git
     setup_ssh_key
     install_vscode_extensions_for_role "$selected_role_name"
     setup_global_git_hooks
     clone_repositories_for_role "$selected_role_name"
+
+    # --- Final Tooling Configuration ---
+    configure_gft_cli
 
     # Final summary
     log_success "############################################################"

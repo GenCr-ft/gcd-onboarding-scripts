@@ -7,30 +7,39 @@ title: Mock Role Tooling Matrix with Inheritance
 ```yaml
 roles:
   - name: common-base
-    description: "Universal tools."
+    description: "Universal tools and resources."
     tools:
       - git
       - github-cli
+    repositories:
+      - "gcs-studio-handbook"
+      - "gcs-devops-standards"
 
   - name: lead-developer-tech-lead
-    description: "Parent role with core tech tools."
+    description: "Parent role with core tech tools and repos."
     inherits: common-base
     tools:
-      - python # <-- L'outil que nous cherchons est ici.
+      - python
       - node-lts
       - docker
+    repositories:
+      - "gct-service-template-py"
+      - "gcs-plt-tools"
 
   - name: gameplay-programmer
     description: "Child role inheriting from the lead dev."
-    inherits: lead-developer-tech-lead # <-- L'héritage correct est maintenant défini.
-    # Ce rôle n'a pas d'outils propres.
+    inherits: lead-developer-tech-lead
+    # This role has no unique tools or repositories.
 
   - name: devops-specialist
-    description: "Role with its own specific tools."
-    inherits: lead-developer-tech-lead # Hérite aussi pour être réaliste.
+    description: "Role with its own specific tools and repos."
+    inherits: lead-developer-tech-lead
     tools:
       - opentofu
       - shellcheck
       - commitlint
       - yq
+    repositories:
+      - "gencraft-iac"
+      - "gcd-onboarding-scripts"
 ```

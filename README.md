@@ -1,120 +1,126 @@
+# README: GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
+
+**Document ID:** ONB-README-002
+**Version:** 2.0.0
+**Status:** Approved
+**Author:** Gem-BB (Camille)
+**Knowledge Guardian:** Gem-AA (Lead)
+
 ---
-docId: DEV-REFE-001
-title: Readme
-version: 1.0.0
-status: Draft
-authors:
-- AI Compliance Agent
-reviewers:
-- ReviewTeamPlaceholder
-creation_date: '2025-05-25'
-language: en
-summary: This directory houses DevOps automation scripts for the GenCr@ft project, streamlining onboarding and other development workflows. Scripts are provided for automating tasks and improving efficiency within the GenCr@ft ecosystem.
-last_updated_date: '2025-06-05'
-knowledgeGuardian: []
-metadata:
-  scope: studio
-  domain: devops
-  doc-type: reference
----
-# GenCr@t Studio - Onboarding Scripts
 
-![Status: V2 Approved](https://img.shields.io/badge/status-V2%20Approved-brightgreen)
+## 1. Introduction
 
-## 1. Overview
+Welcome to GenCr@t Studio!
 
-Welcome to GenCr@t Studio! This repository contains the official onboarding scripts designed to automate the setup of your local development environment.
+This script is your automated assistant for setting up a complete, standardized local development environment. It is designed to ensure that every technical member of the studio, regardless of their role, has the correct tools, configurations, and repository access from day one.
 
-The primary script, `v2/gft-onboarding.sh`, is a comprehensive tool that configures your machine with the necessary software, tools, and configurations based on your specific role within the studio. It is entirely driven by our Single Source of Truth (SSoT) repository, `gcs-devops-standards`, ensuring your environment is always compliant with our latest standards.
+The script is **SSoT-Driven**, meaning it dynamically configures itself by reading approved standards directly from our `gcs-devops-standards` repository. This ensures your environment is always compliant with the latest studio policies.
 
-## 2. Prerequisites
+## 2. Features
 
-Before running the onboarding script, please ensure your system meets the following prerequisites.
+- **Cross-Platform:** Supports macOS (zsh), Linux (bash/zsh), and Windows (via WSL2 with Ubuntu LTS).
+- **Role-Based Setup:** Interactively prompts you to select your studio role and installs the specific tools and repositories you need.
+- **Idempotent:** Safe to re-run. The script checks the state of your system and only performs actions that are necessary.
+- **Comprehensive:**
+  - Installs and configures essential command-line tools (Git, GitHub CLI, etc.).
+  - Sets up version managers for runtimes like Node.js and Python.
+  - Configures your local Git identity.
+  - Clones all necessary studio repositories into a structured workspace directory.
+  - Installs a recommended set of VS Code extensions tailored to your role.
+- **Robust & Transparent:** Provides clear output on actions being performed and creates a detailed log file at `~/gft_onboarding_YYYY-MM-DD.log` for troubleshooting.
 
-### 2.1. Supported Operating Systems
+## 3. Prerequisites
 
-- **macOS:** (zsh)
-- **Linux:** Debian/Ubuntu derivatives (apt) or Fedora-based (dnf).
-- **Windows 10/11:** Via **Windows Subsystem for Linux 2 (WSL2)**.
+Before running the script, please ensure you have the following:
 
-### 2.2. For Windows Users (Important First Step)
+1. **Administrative Rights:** You will need `sudo` (for macOS/Linux) or Administrator (for Windows PowerShell) privileges to install system-level packages. The script will prompt for your password when needed.
+2. **Internet Connection:** A stable internet connection is required to download tools and clone repositories.
+3. **GitHub Account:** You must have an active GenCr@t GitHub account and have logged in at least once.
 
-If you are on Windows, you must first prepare your machine by running our PowerShell bootstrapper. This will install and configure WSL2 correctly.
+## 4. How to Use
 
-1. Open PowerShell **as an Administrator**.
-2. Navigate to the `v1/` directory (where the legacy scripts are).
-3. Allow script execution: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-4. Run the bootstrapper: `.\onboarding-win.ps1`
-5. Follow the on-screen instructions. At the end, a WSL2 terminal will open. **All subsequent steps must be performed inside this WSL2 terminal.**
+Follow the instructions specific to your operating system.
 
-### 2.3. Core Dependencies
+### 4.1. For macOS & Linux Users
 
-The onboarding script itself requires two tools to be installed first:
+You will run the `gft-onboarding.sh` script directly in your terminal.
 
-- **Git:** To clone our SSoT repository.
-- **yq:** A command-line YAML processor to read the SSoT.
+1. **Open your Terminal.**
 
-You can install them with your system's package manager:
+2. **Download the script** using `curl`. This command downloads it into your current directory.
 
-```bash
-  # On macOS
-  brew install git yq
+    ```bash
+    curl -o gft-onboarding.sh <RAW_SCRIPT_URL_PROVIDED_BY_DEVOPS>
+    ```
 
-  # On Debian/Ubuntu
-  sudo apt update && sudo apt install git yq -y
-```
+    *(Note: Replace `<RAW_SCRIPT_URL_PROVIDED_BY_DEVOPS>` with the actual URL to the script file.)*
 
-## 3. How to Use
+3. **Make the script executable:**
 
-  Once the prerequisites are met, follow these steps from your terminal (or your WSL2 terminal on Windows):
-
-**Step 1.** Clone this repository:
-
-  ```bash
-    git clone [URL_of_this_gcd-onboarding-scripts_repo]
-    cd gcd-onboarding-scripts/v2
-  ```
-
-**Step 2.** Make the script executable:
-
-  ```Bash
+    ```bash
     chmod +x gft-onboarding.sh
-  ```
+    ```
 
-**Step 3.** Run the script:
+4. **Run the script:**
 
-  ```Bash
+    ```bash
     ./gft-onboarding.sh
-  ```
+    ```
 
-The script is interactive and will guide you through the process, starting with selecting your role in the studio.
+5. **Follow the on-screen prompts.** The script will guide you through role selection and ask for confirmation before making critical changes.
 
-## 4. Script Behavior
+### 4.2. For Windows Users (via WSL2)
 
-When you run the script, it will perform the following actions based on the role you select:
+The process for Windows involves using a PowerShell script to prepare the Windows Subsystem for Linux (WSL2), which then runs the main Bash script.
 
-- **Fetch SSoT:** Clones or updates a local copy of `gcs-devops-standards`.
-- **Install Tools:** Installs required command-line tools and version managers (e.g., `nvm`, `pyenv`) according to your role's profile.
-- **Configure Git:** Prompts for your `user.name` and `user.email` and sets up global configurations.
-- **Set up SSH:** Guides you through creating or using an SSH key and adding it to your GitHub account.
-- **Install Global Git Hooks:** Configures a global `commit-msg` hook to enforce our Conventional Commits standard on all your local repositories.
-- **Install VS Code Extensions:** Automatically installs the recommended VS Code extensions for your role.
-- **Clone Repositories:** Clones the essential studio repositories for your role into a central workspace (`~/gft_studio`).
+1. **Open PowerShell as Administrator:**
+    - Search for "PowerShell" in the Start Menu.
+    - Right-click on "Windows PowerShell" and select "Run as administrator".
 
-## 5. Validation
+2. **Download the preparatory script** `onboarding-win.ps1`.
 
-At any time after the onboarding, you can run the validation script to check if your environment is compliant with the latest standards.
+    ```powershell
+    Invoke-WebRequest -Uri <RAW_WINDOWS_SCRIPT_URL> -OutFile .\onboarding-win.ps1
+    ```
 
-```Bash
-  # Navigate to the script directory
-  cd ~/gft_studio/gcd-onboarding-scripts/v2
+    *(Note: Replace `<RAW_WINDOWS_SCRIPT_URL>` with the actual URL.)*
 
-  # Run the validator
-  ./validate-environment.sh
-```
+3. **Run the script.** You may need to adjust your execution policy first.
 
-This will run a series of checks and provide a summary report of any missing tools or misconfigurations.
+    ```powershell
+    # This command allows the script to run in the current session
+    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
-## 6. Contribution
+    # Run the preparatory script
+    .\onboarding-win.ps1
+    ```
 
-This script is a living project. If you wish to contribute, please follow the standards defined in gcs-devops-standards, including creating a new branch, using Conventional Commits, and submitting a Pull Request for review by the DevOps team.
+4. **Follow the on-screen prompts.** The PowerShell script will:
+    - Ensure WSL2 is enabled on your system (this may require a restart).
+    - Guide you to install Ubuntu from the Microsoft Store if it's not present.
+    - Launch the Ubuntu WSL2 terminal, which will **automatically download and run** the main `gft-onboarding.sh` script for you.
+
+## 5. What to Expect During Execution
+
+1. **Welcome & System Check:** The script will greet you and confirm your operating system.
+2. **SSoT Download:** It will perform a temporary clone of the `gcs-devops-standards` repository to load its configuration.
+3. **Role Selection:** You will be presented with a list of official studio roles. Please select the one that matches your position.
+4. **Confirmation:** The script will display a summary of the actions it's about to take based on your role and ask for your final confirmation.
+5. **Installation & Configuration:** The script will proceed to install tools, clone repositories, and configure your environment. You may be prompted for your password for `sudo` commands.
+6. **Completion:** Upon successful completion, the script will provide final instructions and reminders.
+
+## 6. Post-Installation Steps
+
+After the script finishes, please perform the following steps:
+
+1. **Restart Your Terminal:** Close and reopen all terminal/shell windows to ensure all changes to your environment (like new `PATH` entries) are loaded correctly.
+2. **Restart VS Code:** If VS Code was open, restart it to load the newly installed extensions.
+3. **Review the Log File:** If you encounter any issues, check the detailed log file located in your home directory (e.g., `~/gft_onboarding_2025-06-11.log`) for more information.
+
+## 7. Troubleshooting
+
+- **Permission Denied:** If you see "Permission Denied" when running `./gft-onboarding.sh`, ensure you have made it executable with `chmod +x gft-onboarding.sh`.
+- **Package Manager Fails:** If a tool installation fails (e.g., via `apt` or `brew`), check your internet connection and ensure your package manager is up to date (`sudo apt update` or `brew update`).
+- **GitHub Authentication Fails:** Ensure you have correctly set up your GitHub CLI authentication (`gh auth login`) when prompted by the script.
+
+For any persistent issues, please contact the DevOps team on the `#devops-support` Slack channel.

@@ -1,8 +1,23 @@
 #!/usr/bin/env bash
-
-# ==============================================================================
-# Onboarding Script - Part 3: Environment Configuration Functions
-# ==============================================================================
+#
+# ID: GFT_ONBOARDING_CONFIGURATION_03
+# Title: Onboarding Script - Environment Configuration
+# Author(s): Gem-BB (Camille)
+# Creation Date: 2025-06-09
+# Last Modified Date: 2025-06-26
+# Version: 2.2.0
+#
+# Description:
+#   This script handles the post-installation configuration of the developer's
+#   environment. This includes setting up Git identity, SSH keys, VS Code
+#   extensions, and cloning required studio repositories based on the user's role.
+#
+# Usage:
+#   This file is sourced by gft-onboarding.sh.
+#
+# Dependencies:
+#   Functions from 01_helpers.sh.
+#   External commands: git, ssh-keygen, gh, code.
 
 # Configures global Git user name and email
 configure_git() {
@@ -55,27 +70,6 @@ setup_ssh_key() {
         gh ssh-key add "$ssh_key_path.pub" --title "Onboarding-$(hostname)"
         log_success "SSH key added to GitHub account."
     fi
-}
-
-# Sets up the global commit-msg hook to enforce Conventional Commits
-setup_global_git_hooks() {
-    log_info "Setting up global Git hooks for Conventional Commits..."
-    local hooks_dir="$HOME/.gft-git-hooks"
-    mkdir -p "$hooks_dir"
-
-    local hook_file="$hooks_dir/commit-msg"
-
-    # Create the commit-msg hook script
-    cat > "$hook_file" << EOF
-#!/bin/sh
-# This hook is managed by the GenCr@t onboarding script.
-# It enforces Conventional Commits standard using commitlint.
-npx commitlint --edit "\$1"
-EOF
-
-    chmod +x "$hook_file"
-    git config --global core.hooksPath "$hooks_dir"
-    log_success "Global commit-msg hook configured."
 }
 
 # Installs all VS Code extensions required for a given role

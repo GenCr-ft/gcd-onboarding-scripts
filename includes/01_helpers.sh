@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
-
-# ==============================================================================
-# Onboarding Script - Part 1: Helper Functions
 #
-# Contains utility functions for logging, color output, and user interaction.
-# This file is meant to be sourced by the main script.
-# ==============================================================================
+# ID: GFT_ONBOARDING_HELPERS_01
+# Title: Onboarding Script - Helper Functions
+# Author(s): Gem-BB (Camille)
+# Creation Date: 2025-06-09
+# Last Modified Date: 2025-06-26
+# Version: 2.2.0
+#
+# Description:
+#   This script contains utility functions for logging, user interaction, SSoT
+#   repository management, and prerequisite checks. It is a core library for
+#   the onboarding process and is not meant to be executed directly.
+#
+# Usage:
+#   This file is sourced by gft-onboarding.sh.
+#
+# Dependencies:
+#   External commands: git, curl, yq, python3, sed, awk, find.
+
 
 # --- Global Variables for UI ---
 readonly GFT_COLOR_BLUE="\033[1;34m"
@@ -57,19 +69,61 @@ confirm_action() {
     done
 }
 
+# Fetches the version for a specific tool from the SSoT .tool-versions-gft file.
+# $1: The name of the tool as it appears in the .tool-versions-gft file (e.g., "nodejs").
+# Returns (echoes) the version string (e.g., "lts-gallium").
+get_ssot_tool_version() {
+    local tool_name_in_ssot="$1"
+    # GFT_SSOT_PATH is defined in 01_helpers.sh in the setup_ssot_repository function
+    local ssot_versions_file="${GFT_SSOT_PATH}/tooling/ssot/.tool-versions-gft"
+
+    if [ ! -f "$ssot_versions_file" ]; then
+        log_error "SSoT versions file not found at: $ssot_versions_file"
+        return 1
+    fi
+
+    # Find the line starting with the tool name, and print the second column.
+    # The grep ensures we match the exact tool name at the beginning of the line.
+    grep "^${tool_name_in_ssot} " "$ssot_versions_file" | awk '{print $2}'
+}
+
+
 check_prerequisites() {
-    log_info "Checking for required system tools (git, curl, yq)..."
-    local missing_tool=0
-    for tool in git curl yq; do
-        if ! command -v "$tool" &> /dev/null; then
-            log_error "Required tool '$tool' is not installed. Please install it and re-run the script."
-            missing_tool=1
+    log_info "Checking and installing core dependencies (git, curl, yq, python3)..."
+    local all_ok=true
+
+    # List of essential tools and their package names.
+    # Format: "command_to_check:package_name"
+    local prerequisites=(
+        "git:git"
+        "curl:curl"
+        "yq:yq"
+        "python3:python3"
+    )
+
+    for item in "${prerequisites[@]}"; do
+        local cmd="${item%%:*}"
+        local pkg="${item#*:}"
+
+        if ! command -v "$cmd" &> /dev/null; then
+            log_warn "Required tool '$cmd' is not installed. Attempting installation..."
+            # Assumes install_with_package_manager is available (sourced before call)
+            install_with_package_manager "$pkg"
+
+            # Verify installation
+            if ! command -v "$cmd" &> /dev/null; then
+                log_error "Failed to automatically install '$cmd'. Please install it manually and re-run the script."
+                all_ok=false
+            fi
+        else
+            log_info "Prerequisite '$cmd' is present."
         fi
     done
-    if [ "$missing_tool" -eq 1 ]; then
+
+    if ! $all_ok; then
         exit 1
     fi
-    log_success "All prerequisite tools are present."
+    log_success "All prerequisite tools are installed and ready."
 }
 
 # --- SSoT Management ---

@@ -1,150 +1,138 @@
 #!/usr/bin/env bash
-
-# ==============================================================================
-# Onboarding Script - Part 2: Tool Installation Functions
 #
-# Contains all logic for installing software based on the SSoT specs.
-# This file is meant to be sourced by the main script.
-# ==============================================================================
+# ID: GFT_ONBOARDING_INSTALLERS_02
+# Title: Onboarding Script - SSoT-Driven Tool Installers
+# Author(s): Gem-BB (Camille)
+# Creation Date: 2025-06-09
+# Last Modified Date: 2025-06-26
+# Version: 2.3.0
+#
+# Description:
+#   This script manages the installation of all required development tools. It
+#   is driven by the SSoT (.tool-versions-gft) and the role matrix to ensure
+#   a standardized environment. It includes specific installers for version
+#   managers (nvm, pyenv), binaries from GitHub, and other packages.
+#
+# Usage:
+#   This file is sourced by gft-onboarding.sh.
+#
+# Dependencies:
+#   Functions from 01_helpers.sh.
+#   External commands: curl, unzip, tar, sha256sum, sudo, nvm, pyenv.
 
-# --- Tool Installation Helper Functions ---
-
-# Generic installer for system packages using apt or brew.
-# $1: Package name to install.
-install_with_package_manager() {
-    local package_name="$1"
-    if [[ "$PACKAGE_MANAGER" == "brew" ]]; then
-        if brew list "$package_name" &>/dev/null; then
-            log_info "Package '$package_name' is already installed via Homebrew."
-        else
-            log_info "Installing '$package_name' with Homebrew..."
-            brew install "$package_name"
-            log_success "'$package_name' installed."
-        fi
-    elif [[ "$PACKAGE_MANAGER" == "apt" ]]; then
-        if dpkg -s "$package_name" &>/dev/null; then
-            log_info "Package '$package_name' is already installed via apt."
-        else
-            log_info "Installing '$package_name' with apt..."
-            sudo apt-get update
-            sudo apt-get install -y "$package_name"
-            log_success "'$package_name' installed."
-        fi
-    fi
+# --- Helper for OS/Architecture Detection ---
+detect_os_arch() {
+    if [[ -n "${GFT_OS:-}" ]]; then return; fi
+    GFT_OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    local arch; arch=$(uname -m)
+    case "$arch" in
+        x86_64) GFT_ARCH="amd64" ;; aarch64|arm64) GFT_ARCH="arm64" ;; *) GFT_ARCH="$arch" ;;
+    esac
+    export GFT_OS GFT_ARCH
 }
 
-# --- Specific Tool Installers ---
+# --- Specific SSoT-driven Tool Installers ---
 
-install_tofu() {
-    if command -v tofu &> /dev/null; then
-        log_info "OpenTofu is already installed."
-        return
-    fi
-    log_info "Installing OpenTofu (via tfenv)..."
-    if ! command -v tfenv &> /dev/null; then
-        log_info "tfenv not found, installing it..."
-        git clone --depth=1 "https://github.com/tofuutils/tfenv.git" ~/.tfenv
-        # This PATH change is for the current session only.
-        # The main script should handle adding it to the shell profile permanently.
-        export PATH="$HOME/.tfenv/bin:$PATH"
-    fi
-    log_info "Installing the latest version of OpenTofu..."
-    tfenv install latest
-    tfenv use latest
-    log_success "OpenTofu installed."
+install_node() {
+    local version="$1"; local nvm_version_string; nvm_version_string=$(echo "$version" | sed 's/-/\\//')
+    log_info "Installing Node.js version '$nvm_version_string' via nvm..."
+    if [ ! -s "$HOME/.nvm/nvm.sh" ]; then log_error "nvm not found." && return 1; fi
+    . "$HOME/.nvm/nvm.sh" && nvm install "$nvm_version_string" && nvm alias default "$nvm_version_string"
+    log_success "Node.js $version installed and set as default."
 }
 
-install_shellcheck() {
-    log_info "Installing shellcheck..."
-    install_with_package_manager "shellcheck"
+install_python() {
+    local version="$1"
+    log_info "Installing Python version '$version' via pyenv..."
+    if ! command -v pyenv &>/dev/null; then log_error "pyenv not found." && return 1; fi
+    pyenv install -s "$version" && pyenv global "$version"
+    log_success "Python $version installed and set as global default."
+}
+
+install_binary_from_github() {
+    local tool_name="$1"; local version="$2"; local repo_url="$3"; local bin_name_in_zip="$4"
+    log_info "Installing $tool_name version '$version' from GitHub releases..."
+    if command -v "$bin_name_in_zip" &>/dev/null && [[ "$(eval "$bin_name_in_zip --version")" == *"$version"* ]]; then log_info "$tool_name $version is already installed." && return 0; fi
+    local install_dir="$HOME/.local/bin"; mkdir -p "$install_dir"; local file_prefix="${tool_name}_${version}"
+    if [[ "$tool_name" == "gft-cli" ]]; then file_prefix="gft-cli-v${version}"; fi
+    local release_file="${file_prefix}_${GFT_OS}_${GFT_ARCH}.tar.gz"
+    local checksum_file="checksums.txt"
+    local download_url="https://github.com/${repo_url}/releases/download/v${version}"
+    if [[ "$tool_name" == "gft-cli" ]]; then download_url="https://github.com/${repo_url}/releases/download/gft-cli-v${version}"; fi
+    cd /tmp || return 1
+    log_info "Downloading $tool_name binary and checksums..." && curl -sSL -O "${download_url}/${release_file}" && curl -sSL -O "${download_url}/${checksum_file}"
+    log_info "Verifying checksum..."
+    if ! grep "$release_file" "$checksum_file" | sha256sum --check --status; then
+        log_error "Checksum verification failed for $tool_name." && rm -f "$release_file" "$checksum_file" && return 1
+    fi
+    log_info "Installing $tool_name..." && tar -xzf "$release_file" && mv "$bin_name_in_zip" "${install_dir}/" && chmod +x "${install_dir}/${bin_name_in_zip}"
+    rm -f "$release_file" "$checksum_file" && log_success "$tool_name $version installed to ${install_dir}/${bin_name_in_zip}"
+}
+
+install_aws_cli() {
+    log_info "Installing AWS CLI v2..."
+    if command -v aws &>/dev/null && [[ "$(aws --version 2>&1)" == *"aws-cli/2"* ]]; then log_info "AWS CLI v2 is already installed." && return 0; fi
+    cd /tmp || return 1
+    curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip -oq awscliv2.zip && sudo ./aws/install
+    rm -rf aws awscliv2.zip && log_success "AWS CLI v2 installed."
+}
+
+install_hook_managers() {
+    log_info "Installing global hook managers (pre-commit, lint-staged)..."
+    if command -v npm &>/dev/null; then npm install -g lint-staged; else log_warn "npm not found, skipping lint-staged."; fi
+    if command -v pip3 &>/dev/null; then pip3 install --user pre-commit; else log_warn "pip3 not found, skipping pre-commit."; fi
+    log_success "Global hook managers installation attempted."
+}
+
+verify_docker() {
+    log_info "Verifying Docker installation..."
+    if command -v docker &> /dev/null && docker info &> /dev/null; then
+        log_success "Docker is installed and the daemon is running."
+    else
+        log_error "Docker is not installed or the Docker daemon is not running. Please install Docker Desktop and start it."
+    fi
 }
 
 install_commitlint() {
-    if ! command -v npm &> /dev/null; then
-        log_error "npm (part of Node.js) is required to install commitlint. Please ensure Node.js is installed first."
-        return 1
-    fi
     log_info "Installing global npm packages for commitlint..."
+    if ! command -v npm &>/dev/null; then log_error "npm is required to install commitlint." && return 1; fi
     npm install -g @commitlint/cli @commitlint/config-conventional
-    log_success "commitlint dependencies installed globally."
+    log_success "commitlint dependencies installed."
 }
 
-# --- Main Installation Dispatcher Function ---
 
-# Reads the tool name and calls the appropriate installer function.
-# $1: Logical tool name (e.g., "python", "opentofu")
+# --- Main Installation Dispatcher ---
 install_tool() {
-    local tool_name="$1"
-    log_info "--------------------------------------------------"
-    log_info "Processing tool requirement: $tool_name"
-
-    case "$tool_name" in
-        git|github-cli|docker|prettier|yq)
-            install_with_package_manager "$tool_name"
-            ;;
-        node-lts)
-            log_info "Installing Node.js LTS with nvm..."
-            # Assuming nvm is installed as a prerequisite for this logic
-            if [ -s "$HOME/.nvm/nvm.sh" ]; then
-                # shellcheck source=/dev/null
-                . "$HOME/.nvm/nvm.sh"
-                nvm install --lts
-                log_success "Node.js LTS installed."
-            else
-                log_error "nvm is not sourced correctly. Cannot install Node.js."
-            fi
-            ;;
-        python)
-            log_info "Ensuring Python is available..."
-            # For now, we assume a system python is sufficient or pyenv is handled separately.
-            if ! command -v python3 &>/dev/null; then
-                log_warn "python3 command not found. Installation may be required."
-                install_with_package_manager "python3"
-            else
-                log_info "python3 command found."
-            fi
-            ;;
-        opentofu)
-            install_tofu
-            ;;
-        shellcheck)
-            install_shellcheck
-            ;;
-        commitlint)
-            install_commitlint
-            ;;
-        *)
-            log_warn "No specific installation logic defined for tool '$tool_name' in this script. Skipping."
-            ;;
+    local tool_from_matrix="$1"
+    log_info "--- Processing tool: $tool_from_matrix ---"
+    local version; detect_os_arch
+    case "$tool_from_matrix" in
+        git) log_info "'git' is a core prerequisite handled at startup." ;;
+        github-cli) install_with_package_manager "gh" ;;
+        yq) install_with_package_manager "yq" ;;
+        shellcheck) install_with_package_manager "shellcheck" ;;
+        docker) verify_docker ;;
+        commitlint) install_commitlint ;;
+        node-lts) version=$(get_ssot_tool_version "nodejs"); [ -n "$version" ] && install_node "$version" || log_warn "No version for 'nodejs' in SSoT.";;
+        python) version=$(get_ssot_tool_version "python"); [ -n "$version" ] && install_python "$version" || log_warn "No version for 'python' in SSoT.";;
+        opentofu) version=$(get_ssot_tool_version "opentofu"); [ -n "$version" ] && install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu" || log_warn "No version for 'opentofu' in SSoT.";;
+        gft-cli) version=$(get_ssot_tool_version "gft-cli"); [ -n "$version" ] && install_binary_from_github "gft-cli" "$version" "GenCr-ft/gft-cli" "gft" || log_warn "No version for 'gft-cli' in SSoT.";;
+        aws-cli) install_aws_cli ;;
+        git-hooks-managers) install_hook_managers ;;
+        *) log_warn "No SSoT-driven installation logic defined for tool '$tool_from_matrix'." ;;
     esac
 }
 
-# Gets the list of required tools for a role and orchestrates their installation.
-# $1: The selected role name
+# --- Main Entry Point for Tool Installation ---
 install_tools_for_role() {
     local role_name="$1"
-
-    log_info "Fetching required tool list for role: $role_name"
-
-    # Use yq to get the list of tool names for the selected role, including inherited ones
-    mapfile -t required_tools < <(echo "$ROLE_MATRIX_YAML" | yq -r "
-        (.roles[] | select(.name == \"common-base\") | .tools[]?),
-        (.roles[] | select(.name == \"$role_name\") | .tools[]?),
-        (.roles[] | select(.name == \"$role_name\") | .inherits | select(. != null) | . as \$base_role | .roles[] | select(.name == \$base_role) | .tools[]?)
-    " | sort -u | sed '/^$/d' | sed '/null/d')
-
-    if [[ ${#required_tools[@]} -eq 0 ]]; then
-        log_info "No specific command-line tools to install for this role."
-        return
-    fi
-
+    log_info "Fetching required tool list for role: '$role_name'..."
+    local python_helper_script="${SCRIPT_DIR}/includes/get_role_tools.py"
+    if [ ! -f "$python_helper_script" ]; then log_error "FATAL: Python helper script not found" && return 1; fi
+    mapfile -t required_tools < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
+    if [[ ${#required_tools[@]} -eq 0 ]]; then log_info "No specific tools to install for this role." && return; fi
     log_info "The following tools will be installed or verified: ${required_tools[*]}"
-    if confirm_action "Proceed with tool installation?"; then
-        for tool in "${required_tools[@]}"; do
-            install_tool "$tool"
-        done
-        log_success "Tool installation phase complete."
-    else
-        log_warn "Tool installation skipped by user."
-    fi
+    if [[ -z "${TEST_ENV:-}" ]]; then if ! confirm_action "Proceed with tool installation?"; then log_warn "Skipped by user." && return; fi; fi
+    for tool in "${required_tools[@]}"; do install_tool "$tool"; done
+    log_success "Tool installation phase complete."
 }

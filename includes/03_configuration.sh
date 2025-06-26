@@ -101,21 +101,33 @@ install_vscode_extensions_for_role() {
     log_success "VS Code extension setup complete."
 }
 
-# Clones all repositories required for a given role
+# Clones all repositories required for a given role by calling the Python helper.
 clone_repositories_for_role() {
     local role_name="$1"
+
+
+    if [ -z "${ROLE_MATRIX_YAML:-}" ]; then
+        log_warn "ROLE_MATRIX_YAML not set, attempting to load SSoT configuration..."
+        load_ssot_configuration
+    fi
+
     log_info "Cloning required repositories for role: $role_name"
 
-    local gft_workspace="$HOME/gft_studio" # Central workspace directory
+    local gft_workspace="$HOME/gft_studio"
     mkdir -p "$gft_workspace"
 
-    local required_repos
-    mapfile -t required_repos < <(echo "$ROLE_MATRIX_YAML" | yq -r "
-        (.roles[] | select(.name == \"$role_name\") | .repositories[]?),
-        (.roles[] | select(.name == \"$role_name\") | .inherits | select(. != null) | . as \$base_role | .roles[] | select(.name == \$base_role) | .repositories[]?)
-    " | sort -u)
+    local python_helper_script="${SCRIPT_DIR}/includes/get_role_repos.py"
+    if [ ! -f "$python_helper_script" ]; then
+        log_error "FATAL: Python helper for repos not found at $python_helper_script"
+        return 1
+    fi
 
-    if [[ ${#required_repos[@]} -eq 0 ]]; then log_info "No specific repositories to clone for this role."; return; fi
+    mapfile -t required_repos < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
+
+    if [[ ${#required_repos[@]} -eq 0 ]]; then
+        log_info "No specific repositories to clone for this role."
+        return
+    fi
 
     if confirm_action "Clone ${#required_repos[@]} repositories into '$gft_workspace'?"; then
         for repo_name in "${required_repos[@]}"; do
@@ -131,6 +143,7 @@ clone_repositories_for_role() {
         log_warn "Repository cloning skipped by user."
     fi
 }
+
 
 # Configures the gft-cli tool by running its setup command.
 configure_gft_cli() {

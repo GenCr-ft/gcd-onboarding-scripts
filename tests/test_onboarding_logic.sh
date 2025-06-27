@@ -129,6 +129,52 @@ test_repository_cloning_logic() {
 }
 
 # ==============================================================================
+# --- Test Suites ---
+# ==============================================================================
+
+# Test Suite 4: Environment Variable Logic
+test_environment_variable_logic() {
+    log_info "[TEST SUITE 1] Testing Environment Variable Logic..."
+
+    # Créer un faux fichier de profil temporaire
+    local MOCK_PROFILE_FILE
+    MOCK_PROFILE_FILE=$(mktemp)
+    # S'assurer que le fichier est supprimé à la fin du test
+    trap 'rm -f "$MOCK_PROFILE_FILE"' RETURN
+
+    # Appeler la fonction en lui passant le chemin du fichier mock
+    local output
+    output=$(configure_environment_variables "devops-specialist" "$MOCK_PROFILE_FILE" 2>&1)
+
+    local checks_failed=0
+    # Vérifier qu'une variable héritée est bien présente
+    if ! grep -q 'export GFT_PROJECTS_HOME="$HOME/gft_studio"' "$MOCK_PROFILE_FILE"; then
+        log_error "FAIL (Env Var): Inherited variable 'GFT_PROJECTS_HOME' not found in profile."
+        ((checks_failed++))
+    fi
+    # Vérifier qu'une variable propre au rôle est bien présente
+    if ! grep -q 'export GFT_AWS_PROFILE="gft-devops"' "$MOCK_PROFILE_FILE"; then
+        log_error "FAIL (Env Var): Role-specific variable 'GFT_AWS_PROFILE' not found in profile."
+        ((checks_failed++))
+    fi
+    # Vérifier que la création du répertoire a été tentée
+    if [[ "$output" != *"MOCK_mkdir_CALLED_WITH: -p"* ]]; then
+        log_error "FAIL (Env Var): Workspace directory creation was not called."
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then
+        log_error "$checks_failed env var check(s) failed."
+        echo "--- Profile Content ---" && cat "$MOCK_PROFILE_FILE"
+        echo "--- Raw Test Output ---" && echo "$output"
+        return 1
+    fi
+
+    log_success "Environment Variable Logic: PASSED"
+    return 0
+}
+
+# ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
 main() {
@@ -146,6 +192,7 @@ main() {
 
     test_full_dispatcher_logic || ((failed_suites++))
     test_repository_cloning_logic || ((failed_suites++))
+    test_environment_variable_logic || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

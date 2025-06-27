@@ -14,6 +14,10 @@ roles:
     repositories:
       - "gcs-studio-handbook"
       - "gcs-devops-standards"
+    # NOUVELLE SECTION AJOUTÉE
+    environment_variables:
+      GFT_PROJECTS_HOME: "$HOME/gft_studio"
+      GFT_LOG_LEVEL: "INFO"
 
   - name: lead-developer-tech-lead
     description: "Parent role with core tech tools and repos."
@@ -26,20 +30,17 @@ roles:
       - "gct-service-template-py"
       - "gcs-plt-tools"
 
-  - name: gameplay-programmer
-    description: "Child role inheriting from the lead dev."
-    inherits: lead-developer-tech-lead
-    # This role has no unique tools or repositories.
-
   - name: devops-specialist
     description: "Role with its own specific tools and repos."
     inherits: lead-developer-tech-lead
     tools:
       - opentofu
       - shellcheck
-      - commitlint
-      - yq
     repositories:
       - "gencraft-iac"
-      - "gcd-onboarding-scripts"
+    # NOUVELLE SECTION AJOUTÉE
+    environment_variables:
+      GFT_AWS_PROFILE: "gft-devops"
+      # Une valeur vide indique au script de demander à l'utilisateur
+      TF_VAR_github_token: ""
 ```

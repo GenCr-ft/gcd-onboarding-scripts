@@ -18,10 +18,15 @@ import sys
 import yaml
 
 def get_all_tools_for_role(matrix_data, role_name):
+    """
+    Recursively traverses the inheritance chain to aggregate all tools
+    for a given role and its parents.
+    """
     all_tools = set()
     try:
         roles_map = {role['name']: role for role in matrix_data.get('roles', [])}
-    except (TypeError, KeyError):
+    except (TypeError, KeyError) as e:
+        print(f"Error: Formatting error in the 'roles' section of the YAML: {e}", file=sys.stderr)
         return []
 
     # Use a queue for robust, level-by-level traversal of the inheritance tree
@@ -36,6 +41,7 @@ def get_all_tools_for_role(matrix_data, role_name):
         visited_roles.add(current_role_name)
 
         if current_role_name not in roles_map:
+            print(f"::warning:: Role '{current_role_name}' found in an 'inherits' key but is not defined in the roles list. Inheritance chain is broken.", file=sys.stderr)
             continue
 
         current_role_data = roles_map[current_role_name]
@@ -52,6 +58,7 @@ def get_all_tools_for_role(matrix_data, role_name):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <role_name>", file=sys.stderr)
         sys.exit(1)
 
     target_role = sys.argv[1]

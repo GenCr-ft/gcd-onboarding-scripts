@@ -26,6 +26,8 @@ roles:
       - python
       - node-lts
       - docker
+      - commitlint
+      - yq
     repositories:
       - "gct-service-template-py"
       - "gcs-plt-tools"

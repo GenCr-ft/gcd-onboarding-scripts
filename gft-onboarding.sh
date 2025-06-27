@@ -61,6 +61,7 @@ main() {
     # --- Configuration Flow ---
     configure_git
     setup_ssh_key
+    configure_environment_variables "$selected_role_name"
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
 

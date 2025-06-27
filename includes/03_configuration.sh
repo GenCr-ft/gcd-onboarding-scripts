@@ -157,3 +157,83 @@ configure_gft_cli() {
     gft config setup
     log_success "gft-cli configuration complete."
 }
+
+# Configures environment variables based on the user's role.
+# $1: role_name (mandatory)
+# $2: shell_profile_for_test (optional, used only for testing)
+configure_environment_variables() {
+    local role_name="$1"
+    local shell_profile_for_test="$2" # Argument pour le test
+    log_info "Configuring environment variables for role: $role_name"
+
+    # 1. Détecter le fichier de profil du shell
+    local shell_profile_file=""
+    if [ -n "$shell_profile_for_test" ]; then
+        shell_profile_file="$shell_profile_for_test"
+        log_info "Using provided test profile file: $shell_profile_file"
+    elif [ -n "${BASH_VERSION:-}" ]; then
+        shell_profile_file="$HOME/.bashrc"
+    elif [ -n "${ZSH_VERSION:-}" ]; then
+        shell_profile_file="$HOME/.zshrc"
+    else
+        log_warn "Could not detect Bash or Zsh. Skipping shell profile configuration."
+        return
+    fi
+
+    if [ -z "$shell_profile_for_test" ]; then
+      log_info "Detected shell profile: $shell_profile_file"
+    fi
+    # S'assurer que le fichier existe pour les tests et l'exécution normale
+    touch "$shell_profile_file"
+
+    # 2. Obtenir la liste des variables via le helper Python
+    local python_helper_script="${SCRIPT_DIR}/includes/get_role_env_vars.py"
+    if [ ! -f "$python_helper_script" ]; then
+        log_error "FATAL: Python helper for env vars not found at $python_helper_script"
+        return 1
+    fi
+
+    mapfile -t required_vars < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
+
+    if [[ ${#required_vars[@]} -eq 0 ]]; then
+        log_info "No specific environment variables to configure for this role."
+        return
+    fi
+
+    # 3. S'assurer que le bloc de configuration Gencraft existe
+    local start_marker="# GENCRAFT ENVIRONMENT - START"
+    local end_marker="# GENCRAFT ENVIRONMENT - END"
+    if ! grep -qF "$start_marker" "$shell_profile_file"; then
+        log_info "Adding Gencraft configuration block to $shell_profile_file..."
+        echo -e "\n$start_marker\n# This block is managed by the Gencraft onboarding script. Do not edit manually.\n$end_marker" >> "$shell_profile_file"
+    fi
+
+    # 4. Ajouter chaque variable si elle n'existe pas déjà
+    for var_line in "${required_vars[@]}"; do
+        local var_name="${var_line%%=*}"
+        local var_value="${var_line#*=}"
+
+        if grep -qF "export $var_name=" "$shell_profile_file"; then
+            log_info "Variable '$var_name' is already configured."
+        else
+            log_info "Adding variable '$var_name' to shell profile."
+            # sed -i est complexe et non portable, utilisons une méthode plus sûre
+            local temp_file
+            temp_file=$(mktemp)
+            grep -vF "$end_marker" "$shell_profile_file" > "$temp_file"
+            echo "export $var_name=$var_value" >> "$temp_file"
+            echo "$end_marker" >> "$temp_file"
+            cat "$temp_file" > "$shell_profile_file"
+            rm "$temp_file"
+
+            if [[ "$var_name" == "GFT_PROJECTS_HOME" ]]; then
+                local evaluated_path
+                eval evaluated_path=${var_value//\"/}
+                log_info "Creating workspace directory at $evaluated_path..."
+                mkdir -p "$evaluated_path"
+            fi
+        fi
+    done
+
+    log_success "Environment variables configured. Please restart your terminal."
+}

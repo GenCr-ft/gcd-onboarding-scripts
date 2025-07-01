@@ -11,7 +11,9 @@ jobs:
   ssot-linting:
     # This calls the master workflow from the correct SSoT location.
     # The '@main' should be replaced with a specific version tag (e.g., @v1.0) for production stability.
-    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@main
+    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.1.2
+    secrets:
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
     with:
       # We keep the default behavior which is to fail the job on error.
       continue-on-error: false

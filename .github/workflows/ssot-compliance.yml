@@ -17,3 +17,4 @@ jobs:
     with:
       # We keep the default behavior which is to fail the job on error.
       continue-on-error: false
+

@@ -1,13 +1,5 @@
 # README: GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
 
-**Document ID:** ONB-README-002
-**Version:** 2.0.0
-**Status:** Approved
-**Author:** Gem-BB (Camille)
-**Knowledge Guardian:** Gem-AA (Lead)
-
----
-
 ## 1. Introduction
 
 Welcome to GenCr@t Studio!

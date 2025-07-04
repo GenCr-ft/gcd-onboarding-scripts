@@ -112,7 +112,7 @@ repos:
 
   # ===== Gencraft SSoT Linters (Custom Hooks) =====
   - repo: https://github.com/GenCr-ft/gcd-ops-scripts.git
-    rev: v2.5.3 # Utiliser le dernier tag stable de nos outils
+    rev: v4.0.0 # Utiliser le dernier tag stable de nos outils
     hooks:
       - id: metadata-linter
         exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|README\.md)

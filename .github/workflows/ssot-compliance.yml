@@ -1,0 +1,23 @@
+# SSoT Compliance Check
+# This workflow calls the central, reusable SSoT linter.
+# DO NOT add logic here. To update the linter, modify the reusable workflow in gcd-shared-actions.
+name: SSoT Compliance Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+ validate-ssot:
+    name: "Run Official SSoT Linter"
+    # This calls the master workflow from the correct SSoT location.
+    # The '@main' should be replaced with a specific version tag (e.g., @v1.0) for production stability.
+    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.2.5
+    secrets:
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
+    with:
+      # We keep the default behavior which is to fail the job on error.
+      continue-on-error: true
+      # We specify the exact, stable versions of our governance and tooling.
+      governance-version: "v1.4.0"
+      tooling-version: "v4.1.2"

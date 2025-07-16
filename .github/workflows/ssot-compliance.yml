@@ -6,7 +6,6 @@ name: SSoT Compliance Check
 on:
   pull_request:
     branches: [ main, develop ]
-
 jobs:
  validate-ssot:
     name: "Run Official SSoT Linter"

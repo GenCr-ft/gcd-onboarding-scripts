@@ -33,7 +33,7 @@ def gather_default_repositories(matrix_data, roles_map):
     if not isinstance(matrix_data, dict):
         return default_repos
 
-    for repo in matrix_data.get('default_repositories', []) or []:
+    for repo in matrix_data.get('default_repositories') or []:
         if repo:
             default_repos.add(repo)
 

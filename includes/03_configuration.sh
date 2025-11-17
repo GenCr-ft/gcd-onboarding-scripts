@@ -116,6 +116,11 @@ clone_repositories_for_role() {
     local gft_workspace="$HOME/gft_studio"
     mkdir -p "$gft_workspace"
 
+    local -a base_repos=(
+        "gcs-devops-standards"
+        "gcs-studio-handbook"
+    )
+
     local python_helper_script="${SCRIPT_DIR}/includes/get_role_repos.py"
     if [ ! -f "$python_helper_script" ]; then
         log_error "FATAL: Python helper for repos not found at $python_helper_script"
@@ -124,24 +129,72 @@ clone_repositories_for_role() {
 
     mapfile -t required_repos < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
 
-    if [[ ${#required_repos[@]} -eq 0 ]]; then
+    local -a merged_repos=()
+    declare -A seen_repo
+    for repo_name in "${required_repos[@]}" "${base_repos[@]}"; do
+        if [[ -z "$repo_name" || -n "${seen_repo[$repo_name]:-}" ]]; then
+            continue
+        fi
+        seen_repo[$repo_name]=1
+        merged_repos+=("$repo_name")
+    done
+
+    if [[ ${#merged_repos[@]} -eq 0 ]]; then
         log_info "No specific repositories to clone for this role."
         return
     fi
 
-    if confirm_action "Clone ${#required_repos[@]} repositories into '$gft_workspace'?"; then
-        for repo_name in "${required_repos[@]}"; do
-            if [ -d "$gft_workspace/$repo_name" ]; then
-                log_info "Repository '$repo_name' already exists. Skipping."
-            else
-                log_info "Cloning GenCr-ft/$repo_name..."
-                gh repo clone "GenCr-ft/$repo_name" "$gft_workspace/$repo_name"
-            fi
-        done
-        log_success "Repository cloning complete."
-    else
-        log_warn "Repository cloning skipped by user."
+    local gh_available=true
+    if ! command -v gh &> /dev/null; then
+        log_warn "GitHub CLI 'gh' is not installed."
+        if install_with_package_manager "gh" "gh"; then
+            log_success "'gh' installed successfully."
+        else
+            log_warn "Unable to install 'gh'. Falling back to direct git clone over SSH."
+            gh_available=false
+        fi
     fi
+
+    if $gh_available && ! command -v gh &> /dev/null; then
+        log_warn "'gh' still missing after attempted installation. Using git+SSH fallback."
+        gh_available=false
+    fi
+
+    log_info "Preparing to manage ${#merged_repos[@]} repositories in '$gft_workspace'."
+    for repo_name in "${merged_repos[@]}"; do
+        local target_dir="$gft_workspace/$repo_name"
+        if [ -d "$target_dir" ]; then
+            log_info "Repository '$repo_name' already exists at '$target_dir'. Skipping."
+            continue
+        fi
+
+        local approx_size="unknown"
+        if $gh_available; then
+            local disk_usage
+            disk_usage=$(gh repo view "GenCr-ft/$repo_name" --json diskUsage --jq '.diskUsage' 2>/dev/null | tr -d '\r' | tr -d ' ')
+            if [[ -n "$disk_usage" && "$disk_usage" =~ ^[0-9]+$ ]]; then
+                local size_mb=$(( (disk_usage + 1023) / 1024 ))
+                approx_size="~${size_mb} MB"
+            else
+                approx_size="unknown (gh data unavailable)"
+            fi
+        else
+            approx_size="unknown (gh CLI unavailable)"
+        fi
+
+        log_info "Role: $role_name | Repository: $repo_name | Approx Size: $approx_size | Target: $target_dir"
+        if confirm_action "Clone '$repo_name'?"; then
+            if $gh_available; then
+                run_command_with_logging gh repo clone "GenCr-ft/$repo_name" "$target_dir"
+            else
+                run_command_with_logging git clone "git@github.com:GenCr-ft/${repo_name}.git" "$target_dir"
+            fi
+        else
+            log_warn "User opted to skip cloning '$repo_name'."
+        fi
+    done
+
+    log_success "Repository cloning phase completed."
 }
 
 

@@ -5,6 +5,9 @@ title: Mock Role Tooling Matrix with Inheritance
 # Mock SSoT for Testing Multi-Level Inheritance
 
 ```yaml
+default_repositories:
+  - "gcs-devops-standards"
+
 roles:
   - name: common-base
     description: "Universal tools and resources."
@@ -13,7 +16,6 @@ roles:
       - github-cli
     repositories:
       - "gcs-studio-handbook"
-      - "gcs-devops-standards"
     # NOUVELLE SECTION AJOUTÉE
     environment_variables:
       GFT_PROJECTS_HOME: "$HOME/gft_studio"

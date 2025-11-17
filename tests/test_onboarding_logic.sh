@@ -26,8 +26,19 @@ install_commitlint() { echo "MOCK_install_commitlint_CALLED"; }
 install_node() { echo "MOCK_install_node_CALLED_WITH:$1"; }
 install_python() { echo "MOCK_install_python_CALLED_WITH:$1"; }
 install_binary_from_github() { echo "MOCK_install_binary_CALLED_WITH:$1 $2"; }
-# Mock for Repo Cloning
-gh() { echo "MOCK_gh_CALLED_WITH: $*"; }
+# Default mock payload for repository helper output
+MOCK_ROLE_REPO_OUTPUT=$'gcs-devops-standards\ngcs-plt-tools\ngcs-studio-handbook\ngct-service-template-py\ngencraft-iac'
+
+# Mock for Repo Cloning / gh interactions
+gh() {
+    if [[ "$1" == "repo" && "$2" == "view" ]]; then
+        # Return a fake diskUsage size (in KB) for size calculations
+        echo "204800"
+        return 0
+    fi
+
+    echo "MOCK_gh_CALLED_WITH: $*"
+}
 # Mock for Env Var directory creation
 mkdir() { echo "MOCK_mkdir_CALLED_WITH: $*"; }
 # Generic mocks
@@ -44,9 +55,10 @@ python3() {
             return 0
             ;;
         "${PROJECT_ROOT}/includes/get_role_repos.py")
-            printf '%s\n' \
-                gcs-devops-standards gcs-plt-tools gcs-studio-handbook gct-service-template-py gencraft-iac
-            return 0
+            if [[ -n "${MOCK_ROLE_REPO_OUTPUT:-}" ]]; then
+                printf '%s\n' "${MOCK_ROLE_REPO_OUTPUT}"
+                return 0
+            fi
             ;;
         "${PROJECT_ROOT}/includes/get_role_env_vars.py")
             printf '%s\n' \
@@ -92,6 +104,19 @@ test_repository_cloning_logic() {
     log_success "Repository Cloning Logic: PASSED"
 }
 
+test_base_repository_injection_when_missing() {
+    log_info "[TEST SUITE 2b] Testing Base Repository Injection..."
+    local previous_mock="$MOCK_ROLE_REPO_OUTPUT"
+    MOCK_ROLE_REPO_OUTPUT=$'gcs-plt-tools\ngct-service-template-py\ngencraft-iac'
+    local output; output=$(clone_repositories_for_role "devops-specialist" 2>&1)
+    MOCK_ROLE_REPO_OUTPUT="$previous_mock"
+
+    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-devops-standards"* ]]; then
+        log_error "FAIL (Base Repo): 'gcs-devops-standards' was not injected when missing." && echo "$output" && return 1
+    fi
+    log_success "Base Repository Injection Logic: PASSED"
+}
+
 test_environment_variable_logic() {
     log_info "[TEST SUITE 3] Testing Environment Variable Logic..."
     local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp); trap 'rm -f "$MOCK_PROFILE_FILE"' RETURN
@@ -126,6 +151,7 @@ main() {
     local failed_suites=0
     test_tool_installation_logic || ((failed_suites++))
     test_repository_cloning_logic || ((failed_suites++))
+    test_base_repository_injection_when_missing || ((failed_suites++))
     test_environment_variable_logic || ((failed_suites++))
 
     echo "-------------------------------------------"

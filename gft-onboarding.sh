@@ -23,17 +23,29 @@ set -e
 set -u
 set -o pipefail
 
+LOG_FILE="${HOME}/gft_onboarding_$(date +%F_%H-%M-%S).log"
+
 # Find the script's own directory
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 INCLUDES_DIR="${SCRIPT_DIR}/includes"
 
 # --- Source All Helper and Logic Files ---
 # shellcheck disable=SC1091
+source "${INCLUDES_DIR}/00_bootstrap.sh"
+# shellcheck disable=SC1091
 source "${INCLUDES_DIR}/01_helpers.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/02_installers.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/03_configuration.sh"
+
+# --- Logging Setup ---
+setup_log_stream() {
+    mkdir -p "$(dirname "$LOG_FILE")"
+    touch "$LOG_FILE"
+    exec > >(tee -a "$LOG_FILE") 2>&1
+    log_info "Streaming logs to $LOG_FILE"
+}
 
 # --- SSoT Configuration ---
 readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-devops-standards.git"
@@ -77,5 +89,7 @@ main() {
 
 # --- Script Execution ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    setup_log_stream
+    trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
     main
 fi

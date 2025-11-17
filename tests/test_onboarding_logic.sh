@@ -11,6 +11,7 @@ export TEST_ENV=true
 export SCRIPT_DIR="$PROJECT_ROOT"
 
 # Source all dependencies
+source "${PROJECT_ROOT}/includes/00_bootstrap.sh"
 source "${PROJECT_ROOT}/includes/01_helpers.sh"
 source "${PROJECT_ROOT}/includes/02_installers.sh"
 source "${PROJECT_ROOT}/includes/03_configuration.sh"
@@ -32,6 +33,33 @@ mkdir() { echo "MOCK_mkdir_CALLED_WITH: $*"; }
 # Generic mocks
 confirm_action() { return 0; }
 get_ssot_tool_version() { case "$1" in nodejs) echo "lts-gallium" ;; python) echo "3.11.5" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
+
+python3() {
+    local script_path="$1"
+    shift || true
+    case "$script_path" in
+        "${PROJECT_ROOT}/includes/get_role_tools.py")
+            printf '%s\n' \
+                git github-cli python node-lts docker commitlint yq opentofu shellcheck
+            return 0
+            ;;
+        "${PROJECT_ROOT}/includes/get_role_repos.py")
+            printf '%s\n' \
+                gcs-devops-standards gcs-plt-tools gcs-studio-handbook gct-service-template-py gencraft-iac
+            return 0
+            ;;
+        "${PROJECT_ROOT}/includes/get_role_env_vars.py")
+            printf '%s\n' \
+                'GFT_PROJECTS_HOME="$HOME/gft_studio"' \
+                'GFT_LOG_LEVEL="INFO"' \
+                'GFT_AWS_PROFILE="gft-devops"' \
+                'TF_VAR_github_token=""'
+            return 0
+            ;;
+    esac
+
+    command python3 "$script_path" "$@"
+}
 
 # ==============================================================================
 # --- Test Suites ---

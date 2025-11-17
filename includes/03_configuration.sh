@@ -144,20 +144,22 @@ clone_repositories_for_role() {
         return
     fi
 
-    local gh_available=true
-    if ! command -v gh &> /dev/null; then
+    local gh_available=false
+    if command -v gh &> /dev/null; then
+        gh_available=true
+    else
         log_warn "GitHub CLI 'gh' is not installed."
         if install_with_package_manager "gh" "gh"; then
             log_success "'gh' installed successfully."
+            # Re-check after installation attempt
+            if command -v gh &> /dev/null; then
+                gh_available=true
+            else
+                log_warn "'gh' still missing after attempted installation. Using git+SSH fallback."
+            fi
         else
             log_warn "Unable to install 'gh'. Falling back to direct git clone over SSH."
-            gh_available=false
         fi
-    fi
-
-    if $gh_available && ! command -v gh &> /dev/null; then
-        log_warn "'gh' still missing after attempted installation. Using git+SSH fallback."
-        gh_available=false
     fi
 
     log_info "Preparing to manage ${#merged_repos[@]} repositories in '$gft_workspace'."

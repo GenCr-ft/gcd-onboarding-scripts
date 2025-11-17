@@ -94,7 +94,7 @@ test_repository_cloning_logic() {
 
 test_environment_variable_logic() {
     log_info "[TEST SUITE 3] Testing Environment Variable Logic..."
-    local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp); trap 'rm -f "$MOCK_PROFILE_FILE"' RETURN
+    local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp); trap "rm -f '$MOCK_PROFILE_FILE'; trap - RETURN" RETURN
     local output; output=$(configure_environment_variables "devops-specialist" "$MOCK_PROFILE_FILE" 2>&1)
     local checks_failed=0
 
@@ -112,6 +112,36 @@ test_environment_variable_logic() {
     log_success "Environment Variable Logic: PASSED"
 }
 
+test_environment_variable_idempotency() {
+    log_info "[TEST SUITE 4] Testing Environment Variable Idempotency..."
+    local PROFILE_FILE; PROFILE_FILE=$(mktemp)
+    trap "rm -f '$PROFILE_FILE'; trap - RETURN" RETURN
+
+    configure_environment_variables "devops-specialist" "$PROFILE_FILE" >/dev/null
+    configure_environment_variables "devops-specialist" "$PROFILE_FILE" >/dev/null
+
+    local start_count end_count
+    start_count=$(grep -c '# GENCRAFT ENVIRONMENT - START' "$PROFILE_FILE")
+    end_count=$(grep -c '# GENCRAFT ENVIRONMENT - END' "$PROFILE_FILE")
+
+    if [[ $start_count -ne 1 || $end_count -ne 1 ]]; then
+        log_error "Environment block markers were duplicated."
+        return 1
+    fi
+
+    local var
+    for var in GFT_PROJECTS_HOME GFT_LOG_LEVEL GFT_AWS_PROFILE TF_VAR_github_token; do
+        local count
+        count=$(grep -c "export $var=" "$PROFILE_FILE")
+        if [[ $count -ne 1 ]]; then
+            log_error "Variable '$var' expected once, found $count occurrences."
+            return 1
+        fi
+    done
+
+    log_success "Environment variable configuration is idempotent."
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -127,6 +157,7 @@ main() {
     test_tool_installation_logic || ((failed_suites++))
     test_repository_cloning_logic || ((failed_suites++))
     test_environment_variable_logic || ((failed_suites++))
+    test_environment_variable_idempotency || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

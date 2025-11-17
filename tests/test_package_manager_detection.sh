@@ -16,6 +16,13 @@ run_command_with_logging() {
     return 0
 }
 
+create_fake_binary() {
+    local dir="$1"
+    local name="$2"
+    printf '#!/usr/bin/env bash\nexit 0\n' >"${dir}/${name}"
+    chmod +x "${dir}/${name}"
+}
+
 reset_capture() {
     CAPTURED_COMMANDS=()
 }
@@ -72,8 +79,86 @@ test_install_with_package_manager_dispatch() {
     log_success "Package manager dispatch logic validated."
 }
 
+test_detect_package_manager_priority() {
+    log_info "[TEST] Detecting package manager priority order..."
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    local old_path="$PATH"
+
+    create_fake_binary "$temp_dir" apt-get
+    create_fake_binary "$temp_dir" dnf
+    create_fake_binary "$temp_dir" apk
+
+    PATH="$temp_dir:$old_path"
+
+    unset GFT_PKG_MANAGER GFT_PKG_MANAGER_OVERRIDE
+    if ! detect_package_manager; then
+        PATH="$old_path"
+        rm -rf "$temp_dir"
+        log_error "detect_package_manager failed unexpectedly"
+        return 1
+    fi
+
+    PATH="$old_path"
+    rm -rf "$temp_dir"
+
+    if [[ "${GFT_PKG_MANAGER}" != "apt" ]]; then
+        log_error "Expected 'apt' to be selected, but got '${GFT_PKG_MANAGER:-unset}'"
+        return 1
+    fi
+
+    unset GFT_PKG_MANAGER
+    log_success "detect_package_manager selected the first available manager."
+}
+
+test_detect_package_manager_override() {
+    log_info "[TEST] Detecting package manager override handling..."
+    unset GFT_PKG_MANAGER
+    GFT_PKG_MANAGER_OVERRIDE="winget"
+
+    if ! detect_package_manager; then
+        log_error "detect_package_manager did not honor override"
+        return 1
+    fi
+
+    if [[ "${GFT_PKG_MANAGER}" != "winget" ]]; then
+        log_error "Expected override to set manager to 'winget', but got '${GFT_PKG_MANAGER:-unset}'"
+        return 1
+    fi
+
+    unset GFT_PKG_MANAGER
+    unset GFT_PKG_MANAGER_OVERRIDE
+    log_success "detect_package_manager respected the override variable."
+}
+
+test_detect_package_manager_failure() {
+    log_info "[TEST] Detecting failure when no package managers exist..."
+    local old_path="$PATH"
+    PATH="/nonexistent"
+
+    unset GFT_PKG_MANAGER GFT_PKG_MANAGER_OVERRIDE
+
+    set +e
+    detect_package_manager
+    local status=$?
+    set -e
+
+    PATH="$old_path"
+
+    if [[ $status -eq 0 ]]; then
+        log_error "detect_package_manager should have failed when no managers exist"
+        return 1
+    fi
+
+    unset GFT_PKG_MANAGER
+    log_success "detect_package_manager correctly failed without package managers."
+}
+
 main() {
     test_install_with_package_manager_dispatch
+    test_detect_package_manager_priority
+    test_detect_package_manager_override
+    test_detect_package_manager_failure
 }
 
 main "$@"

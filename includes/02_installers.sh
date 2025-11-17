@@ -136,3 +136,52 @@ install_tools_for_role() {
     for tool in "${required_tools[@]}"; do install_tool "$tool"; done
     log_success "Tool installation phase complete."
 }
+
+performance_and_caching() {
+    if ! command -v docker &> /dev/null; then
+        log_warn "Docker command not found. Skipping image pre-pull stage."
+        return
+    fi
+
+    if [ -z "${GFT_SSOT_PATH:-}" ]; then
+        log_warn "GFT_SSOT_PATH is undefined; cannot load Docker image manifest."
+        return
+    fi
+
+    local docker_manifest="${GFT_SSOT_PATH}/tooling/ssot/.docker-images-gft"
+    if [ ! -f "$docker_manifest" ]; then
+        log_warn "Docker manifest '$docker_manifest' not found."
+        return
+    fi
+
+    mapfile -t docker_images < <(grep -vE '^\s*(#|$)' "$docker_manifest" || true)
+    if [[ ${#docker_images[@]} -eq 0 ]]; then
+        log_info "No Docker images listed for pre-pull caching."
+        return
+    fi
+
+    if [[ -z "${TEST_ENV:-}" ]]; then
+        if ! confirm_action "Pre-pull ${#docker_images[@]} Docker images for performance caching?"; then
+            log_warn "Docker image pre-pull skipped by user."
+            return
+        fi
+    fi
+
+    log_info "Pre-pulling ${#docker_images[@]} Docker images defined in SSoT..."
+    local failures=0
+    for image in "${docker_images[@]}"; do
+        log_info "Caching image: $image"
+        if docker pull "$image"; then
+            log_success "Image '$image' cached locally."
+        else
+            log_error "Failed to pull image '$image'."
+            failures=1
+        fi
+    done
+
+    if [[ $failures -eq 0 ]]; then
+        log_success "All Docker images cached successfully."
+    else
+        log_warn "One or more Docker images failed to pull. Review the errors above."
+    fi
+}

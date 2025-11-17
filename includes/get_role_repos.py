@@ -22,7 +22,8 @@
 #   - PyYAML library
 
 import sys
-import yaml
+
+from simple_yaml import load_yaml_string
 
 def get_all_repos_for_role(matrix_data, role_name):
     all_repos = set()
@@ -63,11 +64,9 @@ if __name__ == "__main__":
 
     target_role = sys.argv[1]
 
-    try:
-        yaml_data = yaml.safe_load(sys.stdin)
-        if not yaml_data:
-            sys.exit(1)
-    except yaml.YAMLError:
+    yaml_content = sys.stdin.read()
+    yaml_data = load_yaml_string(yaml_content)
+    if not yaml_data:
         sys.exit(1)
 
     repos = get_all_repos_for_role(yaml_data, target_role)

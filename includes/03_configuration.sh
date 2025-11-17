@@ -80,18 +80,36 @@ install_vscode_extensions_for_role() {
         return
     fi
 
+    if [ -z "${GFT_SSOT_PATH:-}" ]; then
+        log_warn "GFT_SSOT_PATH is not defined; cannot load VS Code recommendations."
+        return
+    fi
+
+    local python_helper_script="${SCRIPT_DIR}/includes/get_vscode_extensions.py"
+    if [ ! -f "$python_helper_script" ]; then
+        log_error "FATAL: VS Code helper not found at $python_helper_script"
+        return 1
+    fi
+
+    if [ ! -f "${GFT_SSOT_PATH}/tooling/VSCODE_RECOMMENDATIONS.md" ]; then
+        log_warn "VS Code recommendations file not found in SSoT."
+        return
+    fi
+
     log_info "Fetching required VS Code extensions for role: $role_name"
     local required_extensions
-    mapfile -t required_extensions < <(echo "$ROLE_MATRIX_YAML" | yq -r "
-        (.roles[] | select(.name == \"$role_name\") | .vscode_extensions[]?),
-        (.roles[] | select(.name == \"$role_name\") | .inherits | select(. != null) | . as \$base_role | .roles[] | select(.name == \$base_role) | .vscode_extensions[]?)
-    " | sort -u)
+    mapfile -t required_extensions < <(python3 "$python_helper_script" "$role_name" | sort -u)
 
-    if [[ ${#required_extensions[@]} -eq 0 ]]; then log_info "No specific extensions for this role."; return; fi
+    if [[ ${#required_extensions[@]} -eq 0 ]]; then
+        log_info "No specific extensions for this role."
+        return
+    fi
 
     log_info "Installing ${#required_extensions[@]} VS Code extensions..."
+    local installed_list
+    installed_list=$(code --list-extensions)
     for ext_id in "${required_extensions[@]}"; do
-        if code --list-extensions | grep -qiw "$ext_id"; then
+        if grep -qiw "$ext_id" <<<"$installed_list"; then
             log_info "Extension '$ext_id' is already installed."
         else
             log_info "Installing extension: $ext_id"
@@ -158,6 +176,49 @@ configure_gft_cli() {
     log_success "gft-cli configuration complete."
 }
 
+final_validation() {
+    log_info "Executing final validation checks..."
+
+    local gft_status=0
+    if command -v gft &> /dev/null; then
+        if gft config setup; then
+            log_success "gft-cli reported successful configuration."
+        else
+            gft_status=$?
+            log_error "gft config setup encountered issues (exit $gft_status)."
+        fi
+    else
+        log_warn "gft-cli is not available; skipping its validation."
+        gft_status=1
+    fi
+
+    local standards_dir
+    local projects_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    standards_dir="${projects_root}/gcs-devops-standards"
+    local precommit_status=0
+
+    if ! command -v pre-commit &> /dev/null; then
+        log_warn "pre-commit command not found; cannot run repository validation."
+        precommit_status=1
+    elif [ ! -d "$standards_dir" ]; then
+        log_warn "Expected repository '$standards_dir' is missing; skipping pre-commit validation."
+        precommit_status=1
+    else
+        if (cd "$standards_dir" && pre-commit run --all-files); then
+            log_success "pre-commit hooks passed for gcs-devops-standards."
+        else
+            precommit_status=$?
+            log_error "pre-commit run reported issues (exit $precommit_status)."
+        fi
+    fi
+
+    if [[ $gft_status -eq 0 && $precommit_status -eq 0 ]]; then
+        log_success "Final validation complete. All automated checks succeeded."
+    else
+        log_warn "Final validation finished with warnings. Review the logs above for remediation steps."
+    fi
+}
+
 # Configures environment variables based on the user's role.
 # $1: role_name (mandatory)
 # $2: shell_profile_for_test (optional, used only for testing)
@@ -186,14 +247,24 @@ configure_environment_variables() {
     # S'assurer que le fichier existe pour les tests et l'exécution normale
     touch "$shell_profile_file"
 
-    # 2. Obtenir la liste des variables via le helper Python
-    local python_helper_script="${SCRIPT_DIR}/includes/get_role_env_vars.py"
+    if [ -z "${GFT_SSOT_PATH:-}" ]; then
+        log_warn "GFT_SSOT_PATH is not defined; skipping environment variable configuration."
+        return
+    fi
+
+    # 2. Obtenir la liste des variables via le parser Markdown
+    local python_helper_script="${SCRIPT_DIR}/includes/get_standard_env_vars.py"
     if [ ! -f "$python_helper_script" ]; then
-        log_error "FATAL: Python helper for env vars not found at $python_helper_script"
+        log_error "FATAL: Environment variable helper not found at $python_helper_script"
         return 1
     fi
 
-    mapfile -t required_vars < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
+    if [ ! -f "${GFT_SSOT_PATH}/tooling/ENV_VARIABLES_STANDARD.md" ]; then
+        log_error "Missing ENV_VARIABLES_STANDARD.md in ${GFT_SSOT_PATH}/tooling"
+        return 1
+    fi
+
+    mapfile -t required_vars < <(python3 "$python_helper_script" "$role_name")
 
     if [[ ${#required_vars[@]} -eq 0 ]]; then
         log_info "No specific environment variables to configure for this role."

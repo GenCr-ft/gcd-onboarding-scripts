@@ -19,6 +19,8 @@ The script is **SSoT-Driven**, meaning it dynamically configures itself by readi
   - Configures your local Git identity.
   - Clones all necessary studio repositories into a structured workspace directory.
   - Installs a recommended set of VS Code extensions tailored to your role.
+  - Pre-pulls the Docker images defined by the DevOps SSoT so containerized workflows are immediately responsive.
+  - Executes a final validation module that reruns `gft config setup` and the shared `pre-commit` hooks so you finish in a known good state.
 - **Robust & Transparent:** Provides clear output on actions being performed and creates a detailed log file at `~/gft_onboarding_YYYY-MM-DD.log` for troubleshooting.
 
 ## 3. Prerequisites
@@ -28,6 +30,16 @@ Before running the script, please ensure you have the following:
 1. **Administrative Rights:** You will need `sudo` (for macOS/Linux) or Administrator (for Windows PowerShell) privileges to install system-level packages. The script will prompt for your password when needed.
 2. **Internet Connection:** A stable internet connection is required to download tools and clone repositories.
 3. **GitHub Account:** You must have an active GenCr@t GitHub account and have logged in at least once.
+
+### 3.1. Required SSoT Artifacts
+
+The onboarding script now consumes additional files from the `gcs-devops-standards` repository. When cloning or updating that repository, make sure the following paths exist:
+
+- `tooling/ENV_VARIABLES_STANDARD.md` – Markdown file that contains the common and role-specific environment variable exports enclosed in fenced `env` code blocks.
+- `tooling/VSCODE_RECOMMENDATIONS.md` – Markdown file containing global and role-targeted VS Code extension identifiers expressed as bullet lists.
+- `tooling/ssot/.docker-images-gft` – Plain-text manifest (one image per line) of container images to pre-pull for caching.
+
+If any of these artifacts are missing, the onboarding script will skip the corresponding configuration step and emit a warning.
 
 ## 4. How to Use
 
@@ -107,7 +119,14 @@ After the script finishes, please perform the following steps:
 
 1. **Restart Your Terminal:** Close and reopen all terminal/shell windows to ensure all changes to your environment (like new `PATH` entries) are loaded correctly.
 2. **Restart VS Code:** If VS Code was open, restart it to load the newly installed extensions.
-3. **Review the Log File:** If you encounter any issues, check the detailed log file located in your home directory (e.g., `~/gft_onboarding_2025-06-11.log`) for more information.
+3. **Review Validation Results:** The onboarding process now ends with a validation phase that re-runs `gft config setup` and executes `pre-commit run --all-files` inside `$GFT_PROJECTS_HOME/gcs-devops-standards`. Check the summary in your terminal to make sure both steps succeeded. You can manually re-run them later with:
+
+   ```bash
+   gft config setup
+   cd "$GFT_PROJECTS_HOME/gcs-devops-standards" && pre-commit run --all-files
+   ```
+
+4. **Review the Log File:** If you encounter any issues, check the detailed log file located in your home directory (e.g., `~/gft_onboarding_2025-06-11.log`) for more information.
 
 ## 7. Troubleshooting
 

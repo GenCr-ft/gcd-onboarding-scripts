@@ -1,0 +1,3 @@
+# Frequently used containers
+public.ecr.aws/docker/library/node:20
+public.ecr.aws/docker/library/python:3.11

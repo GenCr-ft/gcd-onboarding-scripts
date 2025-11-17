@@ -26,30 +26,38 @@ readonly GFT_COLOR_RED="\033[1;31m"
 readonly GFT_COLOR_YELLOW="\033[1;33m"
 readonly GFT_COLOR_RESET="\033[0m"
 
+current_timestamp() {
+    date '+%Y-%m-%d %H:%M:%S'
+}
+
 # --- Logging Functions ---
 
 # Prints an informational message.
 # Usage: log_info "Doing a thing..."
 log_info() {
-    echo -e "${GFT_COLOR_BLUE}[INFO]${GFT_COLOR_RESET} $1"
+    local message="$*"
+    echo -e "${GFT_COLOR_BLUE}[INFO $(current_timestamp)]${GFT_COLOR_RESET} ${message}"
 }
 
 # Prints a success message.
 # Usage: log_success "Thing done."
 log_success() {
-    echo -e "${GFT_COLOR_GREEN}[SUCCESS]${GFT_COLOR_RESET} $1"
+    local message="$*"
+    echo -e "${GFT_COLOR_GREEN}[SUCCESS $(current_timestamp)]${GFT_COLOR_RESET} ${message}"
 }
 
 # Prints a warning message.
 # Usage: log_warn "This might be an issue."
 log_warn() {
-    echo -e "${GFT_COLOR_YELLOW}[WARN]${GFT_COLOR_RESET} $1"
+    local message="$*"
+    echo -e "${GFT_COLOR_YELLOW}[WARN $(current_timestamp)]${GFT_COLOR_RESET} ${message}"
 }
 
 # Prints an error message.
 # Usage: log_error "Something failed."
 log_error() {
-    echo -e "${GFT_COLOR_RED}[ERROR]${GFT_COLOR_RESET} $1" >&2
+    local message="$*"
+    echo -e "${GFT_COLOR_RED}[ERROR $(current_timestamp)]${GFT_COLOR_RESET} ${message}" >&2
 }
 
 # --- User Interaction Functions ---
@@ -108,7 +116,7 @@ check_prerequisites() {
         if ! command -v "$cmd" &> /dev/null; then
             log_warn "Required tool '$cmd' is not installed. Attempting installation..."
             # Assumes install_with_package_manager is available (sourced before call)
-            install_with_package_manager "$pkg"
+            install_with_package_manager "$pkg" "$cmd"
 
             # Verify installation
             if ! command -v "$cmd" &> /dev/null; then
@@ -134,10 +142,10 @@ setup_ssot_repository() {
     log_info "Setting up SSoT configuration repository..."
     if [ -d "$GFT_SSOT_PATH" ]; then
         log_info "Updating existing SSoT repository at $GFT_SSOT_PATH..."
-        (cd "$GFT_SSOT_PATH" && git pull --ff-only)
+        run_command_with_logging git -C "$GFT_SSOT_PATH" pull --ff-only
     else
         log_info "Cloning SSoT repository into $GFT_SSOT_PATH..."
-        git clone --depth 1 "$GFT_SSOT_REPO" "$GFT_SSOT_PATH"
+        run_command_with_logging git clone --depth 1 "$GFT_SSOT_REPO" "$GFT_SSOT_PATH"
     fi
     log_success "SSoT repository is up to date."
 }
@@ -145,6 +153,7 @@ setup_ssot_repository() {
 # Loads the YAML content from the Role-Tooling matrix into a global variable.
 load_ssot_configuration() {
     log_info "Loading role and tooling data from SSoT..."
+    local start_ts; start_ts=$(date +%s)
     local matrix_file
     # Find the file, as its name might change slightly.
     matrix_file=$(find "$GFT_SSOT_PATH" -type f -name "*role-tooling--resource-matrix.md")
@@ -159,7 +168,8 @@ load_ssot_configuration() {
     ROLE_MATRIX_YAML=$(sed -n '/```yaml/,/```/p' "$matrix_file" | sed '1d;$d')
     export ROLE_MATRIX_YAML
 
-    log_success "SSoT configuration loaded."
+    local end_ts; end_ts=$(date +%s)
+    log_success "SSoT configuration loaded in $((end_ts - start_ts))s."
 }
 
 # --- Role Selection ---

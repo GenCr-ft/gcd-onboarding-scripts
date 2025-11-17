@@ -10,6 +10,7 @@ last_reviewed: 2025-06-26
 
 ## Table of Contents
 - [Purpose for AI Agents](#purpose-for-ai-agents)
+- [Features](#features)
 - [Dependencies (gcs-devops-standards paths)](#dependencies-gcs-devops-standards-paths)
 - [Script Modules & Commands](#script-modules--commands)
 - [Execution Flow](#execution-flow)
@@ -24,10 +25,14 @@ last_reviewed: 2025-06-26
 This repository is the approved single source of truth (SSoT) for onboarding developers—human or AI copilots—into GenCr@t Studio. All automation must:
 
 1. Pull standards exclusively from `gcs-devops-standards` so that the runtime stays compliant.
-2. Run idempotently, surfacing every action to the operator through logs (`~/gft_onboarding_YYYY-MM-DD.log`).
+2. Run idempotently, surfacing every action to the operator through logs (`~/gft_onboarding_YYYY-MM-DD_HH-MM-SS.log`).
 3. Respect the role matrix so GEM agents never install tooling that is not sanctioned for their persona.
 
 If you are orchestrating onboarding through a GEM or another AI agent, feed it this README as the operational guide and ensure it honors the module/command table below.
+
+## Features
+- **Timestamped log streaming** – Every onboarding run saves output to `~/gft_onboarding_<date>_<time>.log` while still mirroring the stream to the console via `tee`, simplifying escalations to `#devops-support`.
+- **OS-aware package resolution** – `install_with_package_manager` auto-detects `brew`, `apt`, `dnf`, `apk`, `pacman`, or `winget`, so dependencies such as `gh`, `yq`, and `shellcheck` remain idempotent across platforms.
 
 ## Dependencies (gcs-devops-standards paths)
 The onboarding scripts dynamically read from the following authoritative files:
@@ -107,7 +112,7 @@ Use this table when delegating tasks to other agents so they know which command 
 - **Support channels**
   - Slack: `#devops-support` for real-time help.
   - Issue tracker: open tickets in `GenCr-ft/gcd-onboarding-scripts` with logs attached.
-  - Include the log file (`~/gft_onboarding_<date>.log`) plus validator output in every escalation.
+  - Include the log file (`~/gft_onboarding_<date>_<time>.log`) plus validator output in every escalation.
 
 ## Testing
 | Scenario | Command | Notes |
@@ -124,6 +129,7 @@ Use this table when delegating tasks to other agents so they know which command 
 | `yq: command not found` | Rerun the script; `check_prerequisites` installs it. If blocked, manually install (`brew install yq` or `sudo apt install yq`).
 | Docker or gh auth failures | Run `docker info` / `gh auth login` manually, then re-run the onboarding script; these are prerequisites for repo cloning and CLI setup.
 | Checksum mismatch | Delete the script, re-download both the script and `.sha256`, and verify network integrity before running anything.
+| Script aborted with `log_error` or trap banner | Grab the latest `~/gft_onboarding_<date>_<time>.log` and send it to the DevOps guild via Slack `#devops-support` (or attach it to the GitHub issue) so they can replay the failing command sequence.
 
 ## Knowledge Base Discoverability
 Add or update the KB entry **“How-To: Onboard devs”** to link to this README (`https://github.com/GenCr-ft/gcd-onboarding-scripts/blob/main/README.md`). Track the KB ticket ID inside your sprint board so the enablement guild can audit discoverability.

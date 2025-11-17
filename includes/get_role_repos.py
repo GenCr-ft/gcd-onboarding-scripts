@@ -39,7 +39,7 @@ def gather_default_repositories(matrix_data, roles_map):
 
     common_base = roles_map.get('common-base')
     if common_base:
-        for repo in common_base.get('repositories', []) or []:
+        for repo in common_base.get('repositories') or []:
             if repo:
                 default_repos.add(repo)
 

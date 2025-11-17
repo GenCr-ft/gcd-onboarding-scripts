@@ -46,6 +46,22 @@ The onboarding scripts dynamically read from the following authoritative files:
 
 Ensure the workstation running these scripts can pull `https://github.com/GenCr-ft/gcs-devops-standards.git`.
 
+## Role → repositories
+The onboarding scripts pull repository requirements from the `roles[].repositories`, `roles[].inherits`, and `default_repositories` nodes that live inside `gcs-devops-standards/foundations/governance/GOV-004-role-tooling-matrix.md`. The following summary mirrors the mock matrix committed to this repository so contributors understand the inheritance model:
+
+| Role / Scope | Source in matrix | Repositories cloned |
+| --- | --- | --- |
+| `default_repositories` | Top-level list | `gcs-devops-standards` |
+| `common-base` | `roles[].name` | `gcs-studio-handbook` + inherits everything from `default_repositories` |
+| `lead-developer-tech-lead` | `roles[].inherits: common-base` | `gct-service-template-py`, `gcs-plt-tools` |
+| `devops-specialist` | `roles[].inherits: lead-developer-tech-lead` | `gencraft-iac` + inherited repos |
+
+🛠 **Updating the matrix when a new repository becomes mandatory:**
+
+1. Edit the markdown file inside `gcs-devops-standards` and add the repository to either `default_repositories` (if every persona needs it) or to the `repositories` array of the appropriate role.
+2. Open a PR in `gcs-devops-standards` so GOV-004 reviewers can approve the change.
+3. No code change is required in this repo—the Bash helper merges `default_repositories`, `common-base`, and the selected role automatically—but remember to update this README table if the mock data diverges from production SSoT values.
+
 ## Script Modules & Commands
 | Module | Location | Primary SSoT Input | Primary Invocation |
 | --- | --- | --- | --- |

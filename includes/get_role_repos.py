@@ -24,12 +24,37 @@
 import sys
 import yaml
 
+
+def gather_default_repositories(matrix_data, roles_map):
+    """Return repositories defined as defaults in the matrix."""
+
+    default_repos = set()
+
+    if not isinstance(matrix_data, dict):
+        return default_repos
+
+    for repo in matrix_data.get('default_repositories') or []:
+        if repo:
+            default_repos.add(repo)
+
+    common_base = roles_map.get('common-base')
+    if common_base:
+        for repo in common_base.get('repositories') or []:
+            if repo:
+                default_repos.add(repo)
+
+    return default_repos
+
+
 def get_all_repos_for_role(matrix_data, role_name):
     all_repos = set()
     try:
         roles_map = {role['name']: role for role in matrix_data.get('roles', [])}
-    except (TypeError, KeyError):
+    except (TypeError, KeyError, AttributeError):
         return []
+
+    base_repos = gather_default_repositories(matrix_data, roles_map)
+    all_repos.update(base_repos)
 
     roles_to_process = [role_name]
     visited_roles = set()
@@ -46,9 +71,9 @@ def get_all_repos_for_role(matrix_data, role_name):
 
         current_role_data = roles_map[current_role_name]
 
-        # The only change is here: look for 'repositories' instead of 'tools'
-        if 'repositories' in current_role_data and current_role_data['repositories'] is not None:
-            for repo in current_role_data['repositories']:
+        repositories = current_role_data.get('repositories') or []
+        for repo in repositories:
+            if repo:
                 all_repos.add(repo)
 
         parent_role = current_role_data.get('inherits')

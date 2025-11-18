@@ -1,139 +1,136 @@
-# README: GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
+-----
 
-## 1. Introduction
+title: GenCr@t Studio Onboarding Script Suite
+status: Active
+owners:
+  - GCS DevOps Enablement Guild
+last_reviewed: 2025-06-26
 
-Welcome to GenCr@t Studio!
+-----
 
-This script is your automated assistant for setting up a complete, standardized local development environment. It is designed to ensure that every technical member of the studio, regardless of their role, has the correct tools, configurations, and repository access from day one.
+# GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
 
-The script is **SSoT-Driven**, meaning it dynamically configures itself by reading approved standards directly from our `gcs-devops-standards` repository. This ensures your environment is always compliant with the latest studio policies.
+## Overview
 
-## 2. Features
+This suite serves as the approved Single Source of Truth (SSoT) for onboarding developers (human or AI) into GenCr@t Studio. It dynamically configures a standardized, compliant local development environment by consuming approved standards from the `gcs-devops-standards` repository.
 
-- **Cross-Platform:** Supports macOS (zsh), Linux (bash/zsh), and Windows (via WSL2 with Ubuntu LTS).
-- **Role-Based Setup:** Interactively prompts you to select your studio role and installs the specific tools and repositories you need.
-- **Idempotent:** Safe to re-run. The script checks the state of your system and only performs actions that are necessary.
-- **Comprehensive:**
-  - Installs and configures essential command-line tools (Git, GitHub CLI, etc.).
-  - Sets up version managers for runtimes like Node.js and Python.
-  - Configures your local Git identity.
-  - Clones all necessary studio repositories into a structured workspace directory.
-  - Installs a recommended set of VS Code extensions tailored to your role.
-  - Pre-pulls the Docker images defined by the DevOps SSoT so containerized workflows are immediately responsive.
-  - Executes a final validation module that reruns `gft config setup` and the shared `pre-commit` hooks so you finish in a known good state.
-- **Robust & Transparent:** Provides clear output on actions being performed and creates a detailed log file at `~/gft_onboarding_YYYY-MM-DD.log` for troubleshooting.
+### Key Principles
 
-## 3. Prerequisites
+  * **SSoT-Driven:** Pulls standards exclusively from `gcs-devops-standards`.
+  * **Role-Based:** Respects the role matrix; agents/users never install unsanctioned tooling.
+  * **Idempotent:** Safe to re-run; checks system state before action.
+  * **Transparent:** Streams output to console and saves detailed logs (`~/gft_onboarding_<date>_<time>.log`).
+  * **Cross-Platform:** Supports macOS (zsh), Linux (bash/zsh), and Windows 10/11 (via WSL2/Ubuntu LTS).
 
-Before running the script, please ensure you have the following:
+## Architecture & Dependencies
 
-1. **Administrative Rights:** You will need `sudo` (for macOS/Linux) or Administrator (for Windows PowerShell) privileges to install system-level packages. The script will prompt for your password when needed.
-2. **Internet Connection:** A stable internet connection is required to download tools and clone repositories.
-3. **GitHub Account:** You must have an active GenCr@t GitHub account and have logged in at least once.
+The script relies on specific artifacts within `gcs-devops-standards`. The workstation must be able to pull `https://github.com/GenCr-ft/gcs-devops-standards.git`.
 
-### 3.1. Required SSoT Artifacts
+### SSoT Configuration Paths
 
-The onboarding script now consumes additional files from the `gcs-devops-standards` repository. When cloning or updating that repository, make sure the following paths exist:
+| Capability | Path in `gcs-devops-standards` | Purpose |
+| :--- | :--- | :--- |
+| **Role/Tool Data** | `foundations/governance/GOV-004-role-tooling-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
+| **Version Pinning** | `tooling/ssot/.tool-versions-gft` | Canonical versions for `get_ssot_tool_version`. |
+| **Tool Specs** | `domains/tooling/standards/tool-002-technical-tooling-specifications.md` | Validation of packages/versions. |
+| **Env Vars** | `tooling/ENV_VARIABLES_STANDARD.md` | Common and role-specific exports. |
+| **VS Code** | `tooling/VSCODE_RECOMMENDATIONS.md` | Global and role-targeted extension IDs. |
+| **Docker** | `tooling/ssot/.docker-images-gft` | Manifest of container images to pre-pull. |
 
-- `tooling/ENV_VARIABLES_STANDARD.md` – Markdown file that contains the common and role-specific environment variable exports enclosed in fenced `env` code blocks.
-- `tooling/VSCODE_RECOMMENDATIONS.md` – Markdown file containing global and role-targeted VS Code extension identifiers expressed as bullet lists.
-- `tooling/ssot/.docker-images-gft` – Plain-text manifest (one image per line) of container images to pre-pull for caching.
+### Role Inheritance Model
 
-If any of these artifacts are missing, the onboarding script will skip the corresponding configuration step and emit a warning.
+Repositories are cloned based on the following inheritance logic defined in `GOV-004`:
 
-## 4. How to Use
+1.  **`default_repositories`**: Top-level list (e.g., `gcs-devops-standards`).
+2.  **`common-base`**: Inherits default; adds shared repos (e.g., `gcs-studio-handbook`).
+3.  **Specific Role**: Inherits `common-base`; adds role-specific repos (e.g., `gct-service-template-py`, `gencraft-iac`).
 
-Follow the instructions specific to your operating system.
+### Script Modules
 
-### 4.1. For macOS & Linux Users
+| Module | Script | Description |
+| :--- | :--- | :--- |
+| **Orchestrator** | `gft-onboarding.sh` | Main entry point. |
+| **Libraries** | `includes/*.sh` | Helpers for discovery (`01`), installation (`02`), and config (`03`). |
+| **Python Helpers** | `includes/get_role_*.py` | Parses YAML role matrices. |
+| **Windows Bootstrapper** | `onboarding-win.ps1` | Enables WSL2, installs Ubuntu, launches orchestrator. |
+| **Validators** | `validate-environment.sh` <br> `validate-gft-devops-environment.sh` | Validates role installs and DevOps tooling (PROJ-103). |
+| **Tofu Helper** | `setup-local-tofu-env.sh` | Configures OpenTofu backend standards. |
 
-You will run the `gft-onboarding.sh` script directly in your terminal.
+## Prerequisites
 
-1. **Open your Terminal.**
+1.  **Permissions:** `sudo` (macOS/Linux) or Administrator (Windows).
+2.  **Connectivity:** Internet access for cloning and package downloads.
+3.  **Accounts:** Active GenCr@t GitHub account (login required).
+4.  **System Tools:** Script `check_prerequisites` auto-detects/installs `git`, `curl`, `yq`, and `python3`.
 
-2. **Download the script** using `curl`. This command downloads it into your current directory.
+## Installation & Usage
 
+### macOS & Linux
+
+Run the following to download, verify checksums, and execute:
+
+```bash
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
+sha256sum --check gft-onboarding.sh.sha256
+chmod +x gft-onboarding.sh
+./gft-onboarding.sh
+```
+
+### Windows (via WSL2)
+
+Run via PowerShell as Administrator to verify checksums and bootstrap WSL2:
+
+```powershell
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1 -o onboarding-win.ps1
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1.sha256 -o onboarding-win.ps1.sha256
+Get-FileHash onboarding-win.ps1 -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  onboarding-win.ps1" } | Select-String -Pattern (Get-Content onboarding-win.ps1.sha256)
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\onboarding-win.ps1
+```
+
+*Note: The Windows script enables WSL2, installs Ubuntu if missing, copies `.env`, and automatically launches the bash orchestrator.*
+
+## Execution Flow
+
+1.  **Prerequisite Scan:** Checks/installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
+2.  **SSoT Sync:** Clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
+3.  **Role Selection:** Prompts user for role; loads configuration via `load_ssot_configuration`.
+4.  **Installation:** Installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.
+5.  **Configuration:** Sets Git identity, SSH keys, VS Code extensions, Env Vars, clones repos, and runs `gft config setup`.
+6.  **Validation:** Runs `pre-commit run --all-files` in the standards repo.
+
+## Post-Installation & Validation
+
+1.  **Restart:** Close/reopen terminals and restart VS Code.
+2.  **Validation Scripts:**
+      * Run `./validate-environment.sh` to verify role-specific tools/repos.
+      * Run `./validate-gft-devops-environment.sh` for DevOps tooling baselines.
+      * Run `gft doctor` for a CLI-native health report.
+3.  **Manual Check:** Verify pre-commit hooks:
     ```bash
-    curl -o gft-onboarding.sh <RAW_SCRIPT_URL_PROVIDED_BY_DEVOPS>
+    cd "$GFT_PROJECTS_HOME/gcs-devops-standards" && pre-commit run --all-files
     ```
 
-    *(Note: Replace `<RAW_SCRIPT_URL_PROVIDED_BY_DEVOPS>` with the actual URL to the script file.)*
+## Troubleshooting & Support
 
-3. **Make the script executable:**
+### Common Issues
 
-    ```bash
-    chmod +x gft-onboarding.sh
-    ```
+| Symptom | Resolution |
+| :--- | :--- |
+| **Permission denied** | Ensure executable permissions (`chmod +x`) and run with appropriate user rights. |
+| **Package fails** | Check internet; update package manager (`apt update`/`brew update`). |
+| **Auth fails** | Run `gh auth login` or `docker info` manually. |
+| **Checksum mismatch** | Re-download script and `.sha256` file. |
 
-4. **Run the script:**
+### Diagnostics
 
-    ```bash
-    ./gft-onboarding.sh
-    ```
+  * **Logs:** Check `~/gft_onboarding_<date>_<time>.log`.
+  * **Testing:** Use `TEST_ENV=1 ./gft-onboarding.sh` to skip confirmation prompts (CI/testing).
+  * **Support:** Contact `#devops-support` on Slack or open an issue in `GenCr-ft/gcd-onboarding-scripts` with logs attached.
 
-5. **Follow the on-screen prompts.** The script will guide you through role selection and ask for confirmation before making critical changes.
+### Documentation
 
-### 4.2. For Windows Users (via WSL2)
-
-The process for Windows involves using a PowerShell script to prepare the Windows Subsystem for Linux (WSL2), which then runs the main Bash script.
-
-1. **Open PowerShell as Administrator:**
-    - Search for "PowerShell" in the Start Menu.
-    - Right-click on "Windows PowerShell" and select "Run as administrator".
-
-2. **Download the preparatory script** `onboarding-win.ps1`.
-
-    ```powershell
-    Invoke-WebRequest -Uri <RAW_WINDOWS_SCRIPT_URL> -OutFile .\onboarding-win.ps1
-    ```
-
-    *(Note: Replace `<RAW_WINDOWS_SCRIPT_URL>` with the actual URL.)*
-
-3. **Run the script.** You may need to adjust your execution policy first.
-
-    ```powershell
-    # This command allows the script to run in the current session
-    Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-
-    # Run the preparatory script
-    .\onboarding-win.ps1
-    ```
-
-4. **Follow the on-screen prompts.** The PowerShell script will:
-    - Ensure WSL2 is enabled on your system (this may require a restart).
-    - Guide you to install Ubuntu from the Microsoft Store if it's not present.
-    - Launch the Ubuntu WSL2 terminal, which will **automatically download and run** the main `gft-onboarding.sh` script for you.
-
-## 5. What to Expect During Execution
-
-1. **Welcome & System Check:** The script will greet you and confirm your operating system.
-2. **SSoT Download:** It will perform a temporary clone of the `gcs-devops-standards` repository to load its configuration.
-3. **Role Selection:** You will be presented with a list of official studio roles. Please select the one that matches your position.
-4. **Confirmation:** The script will display a summary of the actions it's about to take based on your role and ask for your final confirmation.
-5. **Installation & Configuration:** The script will proceed to install tools, clone repositories, and configure your environment. You may be prompted for your password for `sudo` commands.
-6. **Completion:** Upon successful completion, the script will provide final instructions and reminders.
-
-## 6. Post-Installation Steps
-
-After the script finishes, please perform the following steps:
-
-1. **Restart Your Terminal:** Close and reopen all terminal/shell windows to ensure all changes to your environment (like new `PATH` entries) are loaded correctly.
-2. **Restart VS Code:** If VS Code was open, restart it to load the newly installed extensions.
-3. **Review Validation Results:** The onboarding process now ends with a validation phase that re-runs `gft config setup` and executes `pre-commit run --all-files` inside `$GFT_PROJECTS_HOME/gcs-devops-standards`. Check the summary in your terminal to make sure both steps succeeded. You can manually re-run them later with:
-
-   ```bash
-   gft config setup
-   cd "$GFT_PROJECTS_HOME/gcs-devops-standards" && pre-commit run --all-files
-   ```
-
-4. **Review the Log File:** If you encounter any issues, check the detailed log file located in your home directory (e.g., `~/gft_onboarding_2025-06-11.log`) for more information.
-
-## 7. Troubleshooting
-
-- **Permission Denied:** If you see "Permission Denied" when running `./gft-onboarding.sh`, ensure you have made it executable with `chmod +x gft-onboarding.sh`.
-- **Package Manager Fails:** If a tool installation fails (e.g., via `apt` or `brew`), check your internet connection and ensure your package manager is up to date (`sudo apt update` or `brew update`).
-- **GitHub Authentication Fails:** Ensure you have correctly set up your GitHub CLI authentication (`gh auth login`) when prompted by the script.
-
-For any persistent issues, please contact the DevOps team on the `#devops-support` Slack channel.
-  
-  
+  * **Auxiliary Scripts:** See [`docs/auxiliary-scripts.md`](https://www.google.com/search?q=docs/auxiliary-scripts.md) for details on `onboarding-win.ps1` and validators.
+  * **Knowledge Base:** Link this README in the "How-To: Onboard devs" KB entry.

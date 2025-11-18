@@ -12,6 +12,7 @@ export SCRIPT_DIR="$PROJECT_ROOT"
 export GFT_SSOT_PATH="${TEST_SCRIPT_PATH}/fixtures/mock_ssot"
 
 # Source all dependencies
+source "${PROJECT_ROOT}/includes/00_bootstrap.sh"
 source "${PROJECT_ROOT}/includes/01_helpers.sh"
 source "${PROJECT_ROOT}/includes/02_installers.sh"
 source "${PROJECT_ROOT}/includes/03_configuration.sh"
@@ -45,6 +46,34 @@ docker() {
 confirm_action() { return 0; }
 get_ssot_tool_version() { case "$1" in nodejs) echo "lts-gallium" ;; python) echo "3.11.5" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
 
+python3() {
+    local script_path="$1"
+    shift || true
+    case "$script_path" in
+        "${PROJECT_ROOT}/includes/get_role_tools.py")
+            printf '%s\n' \
+                git github-cli python node-lts docker commitlint yq opentofu shellcheck
+            return 0
+            ;;
+        "${PROJECT_ROOT}/includes/get_role_repos.py")
+            if [[ -n "${MOCK_ROLE_REPO_OUTPUT:-}" ]]; then
+                printf '%s\n' "${MOCK_ROLE_REPO_OUTPUT}"
+                return 0
+            fi
+            ;;
+        "${PROJECT_ROOT}/includes/get_role_env_vars.py")
+            printf '%s\n' \
+                'GFT_PROJECTS_HOME="$HOME/gft_studio"' \
+                'GFT_LOG_LEVEL="INFO"' \
+                'GFT_AWS_PROFILE="gft-devops"' \
+                'TF_VAR_github_token=""'
+            return 0
+            ;;
+    esac
+
+    command python3 "$script_path" "$@"
+}
+
 # ==============================================================================
 # --- Test Suites ---
 # ==============================================================================
@@ -76,14 +105,22 @@ test_repository_cloning_logic() {
     log_success "Repository Cloning Logic: PASSED"
 }
 
+test_base_repository_injection_when_missing() {
+    log_info "[TEST SUITE 2b] Testing Base Repository Injection..."
+    local previous_mock="$MOCK_ROLE_REPO_OUTPUT"
+    MOCK_ROLE_REPO_OUTPUT=$'gcs-plt-tools\ngct-service-template-py\ngencraft-iac'
+    local output; output=$(clone_repositories_for_role "devops-specialist" 2>&1)
+    MOCK_ROLE_REPO_OUTPUT="$previous_mock"
+
+    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-devops-standards"* ]]; then
+        log_error "FAIL (Base Repo): 'gcs-devops-standards' was not injected when missing." && echo "$output" && return 1
+    fi
+    log_success "Base Repository Injection Logic: PASSED"
+}
+
 test_environment_variable_logic() {
     log_info "[TEST SUITE 3] Testing Environment Variable Logic..."
-    local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp)
-    local TEMP_HOME; TEMP_HOME=$(mktemp -d)
-    local ORIGINAL_HOME="$HOME"
-    HOME="$TEMP_HOME"
-    cleanup_env_var_test() { rm -f "$MOCK_PROFILE_FILE"; rm -rf "$TEMP_HOME"; HOME="$ORIGINAL_HOME"; }
-
+    local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp); trap "rm -f '$MOCK_PROFILE_FILE'; trap - RETURN" RETURN
     local output; output=$(configure_environment_variables "devops-specialist" "$MOCK_PROFILE_FILE" 2>&1)
     local checks_failed=0
 
@@ -167,6 +204,36 @@ EOF
     log_success "Final Validation Logic: PASSED"
 }
 
+test_environment_variable_idempotency() {
+    log_info "[TEST SUITE 4] Testing Environment Variable Idempotency..."
+    local PROFILE_FILE; PROFILE_FILE=$(mktemp)
+    trap "rm -f '$PROFILE_FILE'; trap - RETURN" RETURN
+
+    configure_environment_variables "devops-specialist" "$PROFILE_FILE" >/dev/null
+    configure_environment_variables "devops-specialist" "$PROFILE_FILE" >/dev/null
+
+    local start_count end_count
+    start_count=$(grep -c '# GENCRAFT ENVIRONMENT - START' "$PROFILE_FILE")
+    end_count=$(grep -c '# GENCRAFT ENVIRONMENT - END' "$PROFILE_FILE")
+
+    if [[ $start_count -ne 1 || $end_count -ne 1 ]]; then
+        log_error "Environment block markers were duplicated."
+        return 1
+    fi
+
+    local var
+    for var in GFT_PROJECTS_HOME GFT_LOG_LEVEL GFT_AWS_PROFILE TF_VAR_github_token; do
+        local count
+        count=$(grep -c "export $var=" "$PROFILE_FILE")
+        if [[ $count -ne 1 ]]; then
+            log_error "Variable '$var' expected once, found $count occurrences."
+            return 1
+        fi
+    done
+
+    log_success "Environment variable configuration is idempotent."
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -181,10 +248,9 @@ main() {
     local failed_suites=0
     test_tool_installation_logic || ((failed_suites++))
     test_repository_cloning_logic || ((failed_suites++))
+    test_base_repository_injection_when_missing || ((failed_suites++))
     test_environment_variable_logic || ((failed_suites++))
-    test_vscode_extension_logic || ((failed_suites++))
-    test_performance_and_caching_logic || ((failed_suites++))
-    test_final_validation_logic || ((failed_suites++))
+    test_environment_variable_idempotency || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

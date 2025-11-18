@@ -252,7 +252,7 @@ configure_environment_variables() {
         return
     fi
 
-    # 2. Obtenir la liste des variables via le parser Markdown
+    # 2. Get list of variables via the Markdown parser
     local python_helper_script="${SCRIPT_DIR}/includes/get_standard_env_vars.py"
     if [ ! -f "$python_helper_script" ]; then
         log_error "FATAL: Environment variable helper not found at $python_helper_script"

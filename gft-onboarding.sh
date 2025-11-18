@@ -79,6 +79,8 @@ main() {
 
     # --- Final Tooling Configuration ---
     configure_gft_cli
+    performance_and_caching
+    final_validation
 
     # Final summary
     log_success "############################################################"

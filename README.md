@@ -1,154 +1,136 @@
----
+-----
+
 title: GenCr@t Studio Onboarding Script Suite
 status: Active
 owners:
   - GCS DevOps Enablement Guild
 last_reviewed: 2025-06-26
----
 
-# GenCr@t Studio Onboarding Script Suite
+-----
 
-## Table of Contents
-- [Purpose for AI Agents](#purpose-for-ai-agents)
-- [Features](#features)
-- [Dependencies (gcs-devops-standards paths)](#dependencies-gcs-devops-standards-paths)
-- [Script Modules & Commands](#script-modules--commands)
-- [Execution Flow](#execution-flow)
-- [Platform-Specific Launch Procedures](#platform-specific-launch-procedures)
-- [Diagnostics & Support](#diagnostics--support)
-- [Testing](#testing)
-- [Troubleshooting](#troubleshooting)
-- [Knowledge Base Discoverability](#knowledge-base-discoverability)
-- [Linked Documentation](#linked-documentation)
+# GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
 
-## Purpose for AI Agents
-This repository is the approved single source of truth (SSoT) for onboarding developers—human or AI copilots—into GenCr@t Studio. All automation must:
+## Overview
 
-1. Pull standards exclusively from `gcs-devops-standards` so that the runtime stays compliant.
-2. Run idempotently, surfacing every action to the operator through logs (`~/gft_onboarding_YYYY-MM-DD_HH-MM-SS.log`).
-3. Respect the role matrix so GEM agents never install tooling that is not sanctioned for their persona.
+This suite serves as the approved Single Source of Truth (SSoT) for onboarding developers (human or AI) into GenCr@t Studio. It dynamically configures a standardized, compliant local development environment by consuming approved standards from the `gcs-devops-standards` repository.
 
-If you are orchestrating onboarding through a GEM or another AI agent, feed it this README as the operational guide and ensure it honors the module/command table below.
+### Key Principles
 
-## Features
-- **Timestamped log streaming** – Every onboarding run saves output to `~/gft_onboarding_<date>_<time>.log` while still mirroring the stream to the console via `tee`, simplifying escalations to `#devops-support`.
-- **OS-aware package resolution** – `install_with_package_manager` auto-detects `brew`, `apt`, `dnf`, `apk`, `pacman`, or `winget`, so dependencies such as `gh`, `yq`, and `shellcheck` remain idempotent across platforms.
+  * **SSoT-Driven:** Pulls standards exclusively from `gcs-devops-standards`.
+  * **Role-Based:** Respects the role matrix; agents/users never install unsanctioned tooling.
+  * **Idempotent:** Safe to re-run; checks system state before action.
+  * **Transparent:** Streams output to console and saves detailed logs (`~/gft_onboarding_<date>_<time>.log`).
+  * **Cross-Platform:** Supports macOS (zsh), Linux (bash/zsh), and Windows 10/11 (via WSL2/Ubuntu LTS).
 
-## Dependencies (gcs-devops-standards paths)
-The onboarding scripts dynamically read from the following authoritative files:
+## Architecture & Dependencies
 
-| Capability | gcs-devops-standards Path | Purpose |
-| --- | --- | --- |
-| Role-to-tooling data | `foundations/governance/GOV-004-role-tooling-matrix.md` | Supplies the YAML matrices used for tools, repositories, VS Code extensions, and environment variables per role.
-| Version pinning | `tooling/ssot/.tool-versions-gft` | Provides canonical versions consumed by `get_ssot_tool_version`.
-| Tool specifications | `domains/tooling/standards/tool-002-technical-tooling-specifications.md` | Validates packages/versions during post-onboarding checks.
-| Git policies | `gcs-studio-handbook/02-knowledge-base-hub/...` (referenced by validators) | Used to confirm hooks, commit policies, and GitHub org access.
+The script relies on specific artifacts within `gcs-devops-standards`. The workstation must be able to pull `https://github.com/GenCr-ft/gcs-devops-standards.git`.
 
-Ensure the workstation running these scripts can pull `https://github.com/GenCr-ft/gcs-devops-standards.git`.
+### SSoT Configuration Paths
 
-## Role → repositories
-The onboarding scripts pull repository requirements from the `roles[].repositories`, `roles[].inherits`, and `default_repositories` nodes that live inside `gcs-devops-standards/foundations/governance/GOV-004-role-tooling-matrix.md`. The following summary mirrors the mock matrix committed to this repository so contributors understand the inheritance model:
+| Capability | Path in `gcs-devops-standards` | Purpose |
+| :--- | :--- | :--- |
+| **Role/Tool Data** | `foundations/governance/GOV-004-role-tooling-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
+| **Version Pinning** | `tooling/ssot/.tool-versions-gft` | Canonical versions for `get_ssot_tool_version`. |
+| **Tool Specs** | `domains/tooling/standards/tool-002-technical-tooling-specifications.md` | Validation of packages/versions. |
+| **Env Vars** | `tooling/ENV_VARIABLES_STANDARD.md` | Common and role-specific exports. |
+| **VS Code** | `tooling/VSCODE_RECOMMENDATIONS.md` | Global and role-targeted extension IDs. |
+| **Docker** | `tooling/ssot/.docker-images-gft` | Manifest of container images to pre-pull. |
 
-| Role / Scope | Source in matrix | Repositories cloned |
-| --- | --- | --- |
-| `default_repositories` | Top-level list | `gcs-devops-standards` |
-| `common-base` | `roles[].name` | `gcs-studio-handbook` + inherits everything from `default_repositories` |
-| `lead-developer-tech-lead` | `roles[].inherits: common-base` | `gct-service-template-py`, `gcs-plt-tools` |
-| `devops-specialist` | `roles[].inherits: lead-developer-tech-lead` | `gencraft-iac` + inherited repos |
+### Role Inheritance Model
 
-🛠 **Updating the matrix when a new repository becomes mandatory:**
+Repositories are cloned based on the following inheritance logic defined in `GOV-004`:
 
-1. Edit the markdown file inside `gcs-devops-standards` and add the repository to either `default_repositories` (if every persona needs it) or to the `repositories` array of the appropriate role.
-2. Open a PR in `gcs-devops-standards` so GOV-004 reviewers can approve the change.
-3. No code change is required in this repo—the Bash helper merges `default_repositories`, `common-base`, and the selected role automatically—but remember to update this README table if the mock data diverges from production SSoT values.
+1.  **`default_repositories`**: Top-level list (e.g., `gcs-devops-standards`).
+2.  **`common-base`**: Inherits default; adds shared repos (e.g., `gcs-studio-handbook`).
+3.  **Specific Role**: Inherits `common-base`; adds role-specific repos (e.g., `gct-service-template-py`, `gencraft-iac`).
 
-## Script Modules & Commands
-| Module | Location | Primary SSoT Input | Primary Invocation |
-| --- | --- | --- | --- |
-| Main Orchestrator | `gft-onboarding.sh` | Role matrix + `.tool-versions-gft` | `./gft-onboarding.sh`
-| Helper Library | `includes/01_helpers.sh` | Role matrix discovery utilities | Auto-sourced by orchestrator
-| Installer Library | `includes/02_installers.sh` | `.tool-versions-gft` for version lookups | Auto-sourced; dispatch via `install_tools_for_role`
-| Configuration Library | `includes/03_configuration.sh` | Role matrix for repos/env vars/extensions | Auto-sourced; run via functions `configure_*`
-| Python role helpers | `includes/get_role_{tools,repos,env_vars}.py` | Role matrix YAML passed on stdin | Called by Bash libraries
-| Windows bootstrapper | `onboarding-win.ps1` | Mirrors orchestrator behavior | `powershell -ExecutionPolicy Bypass -File onboarding-win.ps1`
-| Validation (interactive) | `validate-environment.sh` | Role matrix + tool specs | `./validate-environment.sh`
-| DevOps deep validation | `validate-gft-devops-environment.sh` | Tooling ADRs referenced inside script | `./validate-gft-devops-environment.sh`
-| OpenTofu env helper | `setup-local-tofu-env.sh` | IaC backend standards | `. ./setup-local-tofu-env.sh`
+### Script Modules
 
-Use this table when delegating tasks to other agents so they know which command to run for each module.
+| Module | Script | Description |
+| :--- | :--- | :--- |
+| **Orchestrator** | `gft-onboarding.sh` | Main entry point. |
+| **Libraries** | `includes/*.sh` | Helpers for discovery (`01`), installation (`02`), and config (`03`). |
+| **Python Helpers** | `includes/get_role_*.py` | Parses YAML role matrices. |
+| **Windows Bootstrapper** | `onboarding-win.ps1` | Enables WSL2, installs Ubuntu, launches orchestrator. |
+| **Validators** | `validate-environment.sh` <br> `validate-gft-devops-environment.sh` | Validates role installs and DevOps tooling (PROJ-103). |
+| **Tofu Helper** | `setup-local-tofu-env.sh` | Configures OpenTofu backend standards. |
+
+## Prerequisites
+
+1.  **Permissions:** `sudo` (macOS/Linux) or Administrator (Windows).
+2.  **Connectivity:** Internet access for cloning and package downloads.
+3.  **Accounts:** Active GenCr@t GitHub account (login required).
+4.  **System Tools:** Script `check_prerequisites` auto-detects/installs `git`, `curl`, `yq`, and `python3`.
+
+## Installation & Usage
+
+### macOS & Linux
+
+Run the following to download, verify checksums, and execute:
+
+```bash
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
+sha256sum --check gft-onboarding.sh.sha256
+chmod +x gft-onboarding.sh
+./gft-onboarding.sh
+```
+
+### Windows (via WSL2)
+
+Run via PowerShell as Administrator to verify checksums and bootstrap WSL2:
+
+```powershell
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1 -o onboarding-win.ps1
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1.sha256 -o onboarding-win.ps1.sha256
+Get-FileHash onboarding-win.ps1 -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  onboarding-win.ps1" } | Select-String -Pattern (Get-Content onboarding-win.ps1.sha256)
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\onboarding-win.ps1
+```
+
+*Note: The Windows script enables WSL2, installs Ubuntu if missing, copies `.env`, and automatically launches the bash orchestrator.*
 
 ## Execution Flow
-1. **Prerequisite scan** – `check_prerequisites` ensures `git`, `curl`, `yq`, and `python3` exist (installing via OS package manager if needed).
-2. **SSoT sync** – `setup_ssot_repository` clones/updates the standards repo into `/tmp/gft-ssot-onboarding`.
-3. **Role resolution** – `load_ssot_configuration` + `select_user_role` produce the YAML payload for the chosen persona.
-4. **Tool installation** – `install_tools_for_role` enumerates SSoT-driven tools, installs binaries (Node via `nvm`, Python via `pyenv`, OpenTofu/GFT CLI via GitHub releases with checksums), and verifies Docker/AWS CLI.
-5. **Configuration** – Git identity, SSH keys, VS Code extensions, environment variables, repo clones, and `gft config setup` are handled in order.
-6. **Completion** – Operators receive a success banner plus instructions to restart shells/editors. Logs persist in the user’s home directory for audits.
 
-## Platform-Specific Launch Procedures
-### macOS & Linux (bash/zsh)
-1. **Download with checksum verification**
-   ```bash
-   curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
-   curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
-   sha256sum --check gft-onboarding.sh.sha256
-   ```
-   The checksum file is committed beside the script. Only continue if it returns `OK`.
-2. **Execute**
-   ```bash
-   chmod +x gft-onboarding.sh
-   ./gft-onboarding.sh
-   ```
-3. **Follow prompts** for role selection, sudo approvals, and SSH/GitHub automation.
+1.  **Prerequisite Scan:** Checks/installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
+2.  **SSoT Sync:** Clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
+3.  **Role Selection:** Prompts user for role; loads configuration via `load_ssot_configuration`.
+4.  **Installation:** Installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.
+5.  **Configuration:** Sets Git identity, SSH keys, VS Code extensions, Env Vars, clones repos, and runs `gft config setup`.
+6.  **Validation:** Runs `pre-commit run --all-files` in the standards repo.
 
-### Windows 10/11 via WSL2
-1. **Download & verify**
-   ```powershell
-   curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1 -o onboarding-win.ps1
-   curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1.sha256 -o onboarding-win.ps1.sha256
-   Get-FileHash onboarding-win.ps1 -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  onboarding-win.ps1" } | \
-     Select-String -Pattern (Get-Content onboarding-win.ps1.sha256)
-   ```
-   Ensure PowerShell reports a matching checksum.
-2. **Run as Administrator**
-   ```powershell
-   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-   ./onboarding-win.ps1
-   ```
-   The script enables WSL2, installs Ubuntu if missing, copies `.env`, and launches the Bash orchestrator automatically.
+## Post-Installation & Validation
 
-## Diagnostics & Support
-- **Environment validators**
-  - `./validate-environment.sh` re-runs the role checks from the SSoT, counting pass/fail items.
-  - `./validate-gft-devops-environment.sh` focuses on PROJ-103 DevOps tooling (Git, gh, OpenTofu, jq, linting stack) and versions.
-- **`gft doctor`** – Once `gft-cli` is installed, `gft doctor` offers a CLI-native health report aligned with GOV-004; run it whenever validation scripts fail.
-- **Debug environment variables**
-  - `TEST_ENV=1 ./gft-onboarding.sh` skips confirmation prompts for automated testing.
-  - Override `GFT_SSOT_REPO`/`GFT_SSOT_PATH` temporarily to test forks or offline caches.
-- **Support channels**
-  - Slack: `#devops-support` for real-time help.
-  - Issue tracker: open tickets in `GenCr-ft/gcd-onboarding-scripts` with logs attached.
-  - Include the log file (`~/gft_onboarding_<date>_<time>.log`) plus validator output in every escalation.
+1.  **Restart:** Close/reopen terminals and restart VS Code.
+2.  **Validation Scripts:**
+      * Run `./validate-environment.sh` to verify role-specific tools/repos.
+      * Run `./validate-gft-devops-environment.sh` for DevOps tooling baselines.
+      * Run `gft doctor` for a CLI-native health report.
+3.  **Manual Check:** Verify pre-commit hooks:
+    ```bash
+    cd "$GFT_PROJECTS_HOME/gcs-devops-standards" && pre-commit run --all-files
+    ```
 
-## Testing
-| Scenario | Command | Notes |
-| --- | --- | --- |
-| Shell unit smoke | `TEST_ENV=1 ./gft-onboarding.sh` | Runs orchestration without confirmations; mock commands should be wrapped before CI.
-| Role validation | `./validate-environment.sh` | Confirms installed tools/repos for a selected role.
-| DevOps baseline | `./validate-gft-devops-environment.sh` | Ensures minimum versions for Git, gh, OpenTofu, jq, mdl, tflint, etc.
-| Windows pipeline | `pwsh -File onboarding-win.ps1` | Use in CI to confirm WSL bootstrap behavior.
+## Troubleshooting & Support
 
-## Troubleshooting
+### Common Issues
+
 | Symptom | Resolution |
-| --- | --- |
-| `Permission denied` running `gft-onboarding.sh` | Ensure the file is executable (`chmod +x gft-onboarding.sh`) and re-run under your user account.
-| `yq: command not found` | Rerun the script; `check_prerequisites` installs it. If blocked, manually install (`brew install yq` or `sudo apt install yq`).
-| Docker or gh auth failures | Run `docker info` / `gh auth login` manually, then re-run the onboarding script; these are prerequisites for repo cloning and CLI setup.
-| Checksum mismatch | Delete the script, re-download both the script and `.sha256`, and verify network integrity before running anything.
-| Script aborted with `log_error` or trap banner | Grab the latest `~/gft_onboarding_<date>_<time>.log` and send it to the DevOps guild via Slack `#devops-support` (or attach it to the GitHub issue) so they can replay the failing command sequence.
+| :--- | :--- |
+| **Permission denied** | Ensure executable permissions (`chmod +x`) and run with appropriate user rights. |
+| **Package fails** | Check internet; update package manager (`apt update`/`brew update`). |
+| **Auth fails** | Run `gh auth login` or `docker info` manually. |
+| **Checksum mismatch** | Re-download script and `.sha256` file. |
 
-## Knowledge Base Discoverability
-Add or update the KB entry **“How-To: Onboard devs”** to link to this README (`https://github.com/GenCr-ft/gcd-onboarding-scripts/blob/main/README.md`). Track the KB ticket ID inside your sprint board so the enablement guild can audit discoverability.
+### Diagnostics
 
-## Linked Documentation
-Extended usage notes for auxiliary scripts (`onboarding-win.ps1`, `setup-local-tofu-env.sh`, `validate-*`) live in [`docs/auxiliary-scripts.md`](docs/auxiliary-scripts.md). Keep those sections in sync whenever script flags or parameters change.
+  * **Logs:** Check `~/gft_onboarding_<date>_<time>.log`.
+  * **Testing:** Use `TEST_ENV=1 ./gft-onboarding.sh` to skip confirmation prompts (CI/testing).
+  * **Support:** Contact `#devops-support` on Slack or open an issue in `GenCr-ft/gcd-onboarding-scripts` with logs attached.
+
+### Documentation
+
+  * **Auxiliary Scripts:** See [`docs/auxiliary-scripts.md`](https://www.google.com/search?q=docs/auxiliary-scripts.md) for details on `onboarding-win.ps1` and validators.
+  * **Knowledge Base:** Link this README in the "How-To: Onboard devs" KB entry.

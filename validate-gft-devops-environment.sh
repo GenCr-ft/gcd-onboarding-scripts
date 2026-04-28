@@ -166,12 +166,9 @@ if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005
     check_version "gh --version" "GitHub CLI" "$EXPECTED_GH_VERSION_MAJOR" 0 'gh version \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 
     print_status "Checking GitHub CLI authentication (gh auth status)..." "INFO"
-    if gh auth status -h "$ORGANIZATION" > /dev/null 2>&1; then # Check against specific org
-        GH_USER=$(gh auth status -h github.com --show-token 2>/dev/null | grep "Logged in to github.com as" | sed 's/.*Logged in to github.com as \([^ ]*\) .*/\1/')
-        print_status "GitHub CLI (gh): Authenticated to github.com as '$GH_USER' and access to '$ORGANIZATION' confirmed." "OK"
-    elif gh auth status > /dev/null 2>&1; then
-        GH_USER=$(gh auth status -h github.com --show-token 2>/dev/null | grep "Logged in to github.com as" | sed 's/.*Logged in to github.com as \([^ ]*\) .*/\1/')
-        print_status "GitHub CLI (gh): Authenticated to github.com as '$GH_USER', but access to organisation '$ORGANIZATION' could not be confirmed directly via 'gh auth status -h $ORGANIZATION'." "WARN"
+    if gh auth status --active > /dev/null 2>&1; then
+        GH_USER=$(gh api user --jq '.login' 2>/dev/null || echo "unknown")
+        print_status "GitHub CLI (gh): Authenticated to github.com as '$GH_USER'." "OK"
         print_status "  Ensure your token has the necessary permissions for organisation '$ORGANIZATION'." "INFO"
     else
         print_status "GitHub CLI (gh): Not authenticated." "FAIL"

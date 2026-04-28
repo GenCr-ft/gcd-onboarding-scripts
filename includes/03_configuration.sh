@@ -343,14 +343,11 @@ configure_environment_variables() {
             log_info "Variable '$var_name' is already configured."
         else
             log_info "Adding variable '$var_name' to shell profile."
-            # sed -i is complex and non-portable; use a safer temp-file approach instead
-            local temp_file
-            temp_file=$(mktemp)
-            grep -vF "$end_marker" "$shell_profile_file" > "$temp_file"
-            echo "export $var_name=$var_value" >> "$temp_file"
-            echo "$end_marker" >> "$temp_file"
-            cat "$temp_file" > "$shell_profile_file"
-            rm "$temp_file"
+            # Insert the new export line immediately before the end marker.
+            # This avoids the corruption caused by grep -vF which would strip every
+            # occurrence of the end marker in the file, moving post-block content
+            # into the managed block.
+            sed -i "s|^${end_marker}$|export ${var_name}=${var_value}\n${end_marker}|" "$shell_profile_file"
 
             if [[ "$var_name" == "GFT_PROJECTS_HOME" ]]; then
                 local evaluated_path

@@ -100,6 +100,41 @@ install_commitlint() {
     log_success "commitlint dependencies installed."
 }
 
+install_rustup() {
+    log_info "Installing Rust toolchain via rustup..."
+    if command -v rustup &>/dev/null; then
+        log_info "rustup is already installed. Running rustup update..."
+        rustup update stable && rustup target add wasm32-unknown-unknown
+        log_success "Rust toolchain updated."
+        return 0
+    fi
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    # shellcheck source=/dev/null
+    . "$HOME/.cargo/env"
+    rustup target add wasm32-unknown-unknown
+    log_success "Rust stable toolchain installed with wasm32-unknown-unknown target."
+}
+
+install_wasm_pack() {
+    log_info "Installing wasm-pack..."
+    if command -v wasm-pack &>/dev/null; then log_info "wasm-pack is already installed." && return 0; fi
+    if ! command -v cargo &>/dev/null; then
+        log_error "cargo not found — install rustup first (run rustup installer or ensure rustup is in PATH)." && return 1
+    fi
+    cargo install wasm-pack --locked
+    log_success "wasm-pack installed."
+}
+
+install_wasm_bindgen_cli() {
+    log_info "Installing wasm-bindgen-cli..."
+    if command -v wasm-bindgen &>/dev/null; then log_info "wasm-bindgen is already installed." && return 0; fi
+    if ! command -v cargo &>/dev/null; then
+        log_error "cargo not found — install rustup first." && return 1
+    fi
+    cargo install wasm-bindgen-cli --locked
+    log_success "wasm-bindgen-cli installed."
+}
+
 
 # --- Main Installation Dispatcher ---
 install_tool() {
@@ -119,6 +154,9 @@ install_tool() {
         gft-cli) version=$(get_ssot_tool_version "gft-cli"); [ -n "$version" ] && install_binary_from_github "gft-cli" "$version" "GenCr-ft/gft-cli" "gft" || log_warn "No version for 'gft-cli' in SSoT.";;
         aws-cli) install_aws_cli ;;
         git-hooks-managers) install_hook_managers ;;
+        rustup) install_rustup ;;
+        wasm-pack) install_wasm_pack ;;
+        wasm-bindgen-cli) install_wasm_bindgen_cli ;;
         *) log_warn "No SSoT-driven installation logic defined for tool '$tool_from_matrix'." ;;
     esac
 }

@@ -110,7 +110,7 @@ install_rustup() {
     fi
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
     # shellcheck source=/dev/null
-    . "$HOME/.cargo/env"
+    [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
     rustup target add wasm32-unknown-unknown
     log_success "Rust stable toolchain installed with wasm32-unknown-unknown target."
 }

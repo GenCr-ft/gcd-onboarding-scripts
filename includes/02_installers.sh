@@ -119,7 +119,7 @@ install_wasm_pack() {
     log_info "Installing wasm-pack..."
     if command -v wasm-pack &>/dev/null; then log_info "wasm-pack is already installed." && return 0; fi
     if ! command -v cargo &>/dev/null; then
-        log_error "cargo not found — install rustup first (run rustup installer or ensure rustup is in PATH)." && return 1
+        log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
     cargo install wasm-pack --locked
     log_success "wasm-pack installed."

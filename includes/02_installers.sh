@@ -129,7 +129,7 @@ install_wasm_bindgen_cli() {
     log_info "Installing wasm-bindgen-cli..."
     if command -v wasm-bindgen &>/dev/null; then log_info "wasm-bindgen is already installed." && return 0; fi
     if ! command -v cargo &>/dev/null; then
-        log_error "cargo not found — install rustup first." && return 1
+        log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
     cargo install wasm-bindgen-cli --locked
     log_success "wasm-bindgen-cli installed."

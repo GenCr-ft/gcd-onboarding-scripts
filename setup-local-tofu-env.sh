@@ -1,32 +1,32 @@
 #!/bin/bash
 
 # ==============================================================================
-# Script to configure the local environment for OpenTofu (Gencraft IaC).
+# Script to configure the local environment for OpenTofu (GenCr@ft IaC).
 # Intended for DevOps team members performing manual operations.
 #
 # IMPORTANT - SECURITY:
-# 1. AWS credentials: This script assumes you have configured an AWS CLI profile
+# 1. AWS Credentials: This script assumes you have configured an AWS CLI profile
 #    (via `aws configure --profile <profile-name>`).
 #    This is the recommended method. Do NOT write your AWS keys here.
 #    For enhanced security, explore tools such as `aws-vault`.
-# 2. GitHub token: You will be prompted to enter your GitHub token.
+# 2. GitHub Token: You will be prompted to enter your GitHub token.
 #    It will not be stored in this script.
 #
 # USAGE:
 # To have the environment variables set in your CURRENT terminal session,
 # you must "source" this script:
 #
-#   source ./setup_local_tofu_env.sh
+#   source ./setup-local-tofu-env.sh
 #
 #   OR (shorter equivalent):
 #
-#   . ./setup_local_tofu_env.sh
+#   . ./setup-local-tofu-env.sh
 #
 # After sourcing the script, navigate to the OpenTofu working directory
 # (e.g. environments/github-org) and run your `tofu` commands.
 # ==============================================================================
 
-echo "Configuring the OpenTofu environment for Gencraft IaC (github-org)..."
+echo "Configuring the OpenTofu environment for GenCr@ft IaC (github-org)..."
 echo ""
 
 # --- 1. AWS Configuration ---
@@ -114,4 +114,4 @@ echo ""
 echo "Environment configuration complete."
 echo "Remember to navigate to the appropriate working directory"
 echo "(e.g. 'cd environments/github-org') before running 'tofu init'."
-echo "Reminder: this script must be sourced: '. ./setup_local_tofu_env.sh'"
+echo "Reminder: this script must be sourced: '. ./setup-local-tofu-env.sh'"

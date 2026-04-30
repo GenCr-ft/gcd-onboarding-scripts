@@ -1,14 +1,14 @@
 #!/bin/bash
-# Script: validate_gft_devops_environment.sh
+# Script: validate-devops-environment.sh
 # Description: Validates the presence and critical configuration of essential DevOps tools
 #              specifically for PROJ-103 and ongoing GenCr@ft studio development.
 #              Optimized for WSL/Ubuntu.
 # Version: 1.5.0 (Added pre-commit check, updated doc paths for ADR-001)
 # Author: Camille (Gem AB - Automation Specialist)
-# SSoT: gcd-onboarding-scripts/validations-scripts/validate_gft_devops_environment.sh
+# SSoT: gcd-onboarding-scripts/validations-scripts/validate-gft-devops-environment.sh
 # Based on previous version: 1.4
 
-# --- Configuration - Minimum Expected Versions (sync with Gencraft SSoT) ---
+# --- Configuration - Minimum Expected Versions (sync with GenCr@ft SSoT) ---
 EXPECTED_OPENTOFU_VERSION_MAJOR=1
 EXPECTED_OPENTOFU_VERSION_MINOR=6
 EXPECTED_PYTHON_VERSION_MAJOR=3
@@ -178,7 +178,7 @@ if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005
 
 fi
 
-# 3. OpenTofu (tofu)
+# 3. OpenTofu (tofu) - IaC Tool
 print_header "3" "OpenTofu (tofu) - IaC Tool"
 if check_command_exists "tofu" "OpenTofu" "gcs-devops-standards/iac/IAC_001_OpenTofu_Tooling_Standard.md" "See https://opentofu.org/docs/intro/install (Linux/Debian/Ubuntu)"; then
     check_version "tofu version" "OpenTofu" "$EXPECTED_OPENTOFU_VERSION_MAJOR" "$EXPECTED_OPENTOFU_VERSION_MINOR" 'OpenTofu v\K([0-9]+\.[0-9]+(\.[0-9]+)?)'
@@ -217,7 +217,7 @@ else
     print_status "$FAIL_COUNT critical ERROR(S) detected. $WARN_COUNT WARNING(S) also present." "FAIL"
     print_status "Please fix the ERRORS before running PROJ-103 operations." "FAIL"
 fi
-echo "Consult the Gencraft standards for exact versions and detailed configurations."
+echo "Consult the GenCr@ft standards for exact versions and detailed configurations."
 echo "  - All standards and protocols are in: gcs-studio-handbook"
 echo "  - Specific DevOps standards are in:   gcs-devops-standards"
 echo "======================================================================"

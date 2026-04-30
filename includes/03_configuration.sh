@@ -236,7 +236,8 @@ final_validation() {
 
     local gft_status=0
     if command -v gft &> /dev/null; then
-        if gft config setup; then
+        # Note: gft config setup is also called in configure_gft_cli earlier in the pipeline.
+        if gft config status; then
             log_success "gft-cli reported successful configuration."
         else
             gft_status=$?

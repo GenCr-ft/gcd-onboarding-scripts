@@ -120,7 +120,14 @@ test_base_repository_injection_when_missing() {
 
 test_environment_variable_logic() {
     log_info "[TEST SUITE 3] Testing Environment Variable Logic..."
-    local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp); trap "rm -f '$MOCK_PROFILE_FILE'; trap - RETURN" RETURN
+    local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp)
+    local MOCK_HOME; MOCK_HOME=$(mktemp -d)
+    trap "rm -f '$MOCK_PROFILE_FILE'; rm -rf '$MOCK_HOME'; trap - RETURN" RETURN
+    
+    # Temporarily override HOME for the test to verify directory creation
+    local ORIGINAL_HOME="$HOME"
+    export HOME="$MOCK_HOME"
+    
     local output; output=$(configure_environment_variables "devops-specialist" "$MOCK_PROFILE_FILE" 2>&1)
     local checks_failed=0
 
@@ -130,18 +137,19 @@ test_environment_variable_logic() {
     if ! grep -q 'export GFT_AWS_PROFILE="gft-devops"' "$MOCK_PROFILE_FILE"; then
         log_error "FAIL (Env Var): 'GFT_AWS_PROFILE' not found." && ((checks_failed++))
     fi
-    if [ ! -d "$TEMP_HOME/gft_studio" ]; then
+    if [ ! -d "$MOCK_HOME/gft_studio" ]; then
         log_error "FAIL (Env Var): Workspace directory was not created." && ((checks_failed++))
     fi
+
+    # Restore HOME
+    export HOME="$ORIGINAL_HOME"
 
     if [[ $checks_failed -ne 0 ]]; then
         echo "--- Raw Env Var Test Output ---"
         echo "$output"
-        cleanup_env_var_test
         return 1
     fi
     log_success "Environment Variable Logic: PASSED"
-    cleanup_env_var_test
 }
 
 test_vscode_extension_logic() {
@@ -222,7 +230,7 @@ test_environment_variable_idempotency() {
     fi
 
     local var
-    for var in GFT_PROJECTS_HOME GFT_LOG_LEVEL GFT_AWS_PROFILE TF_VAR_github_token; do
+    for var in GFT_PROJECTS_HOME GFT_AWS_PROFILE GFT_DEFAULT_REGION; do
         local count
         count=$(grep -c "export $var=" "$PROFILE_FILE")
         if [[ $count -ne 1 ]]; then

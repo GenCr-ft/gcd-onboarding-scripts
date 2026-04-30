@@ -119,7 +119,7 @@ install_rustup() {
     fi
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
     # shellcheck source=/dev/null
-    . "$HOME/.cargo/env"
+    [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
     rustup target add wasm32-unknown-unknown
     log_success "Rust stable toolchain installed with wasm32-unknown-unknown target."
 }
@@ -128,7 +128,7 @@ install_wasm_pack() {
     log_info "Installing wasm-pack..."
     if command -v wasm-pack &>/dev/null; then log_info "wasm-pack is already installed." && return 0; fi
     if ! command -v cargo &>/dev/null; then
-        log_error "cargo not found — install rustup first (run rustup installer or ensure rustup is in PATH)." && return 1
+        log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
     cargo install wasm-pack --locked
     log_success "wasm-pack installed."
@@ -138,7 +138,7 @@ install_wasm_bindgen_cli() {
     log_info "Installing wasm-bindgen-cli..."
     if command -v wasm-bindgen &>/dev/null; then log_info "wasm-bindgen is already installed." && return 0; fi
     if ! command -v cargo &>/dev/null; then
-        log_error "cargo not found — install rustup first." && return 1
+        log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
     cargo install wasm-bindgen-cli --locked
     log_success "wasm-bindgen-cli installed."

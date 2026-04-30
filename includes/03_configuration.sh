@@ -280,10 +280,10 @@ final_validation() {
 # $2: shell_profile_for_test (optional, used only for testing)
 configure_environment_variables() {
     local role_name="$1"
-    local shell_profile_for_test="$2" # Argument pour le test
+    local shell_profile_for_test="$2" # Optional: override profile path for testing
     log_info "Configuring environment variables for role: $role_name"
 
-    # 1. Détecter le fichier de profil du shell
+    # 1. Detect the shell profile file
     local shell_profile_file=""
     if [ -n "$shell_profile_for_test" ]; then
         shell_profile_file="$shell_profile_for_test"
@@ -300,7 +300,7 @@ configure_environment_variables() {
     if [ -z "$shell_profile_for_test" ]; then
       log_info "Detected shell profile: $shell_profile_file"
     fi
-    # S'assurer que le fichier existe pour les tests et l'exécution normale
+    # Ensure the file exists for both tests and normal execution
     touch "$shell_profile_file"
 
     if [ -z "${GFT_SSOT_PATH:-}" ]; then
@@ -327,7 +327,7 @@ configure_environment_variables() {
         return
     fi
 
-    # 3. S'assurer que le bloc de configuration Gencraft existe
+    # 3. Ensure the Gencraft configuration block exists
     local start_marker="# GENCRAFT ENVIRONMENT - START"
     local end_marker="# GENCRAFT ENVIRONMENT - END"
     if ! grep -qF "$start_marker" "$shell_profile_file"; then
@@ -335,7 +335,7 @@ configure_environment_variables() {
         echo -e "\n$start_marker\n# This block is managed by the Gencraft onboarding script. Do not edit manually.\n$end_marker" >> "$shell_profile_file"
     fi
 
-    # 4. Ajouter chaque variable si elle n'existe pas déjà
+    # 4. Add each variable if it does not already exist
     for var_line in "${required_vars[@]}"; do
         local var_name="${var_line%%=*}"
         local var_value="${var_line#*=}"
@@ -344,14 +344,11 @@ configure_environment_variables() {
             log_info "Variable '$var_name' is already configured."
         else
             log_info "Adding variable '$var_name' to shell profile."
-            # sed -i est complexe et non portable, utilisons une méthode plus sûre
-            local temp_file
-            temp_file=$(mktemp)
-            grep -vF "$end_marker" "$shell_profile_file" > "$temp_file"
-            echo "export $var_name=$var_value" >> "$temp_file"
-            echo "$end_marker" >> "$temp_file"
-            cat "$temp_file" > "$shell_profile_file"
-            rm "$temp_file"
+            # Insert the new export line immediately before the end marker.
+            # This avoids the corruption caused by grep -vF which would strip every
+            # occurrence of the end marker in the file, moving post-block content
+            # into the managed block.
+            sed -i "s|^${end_marker}$|export ${var_name}=${var_value}\n${end_marker}|" "$shell_profile_file"
 
             if [[ "$var_name" == "GFT_PROJECTS_HOME" ]]; then
                 local evaluated_path

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script: validate-gft-devops-environment.sh
+# Script: validate-devops-environment.sh
 # Description: Validates the presence and critical configuration of essential DevOps tools
 #              specifically for PROJ-103 and ongoing GenCr@ft studio development.
 #              Optimized for WSL/Ubuntu.
@@ -8,7 +8,7 @@
 # SSoT: gcd-onboarding-scripts/validations-scripts/validate-gft-devops-environment.sh
 # Based on previous version: 1.4
 
-# --- Configuration - Minimum Expected Versions (To be synchronized with GenCr@ft SSoT) ---
+# --- Configuration - Minimum Expected Versions (sync with GenCr@ft SSoT) ---
 EXPECTED_OPENTOFU_VERSION_MAJOR=1
 EXPECTED_OPENTOFU_VERSION_MINOR=6
 EXPECTED_PYTHON_VERSION_MAJOR=3
@@ -16,7 +16,7 @@ EXPECTED_PYTHON_VERSION_MINOR=8 # pre-commit often needs a reasonably modern Pyt
 EXPECTED_PIP_VERSION_MAJOR=20   # Example, ensure pip is functional and can install pre-commit
 EXPECTED_GIT_VERSION_MAJOR=2
 EXPECTED_GH_VERSION_MAJOR=2
-EXPECTED_PRECOMMIT_VERSION_MAJOR=2 # pre-commit version, e.g., v2.x.x or v3.x.x
+EXPECTED_PRECOMMIT_VERSION_MAJOR=2 # pre-commit version, e.g. v2.x.x or v3.x.x
 ORGANIZATION="GenCr-ft"
 
 # --- Output Colors ---
@@ -57,7 +57,7 @@ check_command_exists() {
     local msg_detail
 
     if command -v "$cmd" &> /dev/null; then
-        msg_detail="Present: $(command -v "$cmd")"
+        msg_detail="Found: $(command -v "$cmd")"
         print_status "$msg_base: $msg_detail" "OK"
         return 0
     else
@@ -69,15 +69,15 @@ check_command_exists() {
 
         if [ -n "$install_suggestion_ubuntu" ]; then
             print_status "  Installation suggestion (Ubuntu/WSL): $install_suggestion_ubuntu" "INFO"
-            if [[ "$install_suggestion_ubuntu" == *"sudo"* || "$install_suggestion_ubuntu" == *"apt"* || "$install_suggestion_ubuntu" == *"gem"* ]]; then # Added gem for mdl
+            if [[ "$install_suggestion_ubuntu" == *"sudo"* || "$install_suggestion_ubuntu" == *"apt"* || "$install_suggestion_ubuntu" == *"gem"* ]]; then
                 print_status "    (Note: Installation may require 'sudo' privileges.)" "INFO"
             fi
         fi
         if [ -n "$install_suggestion_other" ]; then
-            print_status "  Installation suggestion (Other OS, e.g., macOS): $install_suggestion_other" "INFO"
+            print_status "  Installation suggestion (Other OS, e.g. macOS): $install_suggestion_other" "INFO"
         fi
         if [ -z "$install_suggestion_ubuntu" ] && [ -z "$install_suggestion_other" ]; then
-             print_status "  No automatic installation suggestion available. Please install manually." "INFO"
+             print_status "  No automatic installation suggestion available. Please install it manually." "INFO"
         fi
         return 1
     fi
@@ -94,11 +94,10 @@ check_version() {
 
     # Check if command exists before trying to get version
     if ! command -v "${version_cmd%% *}" &> /dev/null; then # Takes the first word of version_cmd as the command
-      # print_status "$tool_name: Base command not found, unable to verify version." "FAIL" # Already handled by check_command_exists
       return 1
     fi
 
-    print_status "Checking $tool_name version..." "INFO"
+    print_status "Checking version of $tool_name..." "INFO"
     version_cmd_output=$($version_cmd 2>&1)
     local exit_code=$?
 
@@ -114,7 +113,7 @@ check_version() {
     fi
 
     if [ -z "$current_version" ]; then
-        print_status "$tool_name: Unable to extract numerical version from output: \n$version_cmd_output" "WARN"
+        print_status "$tool_name: Unable to extract numeric version from output: \n$version_cmd_output" "WARN"
         return 1
     fi
 
@@ -122,32 +121,32 @@ check_version() {
     current_minor=$(echo "$current_version" | cut -d. -f2)
 
     if ! [[ "$current_major" =~ ^[0-9]+$ ]] || ! [[ "$current_minor" =~ ^[0-9]+$ ]]; then
-        print_status "$tool_name: Extracted version '$current_version' is not in the expected numerical format X.Y(.Z)." "FAIL"
+        print_status "$tool_name: Extracted version '$current_version' is not in the expected numeric format X.Y(.Z)." "FAIL"
         return 1
     fi
 
     if [ "$current_major" -gt "$expected_major" ] || \
        ( [ "$current_major" -eq "$expected_major" ] && [ "$current_minor" -ge "$expected_minor" ] ); then
-        print_status "$tool_name: Version $current_version (Expected >= $expected_major.$expected_minor). Compliant." "OK"
+        print_status "$tool_name: Version $current_version (expected >= $expected_major.$expected_minor). Compliant." "OK"
         return 0
     else
-        print_status "$tool_name: Version $current_version (Expected >= $expected_major.$expected_minor). Non-compliant." "FAIL"
+        print_status "$tool_name: Version $current_version (expected >= $expected_major.$expected_minor). Non-compliant." "FAIL"
         return 1
     fi
 } #
 
-# --- Start of Validations ---
+# --- Checks Begin ---
 echo "======================================================================"
 echo "GenCr@ft DevOps Environment Validation for PROJ-103"
-echo "Target System: WSL / Ubuntu Linux"
+echo "Target system: WSL / Ubuntu Linux"
 echo "Date: $(date)"
-echo "This script validates essential tools and configurations."
-echo "A manual verification of extended GitHub permissions is required."
+echo "This script checks the essential tools and configurations."
+echo "Manual verification of extended GitHub permissions is required."
 echo "======================================================================"
 
 # 1. Git (Version Control)
 print_header "1" "Git (Version Control)"
-if check_command_exists "git" "Git" "gcs-devops-standards/tooling/TOOL_00X_Git_Usage_Standard.md" "sudo apt update && sudo apt install git -y"; then # Added -y for non-interactive
+if check_command_exists "git" "Git" "gcs-devops-standards/tooling/TOOL_00X_Git_Usage_Standard.md" "sudo apt update && sudo apt install git -y"; then
     check_version "git --version" "Git" "$EXPECTED_GIT_VERSION_MAJOR" 0 'git version \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 
     GIT_USER_NAME=$(git config --global user.name)
@@ -163,30 +162,25 @@ fi
 
 # 2. GitHub CLI (gh)
 print_header "2" "GitHub CLI (gh)"
-if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005_GitHub_CLI_Standard.md" "Visit https://github.com/cli/cli#installation (Linux/Debian/Ubuntu instructions)"; then
+if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005_GitHub_CLI_Standard.md" "See https://github.com/cli/cli#installation (Linux/Debian/Ubuntu instructions)"; then
     check_version "gh --version" "GitHub CLI" "$EXPECTED_GH_VERSION_MAJOR" 0 'gh version \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 
     print_status "Checking GitHub CLI authentication (gh auth status)..." "INFO"
-    if gh auth status -h "$ORGANIZATION" > /dev/null 2>&1; then # Check against specific org
-        GH_USER=$(gh auth status -h github.com --show-token 2>/dev/null | grep "Logged in to github.com as" | sed 's/.*Logged in to github.com as \([^ ]*\) .*/\1/')
-        print_status "GitHub CLI (gh): Authenticated on github.com as '$GH_USER' and access to '$ORGANIZATION' confirmed." "OK"
-    elif gh auth status > /dev/null 2>&1; then
-        GH_USER=$(gh auth status -h github.com --show-token 2>/dev/null | grep "Logged in to github.com as" | sed 's/.*Logged in to github.com as \([^ ]*\) .*/\1/')
-        print_status "GitHub CLI (gh): Authenticated on github.com as '$GH_USER', but access to organization '$ORGANIZATION' could not be confirmed directly via 'gh auth status -h $ORGANIZATION'." "WARN"
-        print_status "  Ensure your token has the necessary permissions for organization '$ORGANIZATION'." "INFO"
+    if gh auth status --active > /dev/null 2>&1; then
+        GH_USER=$(gh api user --jq '.login' 2>/dev/null || echo "unknown")
+        print_status "GitHub CLI (gh): Authenticated to github.com as '$GH_USER'." "OK"
+        print_status "  Ensure your token has the necessary permissions for organisation '$ORGANIZATION'." "INFO"
     else
         print_status "GitHub CLI (gh): Not authenticated." "FAIL"
-        print_status "  Please run 'gh auth login' and ensure you have the necessary permissions for organization '$ORGANIZATION'." "INFO"
+        print_status "  Please run 'gh auth login' and ensure you have the required permissions for organisation '$ORGANIZATION'." "INFO"
     fi
-    # Removed detailed permissions check, as it's too complex for this script and better handled by context.
-    # The original detailed permission check note remains valid for manual verification by the user.
-    print_status "  Permission reference: gcs-studio-handbook/02-knowledge-base-hub/02-knowledge-base-hub/kb-domain-security/access-control-policy.md" "INFO"
+    print_status "  Permissions reference: gcs-studio-handbook/02-knowledge-base-hub/02-knowledge-base-hub/kb-domain-security/access-control-policy.md" "INFO"
 
 fi
 
 # 3. OpenTofu (tofu) - IaC Tool
 print_header "3" "OpenTofu (tofu) - IaC Tool"
-if check_command_exists "tofu" "OpenTofu" "gcs-devops-standards/iac/IAC_001_OpenTofu_Tooling_Standard.md" "Visit https://opentofu.org/docs/intro/install (Linux/Debian/Ubuntu)"; then
+if check_command_exists "tofu" "OpenTofu" "gcs-devops-standards/iac/IAC_001_OpenTofu_Tooling_Standard.md" "See https://opentofu.org/docs/intro/install (Linux/Debian/Ubuntu)"; then
     check_version "tofu version" "OpenTofu" "$EXPECTED_OPENTOFU_VERSION_MAJOR" "$EXPECTED_OPENTOFU_VERSION_MINOR" 'OpenTofu v\K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 fi
 
@@ -194,12 +188,11 @@ fi
 print_header "4" "Data Processing Tools"
 check_command_exists "jq" "jq (JSON processor)" "gcs-devops-standards/tooling/TOOL_006_JQ_Usage_Standard.md" "sudo apt install jq -y"
 
-# 5. Linting and Quality Tools
+# 5. Linting and Code Quality Tools
 print_header "5" "Linting and Quality Tools"
 check_command_exists "mdl" "Markdownlint (mdl)" "gcs-studio-handbook/04-tooling-and-automation-hub/Tools/GCT-TOOL-MDLINT-V1.md" "sudo apt install ruby-full build-essential -y && sudo gem install mdl" "brew install mdl"
-check_command_exists "tflint" "TFLint (OpenTofu Linter)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "Visit https://github.com/terraform-linters/tflint#installation"
-check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "Visit https://aquasecurity.github.io/tfsec/latest/getting-started/installation/" "brew install tfsec"
-# check_command_exists "checkov" "Checkov (Alternative IaC Scanner)" "" "pip3 install checkov" "pip3 install checkov"
+check_command_exists "tflint" "TFLint (OpenTofu Linter)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "See https://github.com/terraform-linters/tflint#installation"
+check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "See https://aquasecurity.github.io/tfsec/latest/getting-started/installation/" "brew install tfsec"
 
 if check_command_exists "python3" "Python 3" "" "sudo apt install python3 python3-pip python3-venv -y"; then
     check_version "python3 --version" "Python 3" "$EXPECTED_PYTHON_VERSION_MAJOR" "$EXPECTED_PYTHON_VERSION_MINOR" 'Python \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
@@ -216,17 +209,17 @@ echo ""
 echo "======================================================================"
 echo "DevOps Environment Validation Summary for PROJ-103:"
 if [ "$FAIL_COUNT" -eq 0 ] && [ "$WARN_COUNT" -eq 0 ]; then
-    print_status "All checked tools are PRESENT and COMPLIANT with base versions." "OK"
+    print_status "All checked tools are PRESENT and COMPLIANT with the base versions." "OK"
 elif [ "$FAIL_COUNT" -eq 0 ] && [ "$WARN_COUNT" -gt 0 ]; then
     print_status "All essential tools are present, but $WARN_COUNT WARNING(S) remain." "WARN"
-    print_status "  This potentially includes Git configuration and the need to verify 'gh' permissions." "INFO"
+    print_status "  This may include missing Git configuration and the need to verify 'gh' permissions." "INFO"
 else
     print_status "$FAIL_COUNT critical ERROR(S) detected. $WARN_COUNT WARNING(S) also present." "FAIL"
-    print_status "Please fix the ERRORS to be able to execute PROJ-103 operations." "FAIL"
+    print_status "Please fix the ERRORS before running PROJ-103 operations." "FAIL"
 fi
-echo "Consult GenCr@ft standards for exact versions and detailed configurations."
+echo "Consult the GenCr@ft standards for exact versions and detailed configurations."
 echo "  - All standards and protocols are in: gcs-studio-handbook"
-echo "  - Specific DevOps standards are in: gcs-devops-standards"
+echo "  - Specific DevOps standards are in:   gcs-devops-standards"
 echo "======================================================================"
 
 exit $FAIL_COUNT

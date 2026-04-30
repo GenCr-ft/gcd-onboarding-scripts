@@ -58,8 +58,10 @@ if __name__ == "__main__":
         raw_input = sys.stdin.read()
         yaml_data = load_yaml_string(raw_input)
         if not yaml_data:
+            print("Error: Received empty input or invalid YAML.", file=sys.stderr)
             sys.exit(1)
-    except Exception:
+    except Exception as e:
+        print(f"Error parsing YAML: {e}", file=sys.stderr)
         sys.exit(1)
 
     env_vars = get_all_env_vars_for_role(yaml_data, target_role)

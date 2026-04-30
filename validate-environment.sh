@@ -81,10 +81,12 @@ validate_tool() {
 # Checks all tools for a given role
 validate_tools_for_role() {
     local role_name="$1"
-    mapfile -t required_tools < <(echo "$ROLE_MATRIX_YAML" | yq -r "
-        (.roles[] | select(.name == \"$role_name\") | .tools[].name?),
-        (.roles[] | select(.name == \"$role_name\") | .inherits | select(. != null) | . as \$base_role | .roles[] | select(.name == \$base_role) | .tools[].name?)
-    " | sort -u | sed '/^$/d')
+    local python_helper_script="${SCRIPT_DIR}/includes/get_role_tools.py"
+    if [ ! -f "$python_helper_script" ]; then
+        log_error "FATAL: Python helper for tools not found at $python_helper_script"
+        return 1
+    fi
+    mapfile -t required_tools < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
 
     if [[ ${#required_tools[@]} -gt 0 ]]; then
       for tool in "${required_tools[@]}"; do
@@ -96,10 +98,12 @@ validate_tools_for_role() {
 # Checks for required repositories
 validate_repos_for_role() {
     local role_name="$1"
-    mapfile -t required_repos < <(echo "$ROLE_MATRIX_YAML" | yq -r "
-        (.roles[] | select(.name == \"$role_name\") | .repositories[]?),
-        (.roles[] | select(.name == \"$role_name\") | .inherits | select(. != null) | . as \$base_role | .roles[] | select(.name == \$base_role) | .repositories[]?)
-    " | sort -u | sed '/^$/d')
+    local python_helper_script="${SCRIPT_DIR}/includes/get_role_repos.py"
+    if [ ! -f "$python_helper_script" ]; then
+        log_error "FATAL: Python helper for repos not found at $python_helper_script"
+        return 1
+    fi
+    mapfile -t required_repos < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
 
     log_info "Validating cloned repositories in $GFT_WORKSPACE..."
     if [[ ${#required_repos[@]} -gt 0 ]]; then

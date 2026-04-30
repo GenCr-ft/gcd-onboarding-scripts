@@ -59,22 +59,31 @@ install_binary_from_github() {
     local checksum_file="checksums.txt"
     local download_url="https://github.com/${repo_url}/releases/download/v${version}"
     if [[ "$tool_name" == "gft-cli" ]]; then download_url="https://github.com/${repo_url}/releases/download/gft-cli-v${version}"; fi
-    cd /tmp || return 1
-    log_info "Downloading $tool_name binary and checksums..." && curl -sSL -O "${download_url}/${release_file}" && curl -sSL -O "${download_url}/${checksum_file}"
-    log_info "Verifying checksum..."
-    if ! grep "$release_file" "$checksum_file" | sha256sum --check --status; then
-        log_error "Checksum verification failed for $tool_name." && rm -f "$release_file" "$checksum_file" && return 1
-    fi
-    log_info "Installing $tool_name..." && tar -xzf "$release_file" && mv "$bin_name_in_zip" "${install_dir}/" && chmod +x "${install_dir}/${bin_name_in_zip}"
-    rm -f "$release_file" "$checksum_file" && log_success "$tool_name $version installed to ${install_dir}/${bin_name_in_zip}"
+    (
+        cd /tmp || exit 1
+        log_info "Downloading $tool_name binary and checksums..." && curl -sSL -O "${download_url}/${release_file}" && curl -sSL -O "${download_url}/${checksum_file}"
+        log_info "Verifying checksum..."
+        if ! grep "$release_file" "$checksum_file" | sha256sum --check --status; then
+            log_error "Checksum verification failed for $tool_name." && rm -f "$release_file" "$checksum_file" && exit 1
+        fi
+        log_info "Installing $tool_name..." && tar -xzf "$release_file" && mv "$bin_name_in_zip" "${install_dir}/" && chmod +x "${install_dir}/${bin_name_in_zip}"
+        rm -f "$release_file" "$checksum_file"
+    ) || return 1
+    log_success "$tool_name $version installed to ${install_dir}/${bin_name_in_zip}"
 }
 
 install_aws_cli() {
     log_info "Installing AWS CLI v2..."
     if command -v aws &>/dev/null && [[ "$(aws --version 2>&1)" == *"aws-cli/2"* ]]; then log_info "AWS CLI v2 is already installed." && return 0; fi
-    cd /tmp || return 1
-    curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip -oq awscliv2.zip && sudo ./aws/install
-    rm -rf aws awscliv2.zip && log_success "AWS CLI v2 installed."
+    detect_os_arch
+    local aws_arch="x86_64"
+    if [[ "$GFT_ARCH" == "arm64" ]]; then aws_arch="aarch64"; fi
+    (
+        cd /tmp || exit 1
+        curl -s "https://awscli.amazonaws.com/awscli-exe-linux-${aws_arch}.zip" -o "awscliv2.zip" && unzip -oq awscliv2.zip && sudo ./aws/install
+        rm -rf aws awscliv2.zip
+    ) || return 1
+    log_success "AWS CLI v2 ($aws_arch) installed."
 }
 
 install_hook_managers() {

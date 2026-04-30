@@ -1,117 +1,117 @@
 #!/bin/bash
 
 # ==============================================================================
-# Script pour configurer l'environnement local pour OpenTofu (Gencraft IaC)
-# À utiliser par les membres de l'équipe DevOps pour des opérations manuelles.
+# Script to configure the local environment for OpenTofu (GenCr@ft IaC)
+# To be used by DevOps team members for manual operations.
 #
-# IMPORTANT - SÉCURITÉ :
-# 1. Identifiants AWS : Ce script part du principe que vous avez configuré
-#    un profil AWS CLI (via `aws configure --profile <nom-du-profil>`).
-#    C'est la méthode recommandée. N'écrivez PAS vos clés AWS ici.
-#    Pour une sécurité renforcée, explorez des outils comme `aws-vault`.
-# 2. Token GitHub : Vous serez invité à saisir votre token GitHub.
-#    Il ne sera pas stocké dans ce script.
+# IMPORTANT - SECURITY:
+# 1. AWS Credentials: This script assumes you have configured an AWS CLI profile
+#    (via `aws configure --profile <profile-name>`).
+#    This is the recommended method. Do NOT write your AWS keys here.
+#    For enhanced security, explore tools like `aws-vault`.
+# 2. GitHub Token: You will be prompted to enter your GitHub token.
+#    It will not be stored in this script.
 #
-# USAGE :
-# Pour que les variables d'environnement soient définies dans votre session
-# terminal ACTUELLE, vous devez "sourcer" ce script :
+# USAGE:
+# To ensure environment variables are defined in your CURRENT terminal session,
+# you must "source" this script:
 #
-#   source ./setup_local_tofu_env.sh
+#   source ./setup-local-tofu-env.sh
 #
-#   OU (équivalent plus court) :
+#   OR (shorter equivalent):
 #
-#   . ./setup_local_tofu_env.sh
+#   . ./setup-local-tofu-env.sh
 #
-# Après avoir sourcé le script, naviguez vers le répertoire de travail OpenTofu
-# (ex: environments/github-org) et exécutez vos commandes `tofu`.
+# After sourcing the script, navigate to the OpenTofu working directory
+# (e.g., environments/github-org) and execute your `tofu` commands.
 # ==============================================================================
 
-echo "Configuration de l'environnement OpenTofu pour Gencraft IaC (github-org)..."
+echo "Configuring OpenTofu environment for GenCr@ft IaC (github-org)..."
 echo ""
 
-# --- 1. Configuration AWS ---
+# --- 1. AWS Configuration ---
 export AWS_REGION="eu-west-3"
-export AWS_DEFAULT_REGION="eu-west-3" # Souvent utilisé par les SDK AWS
+export AWS_DEFAULT_REGION="eu-west-3" # Often used by AWS SDKs
 
-echo "[AWS] Région AWS définie sur : ${AWS_REGION}"
+echo "[AWS] AWS Region set to: ${AWS_REGION}"
 
-# Gestion du profil AWS
-# Vous pouvez décommenter et adapter cette section si vous souhaitez choisir un profil dynamiquement.
-# Sinon, assurez-vous que votre profil par défaut ou la variable AWS_PROFILE est correctement positionnée.
+# AWS Profile Management
+# You can uncomment and adapt this section if you wish to choose a profile dynamically.
+# Otherwise, ensure your default profile or the AWS_PROFILE variable is correctly set.
 #----------------------------------------------------------------------------------------------------
-# unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN # Dé-setter les clés directes si un profil est utilisé
+# unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN # Unset direct keys if a profile is used
 
 # if [ -z "$AWS_PROFILE" ]; then
-#   read -r -p "Nom du profil AWS à utiliser (laisser vide pour le profil par défaut) : " profile_name
+#   read -r -p "AWS profile name to use (leave blank for default profile): " profile_name
 #   if [ -n "$profile_name" ]; then
 #     export AWS_PROFILE="$profile_name"
-#     echo "[AWS] Utilisation du profil AWS : ${AWS_PROFILE}"
+#     echo "[AWS] Using AWS profile: ${AWS_PROFILE}"
 #   else
-#     echo "[AWS] Utilisation du profil AWS par défaut. Assurez-vous qu'il est configuré pour la région ${AWS_REGION}."
+#     echo "[AWS] Using default AWS profile. Ensure it is configured for region ${AWS_REGION}."
 #   fi
 # else
-#   echo "[AWS] Utilisation du profil AWS déjà défini dans l'environnement : ${AWS_PROFILE}"
+#   echo "[AWS] Using AWS profile already defined in environment: ${AWS_PROFILE}"
 # fi
 #----------------------------------------------------------------------------------------------------
-# Alternative (moins sécurisée, à n'utiliser qu'en dernier recours et avec prudence) :
-# Si vous ne pouvez pas utiliser de profil, vous pourriez décommenter les lignes suivantes
-# pour saisir vos clés manuellement (elles ne seront valides que pour cette session).
-# read -s -r -p "Saisir AWS Access Key ID : " aws_access_key_id_input
+# Alternative (less secure, use only as a last resort and with caution):
+# If you cannot use a profile, you could uncomment the following lines
+# to enter your keys manually (they will only be valid for this session).
+# read -s -r -p "Enter AWS Access Key ID: " aws_access_key_id_input
 # export AWS_ACCESS_KEY_ID="$aws_access_key_id_input"
 # echo ""
-# read -s -r -p "Saisir AWS Secret Access Key : " aws_secret_access_key_input
+# read -s -r -p "Enter AWS Secret Access Key: " aws_secret_access_key_input
 # export AWS_SECRET_ACCESS_KEY="$aws_secret_access_key_input"
 # echo ""
-# read -s -r -p "Saisir AWS Session Token (si applicable, sinon laisser vide) : " aws_session_token_input
+# read -s -r -p "Enter AWS Session Token (if applicable, otherwise leave blank): " aws_session_token_input
 # if [ -n "$aws_session_token_input" ]; then
 #   export AWS_SESSION_TOKEN="$aws_session_token_input"
 # fi
-# echo "[AWS] Identifiants AWS saisis manuellement (pour cette session uniquement)."
+# echo "[AWS] AWS credentials entered manually (for this session only)."
 #----------------------------------------------------------------------------------------------------
 
-echo "[AWS] Assurez-vous que vos identifiants AWS sont accessibles (via profil ou autre méthode sécurisée)."
+echo "[AWS] Ensure your AWS credentials are accessible (via profile or other secure method)."
 echo ""
 
-# --- 2. Token GitHub pour le Provider OpenTofu ---
-# Ce token nécessite le scope "repo" pour gérer les dépôts privés.
+# --- 2. GitHub Token for OpenTofu Provider ---
+# This token requires the "repo" scope to manage private repositories.
 if [[ -z "${TF_VAR_github_token}" ]]; then
-    echo "[GitHub] Le token GitHub (TF_VAR_github_token) n'est pas défini."
-    read -s -r -p "Veuillez saisir votre token d'accès personnel GitHub : " github_token_input
+    echo "[GitHub] The GitHub token (TF_VAR_github_token) is not defined."
+    read -s -r -p "Please enter your GitHub Personal Access Token: " github_token_input
     export TF_VAR_github_token="$github_token_input"
-    echo "" # Nouvelle ligne après la saisie du mot de passe
+    echo "" # New line after password input
     if [ -n "$TF_VAR_github_token" ]; then
-        echo "[GitHub] Token GitHub (TF_VAR_github_token) configuré pour cette session."
+        echo "[GitHub] GitHub token (TF_VAR_github_token) configured for this session."
     else
-        echo "::warning::[GitHub] Aucun token GitHub n'a été fourni. Les opérations OpenTofu nécessitant une authentification GitHub risquent d'échouer."
+        echo "::warning::[GitHub] No GitHub token was provided. OpenTofu operations requiring GitHub authentication may fail."
     fi
 else
-    echo "[GitHub] Token GitHub (TF_VAR_github_token) est déjà configuré dans cette session."
+    echo "[GitHub] GitHub token (TF_VAR_github_token) is already configured in this session."
 fi
 echo ""
 
-# --- 3. Variables OpenTofu Backend (pour information) ---
-# Ces valeurs sont normalement lues depuis la configuration `backend "s3" {}`
-# dans vos fichiers .tf (ex: backend.tf ou main.tf).
-# Il n'est généralement pas nécessaire de les exporter ici si `tofu init` est correctement exécuté.
+# --- 3. OpenTofu Backend Variables (for information) ---
+# These values are normally read from the `backend "s3" {}` configuration
+# in your .tf files (e.g., backend.tf or main.tf).
+# It is generally not necessary to export them here if `tofu init` is correctly executed.
 # local TF_STATE_BUCKET_INFO="gft-ai-tfstate-eu-west-3"
 # local TF_STATE_KEY_INFO="github-org/terraform.tfstate"
 # local TF_DYNAMODB_TABLE_INFO="gft-ai-tfstate-lock-eu-west-3"
 # echo "[OpenTofu Backend Info]"
-# echo "  Bucket S3    : ${TF_STATE_BUCKET_INFO}"
-# echo "  Clé d'état   : ${TF_STATE_KEY_INFO}"
-# echo "  Table DynamoDB: ${TF_DYNAMODB_TABLE_INFO}"
+# echo "  S3 Bucket     : ${TF_STATE_BUCKET_INFO}"
+# echo "  State key     : ${TF_STATE_KEY_INFO}"
+# echo "  DynamoDB Table: ${TF_DYNAMODB_TABLE_INFO}"
 # echo ""
 
-# --- Résumé ---
+# --- Summary ---
 echo "-----------------------------------------------------------------------"
-echo "Variables d'environnement configurées pour OpenTofu (partiel) :"
+echo "Environment variables configured for OpenTofu (partial):"
 echo "  AWS_REGION          : ${AWS_REGION}"
 echo "  AWS_DEFAULT_REGION  : ${AWS_DEFAULT_REGION}"
 # if [ -n "$AWS_PROFILE" ]; then echo "  AWS_PROFILE         : ${AWS_PROFILE}"; fi
-echo "  TF_VAR_github_token : ${TF_VAR_github_token:+"******** (défini)"}"
+echo "  TF_VAR_github_token : ${TF_VAR_github_token:+"******** (defined)"}"
 echo "-----------------------------------------------------------------------"
 echo ""
-echo "Configuration de l'environnement terminée."
-echo "N'oubliez pas de naviguer vers le répertoire de travail approprié"
-echo "(ex: 'cd environments/github-org') avant de lancer 'tofu init'."
-echo "Pour rappel, ce script doit être sourcé : '. ./setup_local_tofu_env.sh'"
+echo "Environment configuration complete."
+echo "Don't forget to navigate to the appropriate working directory"
+echo "(e.g., 'cd environments/github-org') before running 'tofu init'."
+echo "As a reminder, this script must be sourced: '. ./setup-local-tofu-env.sh'"

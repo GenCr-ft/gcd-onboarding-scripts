@@ -68,7 +68,7 @@ log_error() {
 confirm_action() {
     local prompt="$1"
     while true; do
-        read -p -r "$prompt [y/N]: " response
+        read -r -p "$prompt [y/N]: " response
         case "$response" in
             [Yy]* ) return 0;;
             [Nn]*|"" ) return 1;;

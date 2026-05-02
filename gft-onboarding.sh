@@ -16,7 +16,7 @@
 #   ./gft-onboarding.sh
 #
 # Dependencies:
-#   - Sources includes/01_helpers.sh, 02_installers.sh, 03_configuration.sh
+#   - Sources includes/01_helpers.sh, 02_installers.sh, 03_configuration.sh, 04_pcg_setup.sh
 #   - External commands: git, curl, yq, python3
 # --- Script Configuration and Robustness ---
 set -e
@@ -38,6 +38,8 @@ source "${INCLUDES_DIR}/01_helpers.sh"
 source "${INCLUDES_DIR}/02_installers.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/03_configuration.sh"
+# shellcheck disable=SC1091
+source "${INCLUDES_DIR}/04_pcg_setup.sh"
 
 # --- Logging Setup ---
 setup_log_stream() {
@@ -76,6 +78,7 @@ main() {
     configure_environment_variables "$selected_role_name"
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
+    setup_pcg_python_venv "$selected_role_name"
 
     # --- Final Tooling Configuration ---
     configure_gft_cli

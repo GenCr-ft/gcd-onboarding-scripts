@@ -145,14 +145,18 @@ install_wasm_bindgen_cli() {
 }
 
 
-# Installs the gft unified CLI from the cloned gcs-plt-tools source via pipx.
-# pipx gives gft a global, isolated entry point without polluting the system Python.
+# Installs the gft unified CLI from the cloned gcs-plt-tools source into a
+# dedicated, isolated virtual environment at ~/.local/share/gft/venv.
+# A symlink at ~/.local/bin/gft points to the venv entry point so the command
+# is available on PATH without touching the system or user Python environment.
 install_gft_cli() {
     local plt_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}/gcs-plt-tools"
     local gft_pkg="${plt_root}/services/gft"
+    local gft_venv="$HOME/.local/share/gft/venv"
+    local gft_bin="$HOME/.local/bin/gft"
 
-    if command -v gft &>/dev/null; then
-        log_info "gft is already installed: $(gft version 2>/dev/null || echo 'unknown version')"
+    if [[ -x "$gft_bin" ]] && "$gft_bin" version &>/dev/null; then
+        log_info "gft is already installed: $("$gft_bin" version)"
         return 0
     fi
 
@@ -161,28 +165,23 @@ install_gft_cli() {
         return 1
     fi
 
-    # Prefer pipx for isolated, globally-accessible entry point.
-    if ! command -v pipx &>/dev/null; then
-        log_info "pipx not found — installing via pip..."
-        python3 -m pip install --user pipx
-        python3 -m pipx ensurepath
-        # Reload PATH so pipx is usable in this session.
-        export PATH="$HOME/.local/bin:$PATH"
-    fi
+    log_info "Creating isolated venv at $gft_venv ..."
+    python3 -m venv "$gft_venv"
 
-    if command -v pipx &>/dev/null; then
-        log_info "Installing gft via pipx from $gft_pkg ..."
-        pipx install "$gft_pkg" --force
-    else
-        # Fallback: editable user install (no PATH manipulation needed if ~/.local/bin is on PATH).
-        log_warn "pipx unavailable after install attempt — falling back to pip install --user."
-        python3 -m pip install --user -e "$gft_pkg"
-    fi
+    log_info "Installing gft into venv from $gft_pkg ..."
+    "$gft_venv/bin/pip" install --quiet "$gft_pkg"
 
-    if command -v gft &>/dev/null; then
-        log_success "gft installed: $(gft version)"
+    log_info "Linking $gft_venv/bin/gft → $gft_bin ..."
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$gft_venv/bin/gft" "$gft_bin"
+
+    # Ensure ~/.local/bin is on PATH for the remainder of this session.
+    export PATH="$HOME/.local/bin:$PATH"
+
+    if "$gft_bin" version &>/dev/null; then
+        log_success "gft installed: $("$gft_bin" version)"
     else
-        log_error "gft installation failed. Add \$(python3 -m site --user-base)/bin to PATH and retry."
+        log_error "gft installation failed — check $gft_venv for errors."
         return 1
     fi
 }

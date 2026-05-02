@@ -247,8 +247,11 @@ configure_gft_cli() {
         fi
         for var_assignment in "GFT_PLT_ROOT=${plt_root}" "GFT_WORKSPACE=${workspace}"; do
             local var_name="${var_assignment%%=*}"
-            if grep -qF "export ${var_name}=" "$shell_profile_file"; then
-                log_info "${var_name} is already in shell profile."
+            if grep -qF "export ${var_assignment}" "$shell_profile_file"; then
+                log_info "${var_name} is already set to the correct value."
+            elif grep -qF "export ${var_name}=" "$shell_profile_file"; then
+                sed -i "s|^export ${var_name}=.*$|export ${var_assignment}|" "$shell_profile_file"
+                log_info "Updated ${var_name} in $shell_profile_file"
             else
                 sed -i "s|^${end_marker}$|export ${var_assignment}\n${end_marker}|" "$shell_profile_file"
                 log_info "Added export ${var_assignment} to $shell_profile_file"

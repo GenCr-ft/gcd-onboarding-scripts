@@ -145,6 +145,47 @@ install_wasm_bindgen_cli() {
 }
 
 
+# Installs the gft unified CLI from the cloned gcs-plt-tools source into a
+# dedicated, isolated virtual environment at ~/.local/share/gft/venv.
+# A symlink at ~/.local/bin/gft points to the venv entry point so the command
+# is available on PATH without touching the system or user Python environment.
+install_gft_cli() {
+    local plt_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}/gcs-plt-tools"
+    local gft_pkg="${plt_root}/services/gft"
+    local gft_venv="$HOME/.local/share/gft/venv"
+    local gft_bin="$HOME/.local/bin/gft"
+
+    if [[ -x "$gft_bin" ]] && "$gft_bin" version &>/dev/null; then
+        log_info "gft is already installed: $("$gft_bin" version)"
+        return 0
+    fi
+
+    if [[ ! -d "$gft_pkg" ]]; then
+        log_error "gft package not found at $gft_pkg — ensure gcs-plt-tools is cloned first."
+        return 1
+    fi
+
+    log_info "Creating isolated venv at $gft_venv ..."
+    python3 -m venv "$gft_venv"
+
+    log_info "Installing gft into venv from $gft_pkg ..."
+    "$gft_venv/bin/pip" install --quiet "$gft_pkg"
+
+    log_info "Linking $gft_venv/bin/gft → $gft_bin ..."
+    mkdir -p "$HOME/.local/bin"
+    ln -sf "$gft_venv/bin/gft" "$gft_bin"
+
+    # Ensure ~/.local/bin is on PATH for the remainder of this session.
+    export PATH="$HOME/.local/bin:$PATH"
+
+    if "$gft_bin" version &>/dev/null; then
+        log_success "gft installed: $("$gft_bin" version)"
+    else
+        log_error "gft installation failed — check $gft_venv for errors."
+        return 1
+    fi
+}
+
 # --- Main Installation Dispatcher ---
 install_tool() {
     local tool_from_matrix="$1"
@@ -160,7 +201,7 @@ install_tool() {
         node-lts) version=$(get_ssot_tool_version "nodejs"); [ -n "$version" ] && install_node "$version" || log_warn "No version for 'nodejs' in SSoT.";;
         python) version=$(get_ssot_tool_version "python"); [ -n "$version" ] && install_python "$version" || log_warn "No version for 'python' in SSoT.";;
         opentofu) version=$(get_ssot_tool_version "opentofu"); [ -n "$version" ] && install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu" || log_warn "No version for 'opentofu' in SSoT.";;
-        gft-cli) version=$(get_ssot_tool_version "gft-cli"); [ -n "$version" ] && install_binary_from_github "gft-cli" "$version" "GenCr-ft/gft-cli" "gft" || log_warn "No version for 'gft-cli' in SSoT.";;
+        gft-cli) install_gft_cli ;;
         aws-cli) install_aws_cli ;;
         git-hooks-managers) install_hook_managers ;;
         rustup) install_rustup ;;

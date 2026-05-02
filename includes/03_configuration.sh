@@ -218,30 +218,61 @@ clone_repositories_for_role() {
 }
 
 
-# Configures the gft-cli tool by running its setup command.
+# Writes GFT_PLT_ROOT and GFT_WORKSPACE into the shell profile so gft can
+# locate gcs-plt-tools without relying on the file-tree heuristic.
 configure_gft_cli() {
-    if ! command -v gft &> /dev/null; then
-        log_warn "gft-cli command not found. Skipping its configuration. Please ensure it was installed correctly."
+    if ! command -v gft &>/dev/null; then
+        log_warn "gft command not found — skipping environment configuration. Re-run after installing gft."
         return
     fi
 
-    log_info "Running gft-cli first-time setup..."
-    # This command should be interactive and guide the user.
-    gft config setup
-    log_success "gft-cli configuration complete."
+    log_info "Configuring gft CLI environment variables..."
+
+    local plt_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}/gcs-plt-tools"
+    local workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+
+    local shell_profile_file=""
+    if [ -n "${BASH_VERSION:-}" ]; then
+        shell_profile_file="$HOME/.bashrc"
+    elif [ -n "${ZSH_VERSION:-}" ]; then
+        shell_profile_file="$HOME/.zshrc"
+    fi
+
+    if [ -n "$shell_profile_file" ]; then
+        local start_marker="# GENCRAFT ENVIRONMENT - START"
+        local end_marker="# GENCRAFT ENVIRONMENT - END"
+        touch "$shell_profile_file"
+        if ! grep -qF "$start_marker" "$shell_profile_file"; then
+            echo -e "\n$start_marker\n# Managed by gft-onboarding.sh — do not edit manually.\n$end_marker" >> "$shell_profile_file"
+        fi
+        for var_assignment in "GFT_PLT_ROOT=${plt_root}" "GFT_WORKSPACE=${workspace}"; do
+            local var_name="${var_assignment%%=*}"
+            if grep -qF "export ${var_name}=" "$shell_profile_file"; then
+                log_info "${var_name} is already in shell profile."
+            else
+                sed -i "s|^${end_marker}$|export ${var_assignment}\n${end_marker}|" "$shell_profile_file"
+                log_info "Added export ${var_assignment} to $shell_profile_file"
+            fi
+        done
+    fi
+
+    # Export for the remainder of this session.
+    export GFT_PLT_ROOT="$plt_root"
+    export GFT_WORKSPACE="$workspace"
+
+    log_success "gft CLI configured. GFT_PLT_ROOT=$plt_root"
 }
 
 final_validation() {
     log_info "Executing final validation checks..."
 
     local gft_status=0
-    if command -v gft &> /dev/null; then
-        # Note: gft config setup is also called in configure_gft_cli earlier in the pipeline.
-        if gft config status; then
-            log_success "gft-cli reported successful configuration."
+    if command -v gft &>/dev/null; then
+        if gft version &>/dev/null; then
+            log_success "gft-cli is installed: $(gft version)"
         else
             gft_status=$?
-            log_error "gft config setup encountered issues (exit $gft_status)."
+            log_error "gft version failed (exit $gft_status)."
         fi
     else
         log_warn "gft-cli is not available; skipping its validation."

@@ -145,6 +145,48 @@ install_wasm_bindgen_cli() {
 }
 
 
+# Installs the gft unified CLI from the cloned gcs-plt-tools source via pipx.
+# pipx gives gft a global, isolated entry point without polluting the system Python.
+install_gft_cli() {
+    local plt_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}/gcs-plt-tools"
+    local gft_pkg="${plt_root}/services/gft"
+
+    if command -v gft &>/dev/null; then
+        log_info "gft is already installed: $(gft version 2>/dev/null || echo 'unknown version')"
+        return 0
+    fi
+
+    if [[ ! -d "$gft_pkg" ]]; then
+        log_error "gft package not found at $gft_pkg — ensure gcs-plt-tools is cloned first."
+        return 1
+    fi
+
+    # Prefer pipx for isolated, globally-accessible entry point.
+    if ! command -v pipx &>/dev/null; then
+        log_info "pipx not found — installing via pip..."
+        python3 -m pip install --user pipx
+        python3 -m pipx ensurepath
+        # Reload PATH so pipx is usable in this session.
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+
+    if command -v pipx &>/dev/null; then
+        log_info "Installing gft via pipx from $gft_pkg ..."
+        pipx install "$gft_pkg" --force
+    else
+        # Fallback: editable user install (no PATH manipulation needed if ~/.local/bin is on PATH).
+        log_warn "pipx unavailable after install attempt — falling back to pip install --user."
+        python3 -m pip install --user -e "$gft_pkg"
+    fi
+
+    if command -v gft &>/dev/null; then
+        log_success "gft installed: $(gft version)"
+    else
+        log_error "gft installation failed. Add \$(python3 -m site --user-base)/bin to PATH and retry."
+        return 1
+    fi
+}
+
 # --- Main Installation Dispatcher ---
 install_tool() {
     local tool_from_matrix="$1"
@@ -160,7 +202,7 @@ install_tool() {
         node-lts) version=$(get_ssot_tool_version "nodejs"); [ -n "$version" ] && install_node "$version" || log_warn "No version for 'nodejs' in SSoT.";;
         python) version=$(get_ssot_tool_version "python"); [ -n "$version" ] && install_python "$version" || log_warn "No version for 'python' in SSoT.";;
         opentofu) version=$(get_ssot_tool_version "opentofu"); [ -n "$version" ] && install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu" || log_warn "No version for 'opentofu' in SSoT.";;
-        gft-cli) version=$(get_ssot_tool_version "gft-cli"); [ -n "$version" ] && install_binary_from_github "gft-cli" "$version" "GenCr-ft/gft-cli" "gft" || log_warn "No version for 'gft-cli' in SSoT.";;
+        gft-cli) install_gft_cli ;;
         aws-cli) install_aws_cli ;;
         git-hooks-managers) install_hook_managers ;;
         rustup) install_rustup ;;

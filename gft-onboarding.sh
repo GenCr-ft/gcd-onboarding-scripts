@@ -76,6 +76,7 @@ main() {
     configure_environment_variables "$selected_role_name"
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
+    setup_pcg_python_venv "$selected_role_name"
 
     # --- Final Tooling Configuration ---
     configure_gft_cli
@@ -93,5 +94,8 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     setup_log_stream
     trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
+    main
+fi
+t 1' ERR
     main
 fi

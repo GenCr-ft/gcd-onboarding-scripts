@@ -16,7 +16,7 @@
 #   ./gft-onboarding.sh
 #
 # Dependencies:
-#   - Sources includes/01_helpers.sh, 02_installers.sh, 03_configuration.sh
+#   - Sources includes/01_helpers.sh, 02_installers.sh, 03_configuration.sh, 04_pcg_setup.sh
 #   - External commands: git, curl, yq, python3
 # --- Script Configuration and Robustness ---
 set -e
@@ -38,6 +38,8 @@ source "${INCLUDES_DIR}/01_helpers.sh"
 source "${INCLUDES_DIR}/02_installers.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/03_configuration.sh"
+# shellcheck disable=SC1091
+source "${INCLUDES_DIR}/04_pcg_setup.sh"
 
 # --- Logging Setup ---
 setup_log_stream() {
@@ -94,8 +96,5 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     setup_log_stream
     trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
-    main
-fi
-t 1' ERR
     main
 fi

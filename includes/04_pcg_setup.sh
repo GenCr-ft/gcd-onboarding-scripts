@@ -4,7 +4,7 @@
 # Title: Onboarding Script - PCG Research Environment Setup
 # Author(s): AI Gemini CLI
 # Creation Date: 2026-05-02
-# Version: 1.0.0
+# Version: 1.0.1
 #
 # Description:
 #   This script automates the setup of the Python research environment for the
@@ -29,17 +29,21 @@ setup_pcg_python_venv() {
         return 0
     fi
 
+    # Check for python3-venv module availability
     if ! python3 -m venv --help > /dev/null 2>&1; then
-        log_error "python3-venv is not installed. Please run: sudo apt update && sudo apt install -y python3.12-venv"
+        log_error "python3-venv is not installed. Please install it with your system's package manager (e.g., 'sudo apt install python3-venv')."
         return 1
     fi
 
     (
         cd "$pcg_dir" || exit 1
-        if [ -d ".pcg" ]; then
-            log_info "PCG virtual environment already exists. Updating dependencies..."
+        
+        # Robust check: does the binary exist and is it executable?
+        if [ -x ".pcg/bin/python3" ]; then
+            log_info "PCG virtual environment already exists and is functional. Updating dependencies..."
         else
             log_info "Creating PCG virtual environment in $pcg_dir/.pcg..."
+            rm -rf .pcg # Cleanup any corrupted state
             python3 -m venv .pcg
         fi
         

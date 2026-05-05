@@ -40,6 +40,8 @@ source "${INCLUDES_DIR}/02_installers.sh"
 source "${INCLUDES_DIR}/03_configuration.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/04_pcg_setup.sh"
+# shellcheck disable=SC1091
+source "${INCLUDES_DIR}/05_agent_bootstrap.sh"
 
 # --- Logging Setup ---
 setup_log_stream() {

@@ -19,6 +19,17 @@
 #   Functions from 01_helpers.sh.
 #   External commands: git, ssh-keygen, gh, code.
 
+# Cross-platform sed in-place helper.
+# 'sed -i' requires an empty-string backup extension on macOS but not on Linux.
+# Usage: _sed_inplace "s/old/new/" file
+_sed_inplace() {
+    if [[ "${GFT_OS:-linux}" == "darwin" ]]; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 # Configures global Git user name and email
 configure_git() {
     log_info "Configuring Git..."
@@ -250,10 +261,10 @@ configure_gft_cli() {
             if grep -qF "export ${var_assignment}" "$shell_profile_file"; then
                 log_info "${var_name} is already set to the correct value."
             elif grep -qF "export ${var_name}=" "$shell_profile_file"; then
-                sed -i "s|^export ${var_name}=.*$|export ${var_assignment}|" "$shell_profile_file"
+                _sed_inplace "s|^export ${var_name}=.*$|export ${var_assignment}|" "$shell_profile_file"
                 log_info "Updated ${var_name} in $shell_profile_file"
             else
-                sed -i "s|^${end_marker}$|export ${var_assignment}\n${end_marker}|" "$shell_profile_file"
+                _sed_inplace "s|^${end_marker}$|export ${var_assignment}\n${end_marker}|" "$shell_profile_file"
                 log_info "Added export ${var_assignment} to $shell_profile_file"
             fi
         done
@@ -382,7 +393,7 @@ configure_environment_variables() {
             # This avoids the corruption caused by grep -vF which would strip every
             # occurrence of the end marker in the file, moving post-block content
             # into the managed block.
-            sed -i "s|^${end_marker}$|export ${var_name}=${var_value}\n${end_marker}|" "$shell_profile_file"
+            _sed_inplace "s|^${end_marker}$|export ${var_name}=${var_value}\n${end_marker}|" "$shell_profile_file"
 
             if [[ "$var_name" == "GFT_PROJECTS_HOME" ]]; then
                 local evaluated_path

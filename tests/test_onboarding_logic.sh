@@ -320,6 +320,21 @@ test_environment_variable_idempotency() {
     log_success "Environment variable configuration is idempotent."
 }
 
+test_validate_env_has_set_e() {
+    log_info "[TEST SUITE 9] Testing validate-environment.sh has set -e..."
+    local checks_failed=0
+    local script="${PROJECT_ROOT}/validate-environment.sh"
+
+    # Verify set -e or set -euo pipefail is present
+    if ! grep -qE "^set -[a-z]*e[a-z]*( |$)|^set -euo pipefail" "$script"; then
+        log_error "FAIL (Robustness): 'set -e' is not present in validate-environment.sh."
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "validate-environment.sh has set -e: PASSED"
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -339,6 +354,7 @@ main() {
     test_environment_variable_idempotency || ((failed_suites++))
     test_path_expansion_no_eval || ((failed_suites++))
     test_sed_inplace_portability || ((failed_suites++))
+    test_validate_env_has_set_e || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

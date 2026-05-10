@@ -1,3 +1,9 @@
+---
+docId: ENG-AGENT-009
+title: Agent Guide for gcd-onboarding-scripts
+lifecycle-stage: approved
+knowledgeGuardian: Architecture Lead
+---
 # AGENTS.md — gcd-onboarding-scripts
 
 ## Project Overview

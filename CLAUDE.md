@@ -1,3 +1,9 @@
+---
+docId: ENG-CLAUDE-009
+title: Claude Guide for gcd-onboarding-scripts
+lifecycle-stage: approved
+knowledgeGuardian: Architecture Lead
+---
 # CLAUDE.md — gcd-onboarding-scripts
 
 ## Project Overview

@@ -1,34 +1,8 @@
 ---
 docId: ENG-READ-009
-title: gcd-onboarding-scripts
-version: 0.1.1
-authors:
-- GCS DevOps Enablement Guild
-- AI Compliance Agent
-reviewers: []
-creation_date: '2025-06-26'
-last_updated_date: '2026-05-10'
-knowledgeGuardian:
-- Béatrice (GCT-MGT-SPM-001)
-language: en
-summary: >
-  Approved Single Source of Truth (SSoT) for onboarding developers (human or AI) 
-  into GenCr@t Studio. Automates environment configuration via gcs-devops-standards.
-metadata:
-  lifecycle-stage: approved
-  keywords:
-  - onboarding
-  - dev-environment
-  - automation
-  - bash
-  - ssot
-  scope: project-platform
-  domain: engineering
-  doc-type: readme
-  intended-audience:
-  - contributors
-  - ai-agents
-  security-classification: l2_confidential
+title: GenCr@t Studio Onboarding Scripts
+lifecycle-stage: approved
+knowledgeGuardian: Architecture Lead
 ---
 # GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
 

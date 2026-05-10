@@ -386,7 +386,16 @@ configure_environment_variables() {
 
             if [[ "$var_name" == "GFT_PROJECTS_HOME" ]]; then
                 local evaluated_path
-                eval evaluated_path=${var_value//\"/}
+                # Safe expansion: strip quotes, then replace ~ or literal $HOME with $HOME.
+                # eval is intentionally avoided here to prevent shell injection.
+                local stripped="${var_value//\"/}"
+                if [[ "$stripped" == '~'* ]]; then
+                    evaluated_path="${HOME}${stripped:1}"
+                elif [[ "$stripped" == '$HOME'* ]]; then
+                    evaluated_path="${HOME}${stripped:5}"
+                else
+                    evaluated_path="$stripped"
+                fi
                 log_info "Creating workspace directory at $evaluated_path..."
                 mkdir -p "$evaluated_path"
             fi

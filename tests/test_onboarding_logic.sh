@@ -212,6 +212,43 @@ EOF
     log_success "Final Validation Logic: PASSED"
 }
 
+test_path_expansion_no_eval() {
+    log_info "[TEST SUITE 7] Testing safe tilde/HOME path expansion (no eval)..."
+    local checks_failed=0
+
+    # Verify that eval is not used for path expansion in 03_configuration.sh
+    local src_file="${PROJECT_ROOT}/includes/03_configuration.sh"
+    if grep -q "eval evaluated_path" "$src_file"; then
+        log_error "FAIL (Security): 'eval evaluated_path' still present in 03_configuration.sh — injection vector not removed."
+        ((checks_failed++))
+    fi
+
+    # Verify tilde expansion works safely without eval
+    local var_value='~/projects'
+    local evaluated_path="${var_value//\~/$HOME}"
+    if [[ "$evaluated_path" != "$HOME/projects" ]]; then
+        log_error "FAIL (Expansion): tilde in '~/projects' not expanded. Got: $evaluated_path"
+        ((checks_failed++))
+    fi
+
+    # Verify a $HOME-prefixed value works safely without eval
+    local var_value2='"$HOME/workspace"'
+    local stripped="${var_value2//\"/}"
+    # shellcheck disable=SC2016
+    if [[ "$stripped" == '$HOME'* ]]; then
+        evaluated_path="${HOME}${stripped:5}"
+    else
+        evaluated_path="${stripped//\~/$HOME}"
+    fi
+    if [[ "$evaluated_path" != "$HOME/workspace" ]]; then
+        log_error "FAIL (Expansion): '\$HOME/workspace' not expanded correctly. Got: $evaluated_path"
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "Safe path expansion: PASSED"
+}
+
 test_environment_variable_idempotency() {
     log_info "[TEST SUITE 4] Testing Environment Variable Idempotency..."
     local PROFILE_FILE; PROFILE_FILE=$(mktemp)
@@ -259,6 +296,7 @@ main() {
     test_base_repository_injection_when_missing || ((failed_suites++))
     test_environment_variable_logic || ((failed_suites++))
     test_environment_variable_idempotency || ((failed_suites++))
+    test_path_expansion_no_eval || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

@@ -249,6 +249,47 @@ test_path_expansion_no_eval() {
     log_success "Safe path expansion: PASSED"
 }
 
+test_sed_inplace_portability() {
+    log_info "[TEST SUITE 8] Testing _sed_inplace portability helper..."
+    local checks_failed=0
+
+    # Verify that _sed_inplace function is defined (not just bare sed -i calls)
+    if ! declare -f _sed_inplace > /dev/null 2>&1; then
+        log_error "FAIL (Portability): '_sed_inplace' helper function is not defined."
+        ((checks_failed++))
+    fi
+
+    # Verify no bare 'sed -i' calls remain in 03_configuration.sh
+    local src_file="${PROJECT_ROOT}/includes/03_configuration.sh"
+    # Allow 'sed -i' only inside the _sed_inplace function definition itself
+    local bare_sed_count
+    bare_sed_count=$(grep -c "sed -i " "$src_file" || true)
+    local helper_sed_count
+    helper_sed_count=$(grep -c "_sed_inplace" "$src_file" || true)
+    # bare_sed_count should equal 2 (the two lines inside _sed_inplace definition)
+    # if there are more, there are un-wrapped sed -i calls
+    if [[ "$bare_sed_count" -gt 2 ]]; then
+        log_error "FAIL (Portability): Found $bare_sed_count 'sed -i' occurrences in 03_configuration.sh; expected at most 2 (inside helper). Un-wrapped calls remain."
+        ((checks_failed++))
+    fi
+
+    # Functional test: _sed_inplace performs substitution on a temp file
+    if declare -f _sed_inplace > /dev/null 2>&1; then
+        local tmp_file; tmp_file=$(mktemp)
+        trap "rm -f '$tmp_file'; trap - RETURN" RETURN
+        printf 'Hello World\n' > "$tmp_file"
+        _sed_inplace "s/World/Gencraft/" "$tmp_file"
+        local result; result=$(< "$tmp_file")
+        if [[ "$result" != "Hello Gencraft" ]]; then
+            log_error "FAIL (Portability): _sed_inplace substitution produced '$result', expected 'Hello Gencraft'."
+            ((checks_failed++))
+        fi
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "sed inplace portability: PASSED"
+}
+
 test_environment_variable_idempotency() {
     log_info "[TEST SUITE 4] Testing Environment Variable Idempotency..."
     local PROFILE_FILE; PROFILE_FILE=$(mktemp)
@@ -297,6 +338,7 @@ main() {
     test_environment_variable_logic || ((failed_suites++))
     test_environment_variable_idempotency || ((failed_suites++))
     test_path_expansion_no_eval || ((failed_suites++))
+    test_sed_inplace_portability || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

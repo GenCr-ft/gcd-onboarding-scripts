@@ -11,8 +11,7 @@
 # ==============================================================================
 
 # --- Script Configuration and Robustness ---
-set -u
-set -o pipefail
+set -euo pipefail
 
 # --- Global Variables ---
 # These are identical to the main onboarding script to ensure consistency

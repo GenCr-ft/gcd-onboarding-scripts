@@ -7,7 +7,7 @@
 # Exit: 0 = all tests passed, non-zero = failure
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 cd "$SCRIPT_DIR"
 
 for arg in "$@"; do
@@ -24,9 +24,9 @@ FAILED=0
 TEST_COUNT=0
 
 for test_file in tests/test_*.sh; do
-  if [ ! -f "$test_file" ]; then
-    echo "  (no test_*.sh files found in tests/)"
-    break
+  if [[ ! -f "$test_file" ]]; then
+    echo "  Error: No test files found in tests/" >&2
+    exit 1
   fi
   TEST_COUNT=$((TEST_COUNT + 1))
   echo "  Running $test_file ..."
@@ -39,7 +39,7 @@ for test_file in tests/test_*.sh; do
 done
 
 echo ""
-if [ "$FAILED" -eq 0 ]; then
+if [[ "$FAILED" -eq 0 ]]; then
   echo "✓ All tests passed ($TEST_COUNT test file(s) run)."
 else
   echo "✗ One or more tests failed." >&2

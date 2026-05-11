@@ -15,7 +15,7 @@ Cross-platform developer onboarding orchestration for GenCr@ft Studio. The main 
 
 | Task | Command |
 |------|---------|
-| Run unit tests | `./test.sh` |
+| Run unit tests | `bash test.sh` |
 | Run onboarding (Linux/macOS) | `bash gft-onboarding.sh [--role <role-name>]` |
 | Validate environment | `bash validate-environment.sh` |
 | Validate DevOps env | `bash validate-devops-environment.sh` |

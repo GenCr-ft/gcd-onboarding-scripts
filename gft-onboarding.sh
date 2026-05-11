@@ -4,8 +4,8 @@
 # Title: GenCr@t Studio - Onboarding Script V2 (Main Orchestrator)
 # Author(s): Gem-BB (Camille)
 # Creation Date: 2025-06-09
-# Last Modified Date: 2025-06-26
-# Version: 2.2.0
+# Last Modified Date: 2026-05-11
+# Version: 2.3.0
 #
 # Description:
 #   This script is the main entry point for the GenCr@t developer onboarding process.
@@ -42,6 +42,8 @@ source "${INCLUDES_DIR}/03_configuration.sh"
 source "${INCLUDES_DIR}/04_pcg_setup.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/05_agent_bootstrap.sh"
+# shellcheck disable=SC1091
+source "${INCLUDES_DIR}/06_workspace_files.sh"
 
 # --- Logging Setup ---
 setup_log_stream() {
@@ -80,6 +82,7 @@ main() {
     configure_environment_variables "$selected_role_name"
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
+    deploy_workspace_files
     setup_pcg_python_venv "$selected_role_name"
 
     # --- Final Tooling Configuration ---

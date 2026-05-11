@@ -135,6 +135,16 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
     cd "$GFT_PROJECTS_HOME/gcs-devops-standards" && pre-commit run --all-files
     ```
 
+## Development & Testing
+
+Contributors working on this repo can run the test suite without going through the full onboarding flow:
+
+```bash
+bash test.sh   # discovers and runs all tests/test_*.sh files
+```
+
+There is no `onboard.sh` in this repo — it *is* the onboarding system.
+
 ## Troubleshooting & Support
 
 ### Common Issues

@@ -11,6 +11,16 @@ Cross-platform developer onboarding orchestration for GenCr@ft Studio. The main 
 - Internet access (or internal mirror) for tool downloads
 - `gcs-devops-standards` must be accessible (pulled at runtime for role matrix and version pins)
 
+## Quick Commands
+
+| Task | Command |
+|------|---------|
+| Run unit tests | `bash test.sh` |
+| Run onboarding (Linux/macOS) | `bash gft-onboarding.sh [--role <role-name>]` |
+| Validate environment | `bash validate-environment.sh` |
+| Validate DevOps env | `bash validate-devops-environment.sh` |
+| Configure OpenTofu env | `bash setup-local-tofu-env.sh` |
+
 ## Usage
 
 ```bash

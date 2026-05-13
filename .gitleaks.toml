@@ -3,7 +3,7 @@
 [extend]
 useDefault = true
 
-[[allowlists]]
+[allowlist]
 description = "Test fixtures and example values"
 paths = [
     '''(^|/)tests?/''',

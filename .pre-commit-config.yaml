@@ -37,7 +37,6 @@ repos:
     hooks:
       - id: gitleaks
 
-
   # ===== Documentation Quality (Spelling) =====
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0

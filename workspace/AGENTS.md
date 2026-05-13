@@ -430,13 +430,30 @@ Every identified gap, defect, or action item — found during code review, audit
 | Design / planning items | `gcs-project-management` |
 | Platform items | affected platform repo (`gcs-plt-tools`, `gcs-plt-architecture`, etc.) |
 
-After creating the issue, always add it to Project #16:
-
 ```bash
+# 1. Create the issue (route per table above)
+# --repo options:
+#   Engineering / game bugs → GenCr-ft/gcp-aethel-backlog
+#   Design / planning items → GenCr-ft/gcs-project-management
+#   Platform items         → GenCr-ft/gcs-plt-tools  (or other platform repo)
+gh issue create --repo GenCr-ft/<TARGET-REPO> \
+  --title "[AREA] Short description of the gap" \
+  --body "## Summary
+
+## Steps to reproduce / evidence
+
+## Impact
+
+## Ref
+ENG-BACK-NNN (if known)"
+
+# 2. Add to Project #16 immediately — never skip this step
 gh project item-add 16 --owner GenCr-ft --url <issue-url>
 ```
 
 Then reference the issue number in any related PR, plan file, or memory entry. The GitHub Issue is the single source of truth for active work.
+
+> **Enforcement:** No gap, defect, or action item may remain only in conversation context, a plan file, or memory. If you find something and cannot create a GitHub Issue right now, **stop work** and create the issue before proceeding. This is non-negotiable.
 
 ---
 

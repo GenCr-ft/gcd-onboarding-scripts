@@ -112,9 +112,13 @@ Phase 5 is complete; Phase 6 is unblocked. Gate: GAM-SPEC-049, -066, and -085 mu
 - Design / planning items → `gcs-project-management`
 - Platform items → affected platform repo (`gcs-plt-tools`, `gcs-plt-architecture`, etc.)
 
-After creating the issue, always add it to Project #16:
-
 ```bash
+# 1. Create the issue (route per the routing rules above)
+gh issue create --repo GenCr-ft/gcp-aethel-backlog \
+  --title "[AREA] Short description" \
+  --body "## Summary\n\n## Evidence\n\n## Ref\nENG-BACK-NNN"
+
+# 2. Add to Project #16 — never skip this step
 gh project item-add 16 --owner GenCr-ft --url <issue-url>
 ```
 

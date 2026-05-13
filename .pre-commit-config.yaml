@@ -32,6 +32,11 @@ repos:
     hooks:
       - id: detect-secrets
 
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+
   # ===== Documentation Quality (Spelling) =====
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0

@@ -22,7 +22,7 @@ This workspace (`/home/lgan/hxgn/dev/claude/exp`) contains ~30 Git repositories 
 |------|------|--------|
 | `gcp-aethel-client` | Godot 4 + GDScript game client | Phase 4 complete |
 | `gcp-aethel-server` | TypeScript/NestJS game server | Phase 4 complete |
-| `gcp-aethel-pcg` | Rust/WASM procedural generation library | Phase 5 in progress |
+| `gcp-aethel-pcg` | Rust/WASM procedural generation library | Phase 5 complete |
 | `gcl-srv-authentication` | Auth microservice (RS256 JWT, RTR) | Bootstrapped + integration tests |
 | `gcl-srv-persistence` | Persistence microservice (Prisma + PostgreSQL) | Bootstrapped |
 | `gcl-voxel-engine` | Server-side voxel authority library | Stub |
@@ -47,7 +47,7 @@ This workspace (`/home/lgan/hxgn/dev/claude/exp`) contains ~30 Git repositories 
 
 ---
 
-## Project Phase Status (as of 2026-05-01)
+## Project Phase Status (as of 2026-05-13)
 
 ### Phase 4 — Walking Skeleton: COMPLETE ✅
 
@@ -73,19 +73,13 @@ All work items merged and end-to-end confirmed on WSLg/llvmpipe (2026-05-02). Th
 | WI-4.13 Phase 4 connection sequence diagram | `gcp-aethel-architecture` | ✅ merged |
 | WI-4.14 Mouse-look camera | `gcp-aethel-client` | ✅ merged |
 
-### Phase 5 — PCG Integration: IN PROGRESS
+### Phase 5 — PCG Integration: COMPLETE ✅
 
-Phase 5 progress (as of 2026-05-05):
-- PR #21 merged: Xoshiro256++ RNG parity (Rust ↔ Python)
-- PR #32 merged: `HeightmapGenerator` (OpenSimplex fbm) + WASM `generate_chunk`
-- PRs #34–#39 merged: Godot 4.5 migration + PCG visualizer bring-up (5 compat fixes)
-- PR #42 open: Wire `pcg-cli` Heightmap command to real Simplex noise (closes placeholder)
-
-Next: merge PR #42, then WASM build + server integration (replace `FlatTerrainGenerator`).
+All work items merged (2026-05-10). Deliverables: Xoshiro256++ RNG parity (Rust ↔ Python), `HeightmapGenerator` with OpenSimplex fbm, WASM `generate_chunk`, Godot 4.5 migration + PCG visualizer, `pcg-cli` Heightmap command wired to real Simplex noise.
 
 ### Phase 6 — State Persistence + Multiplayer: NOT STARTED
 
-Full spec in `REMEDIATION.md §6`. Requires Phase 5 complete.
+Phase 5 is complete; Phase 6 is unblocked. Gate: GAM-SPEC-049, -066, and -085 must be approved before WI authoring — tracked in [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27) and [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34).
 
 ---
 
@@ -111,6 +105,18 @@ Full spec in `REMEDIATION.md §6`. Requires Phase 5 complete.
 **Architecture-first for cross-cutting decisions.** Before implementing anything that touches the wire format, authentication, or data storage, verify the relevant ADR in `gcp-aethel-architecture/adrs/`. If no ADR exists, one must be written first.
 
 **`./test.sh` is mandatory after source changes.** After any modification to source code in a repository, run `./test.sh` before closing the session or opening a PR. If `./test.sh` does not yet exist in the repo, this obligation still applies — use the repo's documented test command and note the absence of `test.sh` in the PR description.
+
+**Gaps and actions become GitHub Issues immediately.** Any gap, defect, or action item identified during work — code review, audit, session analysis, or incidental discovery — must be captured as a GitHub Issue before proceeding. Nothing lives only in conversation context, plan files, or memory.
+
+- Engineering / game bugs and improvements → `gcp-aethel-backlog` (or the affected code repo for hot fixes)
+- Design / planning items → `gcs-project-management`
+- Platform items → affected platform repo (`gcs-plt-tools`, `gcs-plt-architecture`, etc.)
+
+After creating the issue, always add it to Project #16:
+
+```bash
+gh project item-add 16 --owner GenCr-ft --url <issue-url>
+```
 
 ---
 
@@ -302,10 +308,7 @@ Philosophy pillars: **Simplicity** (Unix way), **Rigor** (Dijkstra — readable,
 
 ## Known Open Items
 
-| Item | Repo | Notes |
-|------|------|-------|
-| PCG CLI Simplex wire-up | `gcp-aethel-pcg` | PR #42 open — CLI placeholder → real Simplex; WASM+server integration still pending |
-| `production_resolver.py` crash | `gcd-ops-scripts` | Requires `GovernanceModel` spec |
-| Branch protections in IaC | `gencraft-iac` | Policy decision pending |
-| `gcp-aethel-docs-req` ADR-056/057 rename | `gcp-aethel-docs-req` | docId conflict with architecture ADRs |
-| `gcl-voxel-engine` content | `gcl-voxel-engine` | Stub — Phase 5+ work |
+| Item | Repo | Tracking |
+|------|------|---------|
+| `gcp-aethel-docs-req` ADR-056/057 rename | `gcp-aethel-docs-req` | docId conflict with architecture ADRs — [`gcp-aethel-docs-req#44`](https://github.com/GenCr-ft/gcp-aethel-docs-req/issues/44) |
+| GDD specs blocking Phase 6 | `gcp-aethel-docs-gdd` | GAM-SPEC-049, -066, -085 must be approved — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34) |

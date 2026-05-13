@@ -114,9 +114,20 @@ Phase 5 is complete; Phase 6 is unblocked. Gate: GAM-SPEC-049, -066, and -085 mu
 
 ```bash
 # 1. Create the issue (route per the routing rules above)
-gh issue create --repo GenCr-ft/gcp-aethel-backlog \
-  --title "[AREA] Short description" \
-  --body "## Summary\n\n## Evidence\n\n## Ref\nENG-BACK-NNN"
+# --repo options:
+#   Engineering / game bugs → GenCr-ft/gcp-aethel-backlog
+#   Design / planning items → GenCr-ft/gcs-project-management
+#   Platform items         → GenCr-ft/gcs-plt-tools  (or other platform repo)
+gh issue create --repo GenCr-ft/<TARGET-REPO> \
+  --title "[AREA] Short description of the gap" \
+  --body "## Summary
+
+## Steps to reproduce / evidence
+
+## Impact
+
+## Ref
+ENG-BACK-NNN (if known)"
 
 # 2. Add to Project #16 — never skip this step
 gh project item-add 16 --owner GenCr-ft --url <issue-url>

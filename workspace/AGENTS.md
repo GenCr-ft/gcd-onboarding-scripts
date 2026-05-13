@@ -432,7 +432,11 @@ Every identified gap, defect, or action item — found during code review, audit
 
 ```bash
 # 1. Create the issue (route per table above)
-gh issue create --repo GenCr-ft/gcp-aethel-backlog \
+# --repo options:
+#   Engineering / game bugs → GenCr-ft/gcp-aethel-backlog
+#   Design / planning items → GenCr-ft/gcs-project-management
+#   Platform items         → GenCr-ft/gcs-plt-tools  (or other platform repo)
+gh issue create --repo GenCr-ft/<TARGET-REPO> \
   --title "[AREA] Short description of the gap" \
   --body "## Summary
 

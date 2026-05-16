@@ -1,0 +1,65 @@
+name: Onboarding Script CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-scripts:
+    name: Validate Bash Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: ShellCheck
+        run: |
+          sudo apt-get install -y shellcheck
+          find . -name "*.sh" -exec shellcheck {} +
+
+  dry-run-onboarding:
+    name: Dry Run Onboarding
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Environment
+        run: |
+          mkdir -p "$HOME/.agents/skills"
+          # Mock some prerequisites if needed
+          
+      - name: Dry Run Orchestrator
+        run: |
+          # We use a mock selection for the role if the script supports it
+          # For now, just check syntax and help
+          bash -n gft-onboarding.sh
+          find includes -name "*.sh" -exec bash -n {} +
+          
+      - name: Verify Agent Bootstrap Logic
+        run: |
+          # Test the bootstrap logic in isolation if possible
+          export SCRIPT_DIR="$(pwd)"
+          source includes/01_helpers.sh
+          source includes/05_agent_bootstrap.sh
+          
+          # Mock log functions
+          log_info() { echo "[INFO] $1"; }
+          log_success() { echo "[SUCCESS] $1"; }
+          log_warn() { echo "[WARN] $1"; }
+          
+          # Test skill deployment (should use the local skills/ dir we created)
+          mkdir -p skills
+          touch skills/test-skill.skill
+          setup_agent_skills
+          
+          if [[ -d "$HOME/.agents/skills/test-skill" ]]; then
+            echo "Skill deployment verified."
+          else
+            echo "Skill deployment failed."
+            exit 1
+          fi

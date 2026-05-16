@@ -13,83 +13,93 @@
 
 setup_agent_skills() {
     log_info "Deploying required agent skills..."
-    local skills_dir="$HOME/.agents/skills"
+    local skills_dir="${HOME}/.agents/skills"
+    local source_skills_dir="${SCRIPT_DIR}/skills"
+    
     mkdir -p "$skills_dir"
 
-    # List of required skills to ensure visibility
-    local core_skills=(
-        "planning-with-files"
-        "godot-gdscript-patterns"
-        "vercel-react-best-practices"
-        "python-testing-patterns"
-        "rust-best-practices"
-        "typescript-advanced-types"
-        "architecture-decision-records"
-    )
+    if [[ ! -d "$source_skills_dir" ]]; then
+        log_warn "Skills source directory not found at $source_skills_dir. Skipping skill deployment."
+        return 0
+    fi
 
-    for skill in "${core_skills[@]}"; do
-        if [[ ! -d "${skills_dir}/${skill}" ]]; then
-            log_info "Initializing placeholder for skill: $skill"
-            mkdir -p "${skills_dir}/${skill}"
-            # In a production environment, we would clone/copy actual skill logic here.
+    # Deploy all .skill bundles from the repository
+    local deployed=0
+    for skill_bundle in "${source_skills_dir}"/*.skill; do
+        if [[ -f "$skill_bundle" ]]; then
+            local skill_name
+            skill_name=$(basename "$skill_bundle" .skill)
+            log_info "  Installing skill: $skill_name"
+            
+            # Create target dir and unzip (overwrite if exists)
+            mkdir -p "${skills_dir}/${skill_name}"
+            unzip -q -o "$skill_bundle" -d "${skills_dir}/${skill_name}"
+            deployed=$((deployed + 1))
         fi
     done
 
-    log_success "Agent skills environment deployed at $skills_dir."
+    log_success "Deployed $deployed agent skills to $skills_dir."
 }
 
 generate_workspace_agent_md() {
-    log_info "Verifying project-level AGENT.md..."
+    local role_name="${1:-generic-contributor}"
+    log_info "Generating role-specific AGENT.md for: $role_name"
     
-    # We use GFT_WORKSPACE if defined, else fallback to parent of gcs-devops-standards or cwd
     local target_dir="${GFT_PROJECTS_HOME:-$(pwd)}"
     local target_file="${target_dir}/AGENT.md"
 
-    if [[ -f "$target_file" ]]; then
-        log_info "AGENT.md already exists. Ensuring it's up to date..."
-    fi
+    # Role-specific content
+    local role_instructions=""
+    case "$role_name" in
+        "game-developer")
+            role_instructions="- **Stack:** Godot 4.5, GDScript, Rust (WASM).\n- **Primary Tests:** `wt-gut` (Client), `cargo test` (Server).\n- **MO:** Focus on PCG parity and Voxel performance."
+            ;;
+        "devops-specialist")
+            role_instructions="- **Stack:** Python, Tofu (IaC), Bash.\n- **Primary Tests:** `wt-pytest` (Ops), `pre-commit` (SSoT).\n- **MO:** Focus on automation and infrastructure robustness."
+            ;;
+        *)
+            role_instructions="- **Orientation:** Refer to `CLAUDE.md` for general workspace patterns.\n- **Tests:** Run root `./test-all.sh` to verify your changes."
+            ;;
+    esac
 
-    log_info "Generating standardized AGENT.md at $target_file"
-
-    cat << 'EOF' > "$target_file"
-# AGENT.md — GenCr@ft Studio Workspace
+    cat << EOF > "$target_file"
+# AGENT.md — GenCr@ft Studio Workspace ($role_name)
 
 ## Orientation
-You are an agent (AI or Human) contributing to the **GenCr@ft Studio** ecosystem.
-This workspace contains ~30 repositories side-by-side for the **Aethel** project (Voxel RPG Platform).
+You are an agent (AI or Human) in the **$role_name** role.
+This workspace contains ~30 repositories for the **Aethel** project.
+
+## Role Specifics
+$role_instructions
 
 ## Quick Start
-1. **Validate:** Run `gft aethel validate` to check binaries and repo clones.
-2. **Read:** `CLAUDE.md` at workspace root for Technical Stack, Patterns, and Workflows.
-3. **Status:** Check `REMEDIATION.md` for global roadmap and active phase status.
-4. **Audit:** Refer to `senior expertise/INDEX.md` for codebase quality assessment.
+1. **Validate:** Run \`gft aethel validate\` to check binaries and repo clones.
+2. **Read:** \`CLAUDE.md\` at root for patterns and workflows.
+3. **Status:** Check \`REMEDIATION.md\` for roadmap status.
 
 ## Productivity Cheat Sheet
-- **Common Tests:** `./test-all.sh --no-integration` (Fast unit tests).
-- **PCG Parity:** `bash tests/test_parity_py_rs.sh` (Bit-identical verification).
-- **PR Creation:** `gh pr create --fill --label "area:hermes"` (Conventional Commits).
-- **Context:** Check `~/.claude/projects/.../memory/MEMORY.md`.
+- **Common Tests:** \`./test-all.sh --no-integration\`
+- **PR Creation:** \`gh pr create --fill\`
+- **Context:** Check \`~/.claude/projects/.../memory/MEMORY.md\`.
 
-## Required Skills
-Ensure these skills are activated via `activate_skill` for relevant tasks:
-- `planning-with-files` (Mandatory for multi-step tasks)
-- `godot-gdscript-patterns` (Client-side development)
-- `rust-best-practices` (PCG core/WASM implementation)
-- `python-testing-patterns` (PCG research/Ops tooling)
-- `typescript-advanced-types` (Server-side/Platform)
-- `architecture-decision-records` (Before major design changes)
+## Mandatory Skills
+Ensure these skills are activated for your tasks:
+- \`planning-with-files\` (Mandatory for multi-step tasks)
+- \`architecture-decision-records\` (Before major design changes)
+- \`code-review-excellence\` (When reviewing PRs)
 
 ## Core Workflow Mandates
 - **TDD Always:** Never write production code without a failing test.
 - **One PR per WI:** Keep changes atomic and linked to a GitHub Issue.
-- **English Only:** All code, comments, and documentation must be in English.
-- **SSoT Driven:** Respect docIds, YAML frontmatter, and standard file structures.
+- **English Only:** All code and docs must be in English.
+- **SSoT Driven:** Respect docIds and YAML frontmatter.
 EOF
 
-    log_success "AGENT.md generated/updated successfully."
+    log_success "AGENT.md generated for role '$role_name'."
 }
 
 configure_agent_environment() {
+    local role_name="${1:-generic-contributor}"
     setup_agent_skills
-    generate_workspace_agent_md
+    generate_workspace_agent_md "$role_name"
 }

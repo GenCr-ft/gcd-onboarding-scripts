@@ -83,6 +83,7 @@ main() {
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
     deploy_workspace_files
+    configure_agent_environment "$selected_role_name"
     setup_pcg_python_venv "$selected_role_name"
 
     # --- Final Tooling Configuration ---

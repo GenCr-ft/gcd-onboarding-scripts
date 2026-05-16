@@ -107,6 +107,7 @@ check_prerequisites() {
         "curl:curl"
         "yq:yq"
         "python3:python3"
+        "unzip:unzip"
     )
 
     for item in "${prerequisites[@]}"; do

@@ -52,13 +52,18 @@ generate_workspace_agent_md() {
     local role_instructions=""
     case "$role_name" in
         "game-developer")
-            role_instructions="- **Stack:** Godot 4.5, GDScript, Rust (WASM).\n- **Primary Tests:** `wt-gut` (Client), `cargo test` (Server).\n- **MO:** Focus on PCG parity and Voxel performance."
+            role_instructions="- **Stack:** Godot 4.5, GDScript, Rust (WASM).
+- **Primary Tests:** \`wt-gut\` (Client), \`cargo test\` (Server).
+- **MO:** Focus on PCG parity and Voxel performance."
             ;;
         "devops-specialist")
-            role_instructions="- **Stack:** Python, Tofu (IaC), Bash.\n- **Primary Tests:** `wt-pytest` (Ops), `pre-commit` (SSoT).\n- **MO:** Focus on automation and infrastructure robustness."
+            role_instructions="- **Stack:** Python, Tofu (IaC), Bash.
+- **Primary Tests:** \`wt-pytest\` (Ops), \`pre-commit\` (SSoT).
+- **MO:** Focus on automation and infrastructure robustness."
             ;;
         *)
-            role_instructions="- **Orientation:** Refer to `CLAUDE.md` for general workspace patterns.\n- **Tests:** Run root `./test-all.sh` to verify your changes."
+            role_instructions="- **Orientation:** Refer to \`CLAUDE.md\` for general workspace patterns.
+- **Tests:** Run root \`./test-all.sh\` to verify your changes."
             ;;
     esac
 

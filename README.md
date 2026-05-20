@@ -1,13 +1,13 @@
 ---
 docId: ENG-READ-009
 title: gcd-onboarding-scripts
-version: 0.1.1
+version: 0.2.0
 authors:
 - GCS DevOps Enablement Guild
 - AI Compliance Agent
 reviewers: []
 creation_date: '2025-06-26'
-last_updated_date: '2026-05-10'
+last_updated_date: '2026-05-20'
 knowledgeGuardian:
 - Béatrice (GCT-MGT-SPM-001)
 language: en
@@ -27,14 +27,13 @@ metadata:
   doc-type: readme
   intended-audience:
   - contributors
-  - ai-agents
   security-classification: l2_confidential
 ---
 # GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
 
 ## Overview
 
-This suite serves as the approved Single Source of Truth (SSoT) for onboarding developers (human or AI) into GenCr@t Studio. It dynamically configures a standardized, compliant local development environment by consuming approved standards from the `gcs-devops-standards` repository.
+This suite serves as the approved Single Source of Truth (SSoT) for onboarding developers into GenCr@ft Studio. It dynamically configures a standardized, compliant local development environment by consuming approved standards from the `gcs-devops-standards` repository.
 
 ### Key Principles
 
@@ -46,37 +45,9 @@ This suite serves as the approved Single Source of Truth (SSoT) for onboarding d
 
 ## Architecture & Dependencies
 
-The script relies on specific artifacts within `gcs-devops-standards`. The workstation must be able to pull `https://github.com/GenCr-ft/gcs-devops-standards.git`.
+The script pulls its role/tool matrix from `gcs-devops-standards` at runtime, resolves a 3-tier inheritance chain (`default_repositories` → `common-base` → specific role), and configures the machine to match. The workstation must be able to pull `https://github.com/GenCr-ft/gcs-devops-standards.git`.
 
-### SSoT Configuration Paths
-
-| Capability | Path in `gcs-devops-standards` | Purpose |
-| :--- | :--- | :--- |
-| **Role/Tool Data** | `foundations/governance/GOV-004-role-tooling-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
-| **Version Pinning** | `tooling/ssot/.tool-versions-gft` | Canonical versions for `get_ssot_tool_version`. |
-| **Tool Specs** | `domains/tooling/standards/tool-002-technical-tooling-specifications.md` | Validation of packages/versions. |
-| **Env Vars** | `tooling/ENV_VARIABLES_STANDARD.md` | Common and role-specific exports. |
-| **VS Code** | `tooling/VSCODE_RECOMMENDATIONS.md` | Global and role-targeted extension IDs. |
-| **Docker** | `tooling/ssot/.docker-images-gft` | Manifest of container images to pre-pull. |
-
-### Role Inheritance Model
-
-Repositories are cloned based on the following inheritance logic defined in `GOV-004`:
-
-1.  **`default_repositories`**: Top-level list (e.g., `gcs-devops-standards`).
-2.  **`common-base`**: Inherits default; adds shared repos (e.g., `gcs-studio-handbook`).
-3.  **Specific Role**: Inherits `common-base`; adds role-specific repos (e.g., `gct-service-template-py`, `gencraft-iac`).
-
-### Script Modules
-
-| Module | Script | Description |
-| :--- | :--- | :--- |
-| **Orchestrator** | `gft-onboarding.sh` | Main entry point. |
-| **Libraries** | `includes/*.sh` | Helpers for discovery (`01`), installation (`02`), and config (`03`). |
-| **Python Helpers** | `includes/get_role_*.py` | Parses YAML role matrices. |
-| **Windows Bootstrapper** | `onboarding-win.ps1` | Enables WSL2, installs Ubuntu, launches orchestrator. |
-| **Validators** | `validate-environment.sh` <br> `validate-gft-devops-environment.sh` | Validates role installs and DevOps tooling (PROJ-103). |
-| **Tofu Helper** | `setup-local-tofu-env.sh` | Configures OpenTofu backend standards. |
+See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descriptions, and role inheritance model.
 
 ## Prerequisites
 
@@ -169,4 +140,4 @@ There is no `onboard.sh` in this repo — it *is* the onboarding system.
 
 ---
 
-*For technical architecture and agent-specific notes, see [CLAUDE.md](./CLAUDE.md).*
+*For technical architecture and agent-specific guidance, see [AGENTS.md](./AGENTS.md).*

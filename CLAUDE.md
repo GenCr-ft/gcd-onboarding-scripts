@@ -1,5 +1,7 @@
 # CLAUDE.md — gcd-onboarding-scripts
 
+> **Note:** This repo has migrated. `AGENTS.md` is the authoritative source for all agent instructions and technical internals. Refer there first.
+
 ## Project Overview
 SSoT-driven onboarding script suite for GenCr@t Studio. Automates local development environment setup by consuming standards from `gcs-devops-standards`.
 
@@ -15,8 +17,8 @@ SSoT-driven onboarding script suite for GenCr@t Studio. Automates local developm
 
 ## Structure
 - `includes/`: Modular bash libraries and Python logic.
-- `spec/`: BATS integration tests.
-- `tests/`: Unit and regression tests.
+- `spec/`: Developer onboarding specification document.
+- `tests/`: Unit and regression tests (bash-based, no external test runner).
 
 ## Notes
 - Relies on `/tmp/gft-ssot-onboarding` as a local cache of the standards repo.

@@ -78,7 +78,7 @@ All role/tool data is read at runtime from `gcs-devops-standards` (cloned to `/t
 
 | Capability | Path in `gcs-devops-standards` | Purpose |
 | :--- | :--- | :--- |
-| **Role/Tool Data** | `foundations/governance/GOV-004-role-tooling-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
+| **Role/Tool Data** | `foundations/governance/GOV-GUIDE-010.role-tooling--resource-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
 | **Version Pinning** | `tooling/ssot/.tool-versions-gft` | Canonical versions for `get_ssot_tool_version`. |
 | **Tool Specs** | `domains/tooling/standards/tool-002-technical-tooling-specifications.md` | Validation of packages/versions. |
 | **Env Vars** | `tooling/ENV_VARIABLES_STANDARD.md` | Common and role-specific exports. |
@@ -108,7 +108,7 @@ Changes to this model require updating `gcs-devops-standards` first and testing 
 
 ## Execution Flow
 
-1. **Prerequisite Scan** — checks and installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
+1. **Prerequisite Scan** — checks and installs `git`, `curl`, `yq`, `python3`, `unzip` via OS package manager (`brew`, `apt`, `dnf`, etc.).
 2. **SSoT Sync** — clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
 3. **Role Selection** — prompts for role; loads configuration via `load_ssot_configuration` (calls Python helpers).
 4. **Installation** — installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.

@@ -12,8 +12,8 @@ knowledgeGuardian:
 - Béatrice (GCT-MGT-SPM-001)
 language: en
 summary: >
-  Approved Single Source of Truth (SSoT) for onboarding developers (human or AI) 
-  into GenCr@t Studio. Automates environment configuration via gcs-devops-standards.
+  Approved Single Source of Truth (SSoT) for onboarding developers into GenCr@ft Studio.
+  Automates environment configuration via gcs-devops-standards.
 metadata:
   lifecycle-stage: approved
   keywords:
@@ -29,7 +29,7 @@ metadata:
   - contributors
   security-classification: l2_confidential
 ---
-# GenCr@t Studio Onboarding Script (`gft-onboarding.sh`)
+# GenCr@ft Studio Onboarding Script (`gft-onboarding.sh`)
 
 ## Overview
 
@@ -53,7 +53,7 @@ See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descr
 
 1.  **Permissions:** `sudo` (macOS/Linux) or Administrator (Windows).
 2.  **Connectivity:** Internet access for cloning and package downloads.
-3.  **Accounts:** Active GenCr@t GitHub account (login required).
+3.  **Accounts:** Active GenCr@ft GitHub account (login required).
 4.  **System Tools:** Script `check_prerequisites` auto-detects/installs `git`, `curl`, `yq`, and `python3`.
 
 ## Installation & Usage

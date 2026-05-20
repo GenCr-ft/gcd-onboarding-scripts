@@ -72,10 +72,59 @@ pre-commit run --all-files   # shellcheck (shell scripts), markdownlint, yamllin
 | Version pinning | `gcs-devops-standards` | Tool version specs and ENV_VARIABLES_STANDARD |
 | VS Code recommendations | `gcs-devops-standards` | Workspace config pulled during setup |
 
+## SSoT Configuration Paths
+
+All role/tool data is read at runtime from `gcs-devops-standards` (cloned to `/tmp/gft-ssot-onboarding`). The relevant paths are:
+
+| Capability | Path in `gcs-devops-standards` | Purpose |
+| :--- | :--- | :--- |
+| **Role/Tool Data** | `foundations/governance/GOV-004-role-tooling-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
+| **Version Pinning** | `tooling/ssot/.tool-versions-gft` | Canonical versions for `get_ssot_tool_version`. |
+| **Tool Specs** | `domains/tooling/standards/tool-002-technical-tooling-specifications.md` | Validation of packages/versions. |
+| **Env Vars** | `tooling/ENV_VARIABLES_STANDARD.md` | Common and role-specific exports. |
+| **VS Code** | `tooling/VSCODE_RECOMMENDATIONS.md` | Global and role-targeted extension IDs. |
+| **Docker** | `tooling/ssot/.docker-images-gft` | Manifest of container images to pre-pull. |
+
+## Script Modules
+
+| Module | Script | Description |
+| :--- | :--- | :--- |
+| **Orchestrator** | `gft-onboarding.sh` | Main entry point — coordinates the full flow. |
+| **Libraries** | `includes/*.sh` | Helpers for discovery (`01`), installation (`02`), and config (`03`). |
+| **Python Helpers** | `includes/get_role_*.py` | Parses YAML role matrices (no external deps — uses `simple_yaml.py`). |
+| **Windows Bootstrapper** | `onboarding-win.ps1` | Enables WSL2, installs Ubuntu, delegates to bash orchestrator. |
+| **Validators** | `validate-environment.sh`, `validate-devops-environment.sh` | Post-install validation of role installs and DevOps tooling. |
+| **Tofu Helper** | `setup-local-tofu-env.sh` | Configures OpenTofu backend environment variables. |
+
+## Role Inheritance Model
+
+Repositories and tools are resolved via a 3-tier inheritance chain defined in `GOV-004-role-tooling-matrix.md`:
+
+1. **`default_repositories`** — top-level list cloned for every role (e.g., `gcs-devops-standards`).
+2. **`common-base`** — inherits `default_repositories`; adds shared repos (e.g., `gcs-studio-handbook`).
+3. **Specific role** — inherits `common-base`; adds role-specific repos (e.g., `gct-service-template-py`, `gencraft-iac`).
+
+Changes to this model require updating `gcs-devops-standards` first and testing across all roles.
+
+## Execution Flow
+
+1. **Prerequisite Scan** — checks and installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
+2. **SSoT Sync** — clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
+3. **Role Selection** — prompts for role; loads configuration via `load_ssot_configuration` (calls Python helpers).
+4. **Installation** — installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.
+5. **Configuration** — sets Git identity, SSH keys, VS Code extensions, env vars, clones repos, runs `gft config setup`.
+6. **Validation** — runs `pre-commit run --all-files` in the standards repo.
+
+## Key Patterns
+
+- **Adding a new tool**: update `gcs-devops-standards` first — never hardcode tool versions or paths in this repo; everything is read from SSoT at runtime.
+- **Cross-platform shell detection** lives in `includes/01_helpers.sh`; adding a new platform requires changes there.
+- **`TEST_ENV=1`** skips confirmation prompts — always set in CI runs and unit tests.
+- **Testing against the SSoT locally**: unit tests use mock fixtures in `tests/fixtures/mock_ssot/`; do not let tests reach the real `gcs-devops-standards`.
+
 ## Notes for Agents
 
 - **Idempotency is critical** — every action must check system state before executing (never blindly re-install or overwrite).
-- Role inheritance model: `default_repositories` → `common-base` → `specific-role`. Changes to this model require careful testing across all roles.
 - Cross-platform support: shell detection (bash vs zsh vs PowerShell) must be maintained.
 - When adding a new tool to the matrix, update `gcs-devops-standards` first; this script reads from that SSoT at runtime.
 - Shell scripts must pass `shellcheck` without warnings.

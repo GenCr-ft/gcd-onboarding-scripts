@@ -57,6 +57,76 @@ setup_log_stream() {
 readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-devops-standards.git"
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-onboarding"
 
+# --- Hook Registration ---
+register_studio_hooks() {
+    log_info "Registering studio-standard lifecycle hooks in ~/.claude/settings.local.json..."
+
+    local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
+    if [[ -z "$gemop_path" ]]; then
+        local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
+        gemop_path="${workspace}/gcs-plt-gemop"
+    fi
+
+    local hooks_dir="${gemop_path}/hooks"
+    if [[ ! -d "$hooks_dir" ]]; then
+        log_warn "Hooks directory not found at ${hooks_dir}. Skipping hook registration."
+        return 0
+    fi
+
+    local git_safety_hook="${hooks_dir}/git-safety-check.sh"
+    local persona_linter_hook="${hooks_dir}/persona-linter.sh"
+    local date_updater_hook="${hooks_dir}/date-updater.py"
+
+    # Make hooks executable
+    for h in "$git_safety_hook" "$persona_linter_hook" "$date_updater_hook"; do
+        [[ -f "$h" ]] && chmod +x "$h"
+    done
+
+    local settings_file="${HOME}/.claude/settings.local.json"
+    mkdir -p "${HOME}/.claude"
+
+    # Merge hook registrations into settings.local.json, preserving other keys
+    python3 - "$settings_file" "$git_safety_hook" "$persona_linter_hook" "$date_updater_hook" <<'PYEOF'
+import json, sys
+from pathlib import Path
+
+settings_path = Path(sys.argv[1])
+git_safety = sys.argv[2]
+persona_linter = sys.argv[3]
+date_updater = sys.argv[4]
+
+existing = {}
+if settings_path.exists():
+    try:
+        existing = json.loads(settings_path.read_text())
+    except Exception:
+        existing = {}
+
+existing["hooks"] = {
+    "PreToolUse": [
+        {
+            "matcher": "Bash",
+            "hooks": [{"type": "command", "command": git_safety}]
+        }
+    ],
+    "PostToolUse": [
+        {
+            "matcher": "Edit|Write|MultiEdit",
+            "hooks": [
+                {"type": "command", "command": persona_linter},
+                {"type": "command", "command": date_updater}
+            ]
+        }
+    ]
+}
+
+settings_path.write_text(json.dumps(existing, indent=2) + "\n")
+print(f"Hooks registered in {settings_path}")
+PYEOF
+
+    log_success "Studio hooks registered in ${settings_file}."
+}
+
 # --- Main Orchestration ---
 main() {
     log_info "Welcome to the GenCr@t Studio Onboarding Script V2!"
@@ -84,6 +154,7 @@ main() {
     clone_repositories_for_role "$selected_role_name"
     deploy_workspace_files
     configure_agent_environment "$selected_role_name"
+    register_studio_hooks
     setup_pcg_python_venv "$selected_role_name"
 
     # --- Final Tooling Configuration ---

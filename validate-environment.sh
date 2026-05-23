@@ -20,7 +20,7 @@ readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
 readonly ROLE_MATRIX_FILE="foundations/governance/GOV-004-role-tooling-matrix.md"
 readonly TOOLING_SPECS_FILE="domains/tooling/standards/tool-002-technical-tooling-specifications.md"
 readonly GFT_WORKSPACE="$HOME/gft_studio"
-readonly GFT_SSOT_GEMOP_PATH="${HOME}/gft_studio/gcs-plt-gemop"
+readonly GFT_SSOT_GEMOP_PATH="${GFT_SSOT_GEMOP_PATH:-${HOME}/gft_studio/gcs-plt-gemop}"
 
 # Counters for the final report
 declare -i PASS_COUNT=0
@@ -34,8 +34,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 log_info() { echo -e "\033[1;34m[INFO]\033[0m $1"; }
 log_success() { echo -e "\033[1;32m[SUCCESS]\033[0m $1"; }
 log_error() { echo -e "\033[1;31m[ERROR]\033[0m $1"; }
-check_ok() { echo -e "  \033[1;32m[OK]\033[0m $1"; ((PASS_COUNT++)); }
-check_fail() { echo -e "  \033[1;31m[FAIL]\033[0m $1"; ((FAIL_COUNT++)); }
+check_ok() { echo -e "  \033[1;32m[OK]\033[0m $1"; PASS_COUNT=$((PASS_COUNT + 1)); }
+check_fail() { echo -e "  \033[1;31m[FAIL]\033[0m $1"; FAIL_COUNT=$((FAIL_COUNT + 1)); }
 
 # Extracts the YAML data block from a given SSoT markdown file.
 # $1: Path to the markdown file
@@ -212,8 +212,102 @@ except Exception as e:
     fi
 }
 
+# --- Orchestration Health Check ---
+# Checks local filesystem only — no network, no interactive prompts.
+# Uses GFT_SSOT_GEMOP_PATH env var (default: ${HOME}/gft_studio/gcs-plt-gemop).
+check_orchestration_health() {
+    local gemop_path="${GFT_SSOT_GEMOP_PATH:-${HOME}/gft_studio/gcs-plt-gemop}"
+    local claude_skills_dir="${HOME}/.claude/skills"
+    local claude_agents_dir="${HOME}/.claude/agents"
+    local claude_settings="${HOME}/.claude/settings.local.json"
+
+    log_info "Checking orchestration health against: $gemop_path"
+
+    # 1. Verify skill symlinks
+    if [[ -d "${gemop_path}/skills" ]]; then
+        local skill_count=0
+        local missing_count=0
+        for src_skill in "${gemop_path}/skills"/*/; do
+            [[ -d "$src_skill" ]] || continue
+            local skill_name
+            skill_name=$(basename "$src_skill")
+            local link_target="${claude_skills_dir}/${skill_name}"
+            if [[ -L "$link_target" ]]; then
+                check_ok "Skill symlink present: $skill_name"
+                skill_count=$((skill_count + 1))
+            else
+                check_fail "Skill symlink missing: ${claude_skills_dir}/${skill_name}"
+                missing_count=$((missing_count + 1))
+            fi
+        done
+        if [[ $skill_count -eq 0 && $missing_count -eq 0 ]]; then
+            log_info "No skills found in $gemop_path/skills — nothing to validate."
+        fi
+    else
+        check_fail "GEMOP skills directory not found: ${gemop_path}/skills"
+    fi
+
+    # 2. Verify agent symlinks
+    if [[ -d "${gemop_path}/agents" ]]; then
+        local agent_count=0
+        local agent_missing=0
+        for src_agent in "${gemop_path}/agents"/*.md; do
+            [[ -f "$src_agent" ]] || continue
+            local agent_name
+            agent_name=$(basename "$src_agent")
+            local link_target="${claude_agents_dir}/${agent_name}"
+            if [[ -L "$link_target" ]]; then
+                check_ok "Agent symlink present: $agent_name"
+                agent_count=$((agent_count + 1))
+            else
+                check_fail "Agent symlink missing: ${claude_agents_dir}/${agent_name}"
+                agent_missing=$((agent_missing + 1))
+            fi
+        done
+        if [[ $agent_count -eq 0 && $agent_missing -eq 0 ]]; then
+            log_info "No agent files found in $gemop_path/agents — nothing to validate."
+        fi
+    else
+        check_fail "GEMOP agents directory not found: ${gemop_path}/agents"
+    fi
+
+    # 3. Verify hooks are registered in settings.local.json
+    if [[ -f "$claude_settings" ]]; then
+        if grep -q '"hooks"' "$claude_settings"; then
+            check_ok "Hooks block present in settings.local.json"
+        else
+            check_fail "Hooks block missing from settings.local.json"
+        fi
+    else
+        check_fail "settings.local.json not found at ${claude_settings}"
+    fi
+}
+
 # --- Main Orchestration ---
 main() {
+    # Parse flags
+    local ORCHESTRATION_ONLY=false
+    for arg in "$@"; do
+        case "$arg" in
+            --orchestration) ORCHESTRATION_ONLY=true ;;
+        esac
+    done
+
+    if $ORCHESTRATION_ONLY; then
+        check_orchestration_health
+        echo
+        log_info "--- Validation Summary ---"
+        log_info "Checks Passed: $PASS_COUNT"
+        log_info "Checks Failed: $FAIL_COUNT"
+        if [[ $FAIL_COUNT -eq 0 ]]; then
+            log_success "Orchestration health: all checks passed."
+        else
+            log_error "Orchestration health: ${FAIL_COUNT} check(s) failed. Run gft-onboarding.sh to repair."
+            exit 1
+        fi
+        return
+    fi
+
     log_info "Starting GenCr@t Environment Validator..."
 
     # Clone/update SSoT
@@ -256,4 +350,4 @@ main() {
 }
 
 # --- Script Execution ---
-main
+main "$@"

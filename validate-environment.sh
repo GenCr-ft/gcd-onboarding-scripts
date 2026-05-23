@@ -20,14 +20,20 @@ readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
 readonly ROLE_MATRIX_FILE="foundations/governance/GOV-004-role-tooling-matrix.md"
 readonly TOOLING_SPECS_FILE="domains/tooling/standards/tool-002-technical-tooling-specifications.md"
 readonly GFT_WORKSPACE="$HOME/gft_studio"
+readonly GFT_SSOT_GEMOP_PATH="${HOME}/gft_studio/gcs-plt-gemop"
 
 # Counters for the final report
 declare -i PASS_COUNT=0
 declare -i FAIL_COUNT=0
 
+# Script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # --- Helper Functions ---
 # (A minimal set of helpers for this script)
 log_info() { echo -e "\033[1;34m[INFO]\033[0m $1"; }
+log_success() { echo -e "\033[1;32m[SUCCESS]\033[0m $1"; }
+log_error() { echo -e "\033[1;31m[ERROR]\033[0m $1"; }
 check_ok() { echo -e "  \033[1;32m[OK]\033[0m $1"; ((PASS_COUNT++)); }
 check_fail() { echo -e "  \033[1;31m[FAIL]\033[0m $1"; ((FAIL_COUNT++)); }
 
@@ -138,6 +144,71 @@ validate_git_config() {
     fi
 }
 
+# Checks orchestration health: skill/agent symlinks and studio hooks registration
+check_orchestration_health() {
+    log_info "=== Orchestration Health Check ==="
+
+    local gemop_path="${GFT_SSOT_GEMOP_PATH}"
+    local skills_source="${gemop_path}/skills"
+    local agents_source="${gemop_path}/agents"
+    local claude_skills="${HOME}/.claude/skills"
+    local claude_agents="${HOME}/.claude/agents"
+    local settings_local="${HOME}/.claude/settings.local.json"
+
+    # 1. Skill symlink integrity
+    if [[ -d "$skills_source" ]]; then
+        local total_skills missing_skills=0
+        total_skills=$(find "$skills_source" -mindepth 1 -maxdepth 1 -type d | wc -l)
+        for skill_dir in "${skills_source}"/*/; do
+            skill_name=$(basename "$skill_dir")
+            if [[ ! -L "${claude_skills}/${skill_name}" ]]; then
+                missing_skills=$((missing_skills + 1))
+            fi
+        done
+        if [[ $missing_skills -eq 0 ]]; then
+            check_ok "All ${total_skills} skill symlinks are present in ~/.claude/skills/"
+        else
+            check_fail "${missing_skills}/${total_skills} skill symlinks missing from ~/.claude/skills/. Run gft-onboarding.sh to repair."
+        fi
+    else
+        check_fail "gemop skills source not found at ${skills_source}. Set GFT_SSOT_GEMOP_PATH or clone gcs-plt-gemop."
+    fi
+
+    # 2. Agent file symlinks
+    if [[ -d "$agents_source" ]]; then
+        local total_agents=0 missing_agents=0
+        while IFS= read -r -d '' agent_file; do
+            agent_name=$(basename "$agent_file")
+            if [[ "$agent_name" == "grader.md" ]]; then continue; fi
+            total_agents=$((total_agents + 1))
+            if [[ ! -L "${claude_agents}/${agent_name}" ]]; then
+                missing_agents=$((missing_agents + 1))
+            fi
+        done < <(find "$agents_source" -maxdepth 1 -name "*.md" -print0)
+        if [[ $missing_agents -eq 0 ]]; then
+            check_ok "All ${total_agents} agent symlinks are present in ~/.claude/agents/"
+        else
+            check_fail "${missing_agents}/${total_agents} agent symlinks missing from ~/.claude/agents/. Run gft-onboarding.sh to repair."
+        fi
+    else
+        check_fail "gemop agents source not found at ${agents_source}."
+    fi
+
+    # 3. Hook registration
+    if [[ -f "$settings_local" ]] && python3 -c "
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    hooks = d.get('hooks', {})
+    assert 'PreToolUse' in hooks and 'PostToolUse' in hooks
+except Exception as e:
+    sys.exit(1)
+" "$settings_local" 2>/dev/null; then
+        check_ok "Studio hooks registered in ~/.claude/settings.local.json"
+    else
+        check_fail "Studio hooks not registered. Run gft-onboarding.sh to register them."
+    fi
+}
 
 # --- Main Orchestration ---
 main() {
@@ -165,6 +236,7 @@ main() {
     validate_tools_for_role "$selected_role_name"
     validate_repos_for_role "$selected_role_name"
     validate_git_config
+    check_orchestration_health
     # Add more validation calls here (e.g., VS Code extensions)
 
     # --- Final Report ---

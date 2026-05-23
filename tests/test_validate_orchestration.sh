@@ -6,8 +6,8 @@ PROJECT_ROOT=$(cd "$TEST_SCRIPT_PATH/.." && pwd)
 
 PASS=0
 FAIL=0
-assert_eq() { if [[ "$1" == "$2" ]]; then echo "  [OK] $3"; ((PASS++)); else echo "  [FAIL] $3 — got '$1', expected '$2'"; ((FAIL++)); fi; }
-assert_contains() { if echo "$1" | grep -q "$2"; then echo "  [OK] $3"; ((PASS++)); else echo "  [FAIL] $3 — '$2' not in output"; ((FAIL++)); fi; }
+assert_eq() { if [[ "$1" == "$2" ]]; then echo "  [OK] $3"; PASS=$((PASS + 1)); else echo "  [FAIL] $3 — got '$1', expected '$2'"; FAIL=$((FAIL + 1)); fi; }
+assert_contains() { if echo "$1" | grep -q "$2"; then echo "  [OK] $3"; PASS=$((PASS + 1)); else echo "  [FAIL] $3 — '$2' not in output"; FAIL=$((FAIL + 1)); fi; }
 
 echo "=== test: --orchestration skips SSoT clone and role select ==="
 
@@ -32,7 +32,7 @@ assert_contains "$OUTPUT" "OK" "output contains [OK]"
 assert_contains "$OUTPUT" "Checks Passed" "output contains summary"
 
 echo ""
-echo "=== test: --orchestration exits 1 when symlink missing ==="
+echo "=== test: --orchestration exits 1 when symlinks missing ==="
 
 FAKE_GEMOP2=$(mktemp -d)
 mkdir -p "${FAKE_GEMOP2}/skills/skill-b" "${FAKE_GEMOP2}/agents"
@@ -40,7 +40,11 @@ touch "${FAKE_GEMOP2}/agents/gct-test-002.md"
 
 FAKE_HOME2=$(mktemp -d)
 mkdir -p "${FAKE_HOME2}/.claude/skills" "${FAKE_HOME2}/.claude/agents"
-# Intentionally omit the symlinks
+# Symlinks intentionally omitted; settings.local.json present so only symlink
+# checks fail (isolates the symlink-missing failure mode)
+cat > "${FAKE_HOME2}/.claude/settings.local.json" <<'EOF'
+{"hooks": {"PreToolUse": [], "PostToolUse": []}}
+EOF
 
 OUTPUT2=$(HOME="$FAKE_HOME2" GFT_SSOT_GEMOP_PATH="$FAKE_GEMOP2" \
     bash "${PROJECT_ROOT}/validate-environment.sh" --orchestration 2>&1)

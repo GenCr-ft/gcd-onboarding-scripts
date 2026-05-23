@@ -20,7 +20,7 @@ readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
 readonly ROLE_MATRIX_FILE="foundations/governance/GOV-004-role-tooling-matrix.md"
 readonly TOOLING_SPECS_FILE="domains/tooling/standards/tool-002-technical-tooling-specifications.md"
 readonly GFT_WORKSPACE="$HOME/gft_studio"
-readonly GFT_SSOT_GEMOP_PATH="${HOME}/gft_studio/gcs-plt-gemop"
+readonly GFT_SSOT_GEMOP_PATH="${GFT_SSOT_GEMOP_PATH:-${HOME}/gft_studio/gcs-plt-gemop}"
 
 # Counters for the final report
 declare -i PASS_COUNT=0

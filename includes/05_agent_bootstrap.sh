@@ -45,6 +45,7 @@ setup_agent_skills() {
     local linked=0 updated=0 skipped=0
     for skill_dir in "${source_skills_dir}"/*/; do
         if [[ -d "$skill_dir" ]]; then
+            skill_dir="${skill_dir%/}"
             local skill_name
             skill_name=$(basename "$skill_dir")
             local target_link="${target_skills_dir}/${skill_name}"

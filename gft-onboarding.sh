@@ -114,7 +114,7 @@ existing["hooks"] = {
             "matcher": "Edit|Write|MultiEdit",
             "hooks": [
                 {"type": "command", "command": persona_linter},
-                {"type": "command", "command": date_updater}
+                {"type": "command", "command": f"python3 {date_updater}"}
             ]
         }
     ]

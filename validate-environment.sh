@@ -160,6 +160,7 @@ check_orchestration_health() {
         local total_skills missing_skills=0
         total_skills=$(find "$skills_source" -mindepth 1 -maxdepth 1 -type d | wc -l)
         for skill_dir in "${skills_source}"/*/; do
+            local skill_name
             skill_name=$(basename "$skill_dir")
             if [[ ! -L "${claude_skills}/${skill_name}" ]]; then
                 missing_skills=$((missing_skills + 1))
@@ -178,6 +179,7 @@ check_orchestration_health() {
     if [[ -d "$agents_source" ]]; then
         local total_agents=0 missing_agents=0
         while IFS= read -r -d '' agent_file; do
+            local agent_name
             agent_name=$(basename "$agent_file")
             if [[ "$agent_name" == "grader.md" ]]; then continue; fi
             total_agents=$((total_agents + 1))

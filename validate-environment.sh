@@ -19,7 +19,7 @@ readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-devops-standards.git"
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
 readonly ROLE_MATRIX_FILE="foundations/governance/GOV-004-role-tooling-matrix.md"
 readonly TOOLING_SPECS_FILE="domains/tooling/standards/tool-002-technical-tooling-specifications.md"
-readonly GFT_WORKSPACE="$HOME/gft_studio"
+readonly GFT_WORKSPACE="${GFT_WORKSPACE:-${HOME}/gft_studio}"
 readonly GFT_SSOT_GEMOP_PATH="${GFT_SSOT_GEMOP_PATH:-${HOME}/gft_studio/gcs-plt-gemop}"
 
 # Counters for the final report
@@ -144,82 +144,15 @@ validate_git_config() {
     fi
 }
 
-# Checks orchestration health: skill/agent symlinks and studio hooks registration
-check_orchestration_health() {
-    log_info "=== Orchestration Health Check ==="
-
-    local gemop_path="${GFT_SSOT_GEMOP_PATH}"
-    local skills_source="${gemop_path}/skills"
-    local agents_source="${gemop_path}/agents"
-    local claude_skills="${HOME}/.claude/skills"
-    local claude_agents="${HOME}/.claude/agents"
-    local settings_local="${HOME}/.claude/settings.local.json"
-
-    # 1. Skill symlink integrity
-    if [[ -d "$skills_source" ]]; then
-        local total_skills missing_skills=0
-        total_skills=$(find "$skills_source" -mindepth 1 -maxdepth 1 -type d | wc -l)
-        for skill_dir in "${skills_source}"/*/; do
-            local skill_name
-            skill_name=$(basename "$skill_dir")
-            if [[ ! -L "${claude_skills}/${skill_name}" ]]; then
-                missing_skills=$((missing_skills + 1))
-            fi
-        done
-        if [[ $missing_skills -eq 0 ]]; then
-            check_ok "All ${total_skills} skill symlinks are present in ~/.claude/skills/"
-        else
-            check_fail "${missing_skills}/${total_skills} skill symlinks missing from ~/.claude/skills/. Run gft-onboarding.sh to repair."
-        fi
-    else
-        check_fail "gemop skills source not found at ${skills_source}. Set GFT_SSOT_GEMOP_PATH or clone gcs-plt-gemop."
-    fi
-
-    # 2. Agent file symlinks
-    if [[ -d "$agents_source" ]]; then
-        local total_agents=0 missing_agents=0
-        while IFS= read -r -d '' agent_file; do
-            local agent_name
-            agent_name=$(basename "$agent_file")
-            if [[ "$agent_name" == "grader.md" ]]; then continue; fi
-            total_agents=$((total_agents + 1))
-            if [[ ! -L "${claude_agents}/${agent_name}" ]]; then
-                missing_agents=$((missing_agents + 1))
-            fi
-        done < <(find "$agents_source" -maxdepth 1 -name "*.md" -print0)
-        if [[ $missing_agents -eq 0 ]]; then
-            check_ok "All ${total_agents} agent symlinks are present in ~/.claude/agents/"
-        else
-            check_fail "${missing_agents}/${total_agents} agent symlinks missing from ~/.claude/agents/. Run gft-onboarding.sh to repair."
-        fi
-    else
-        check_fail "gemop agents source not found at ${agents_source}."
-    fi
-
-    # 3. Hook registration
-    if [[ -f "$settings_local" ]] && python3 -c "
-import json, sys
-try:
-    d = json.load(open(sys.argv[1]))
-    hooks = d.get('hooks', {})
-    assert 'PreToolUse' in hooks and 'PostToolUse' in hooks
-except Exception as e:
-    sys.exit(1)
-" "$settings_local" 2>/dev/null; then
-        check_ok "Studio hooks registered in ~/.claude/settings.local.json"
-    else
-        check_fail "Studio hooks not registered. Run gft-onboarding.sh to register them."
-    fi
-}
-
 # --- Orchestration Health Check ---
 # Checks local filesystem only — no network, no interactive prompts.
 # Uses GFT_SSOT_GEMOP_PATH env var (default: ${HOME}/gft_studio/gcs-plt-gemop).
 check_orchestration_health() {
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-${HOME}/gft_studio/gcs-plt-gemop}"
-    local claude_skills_dir="${HOME}/.claude/skills"
-    local claude_agents_dir="${HOME}/.claude/agents"
-    local claude_settings="${HOME}/.claude/settings.local.json"
+    local workspace_claude="${GFT_WORKSPACE:-/home/lgan/hxgn/dev/claude/exp}/.claude"
+    local claude_skills_dir="${workspace_claude}/skills"
+    local claude_agents_dir="${workspace_claude}/agents"
+    local claude_settings="${workspace_claude}/settings.json"
 
     log_info "Checking orchestration health against: $gemop_path"
 
@@ -271,15 +204,15 @@ check_orchestration_health() {
         check_fail "GEMOP agents directory not found: ${gemop_path}/agents"
     fi
 
-    # 3. Verify hooks are registered in settings.local.json
+    # 3. Verify hooks are registered in workspace settings.json
     if [[ -f "$claude_settings" ]]; then
         if grep -q '"hooks"' "$claude_settings"; then
-            check_ok "Hooks block present in settings.local.json"
+            check_ok "Hooks block present in workspace settings.json"
         else
-            check_fail "Hooks block missing from settings.local.json"
+            check_fail "Hooks block missing from workspace settings.json"
         fi
     else
-        check_fail "settings.local.json not found at ${claude_settings}"
+        check_fail "workspace settings.json not found at ${claude_settings}"
     fi
 }
 

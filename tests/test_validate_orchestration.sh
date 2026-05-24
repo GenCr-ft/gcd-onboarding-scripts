@@ -63,7 +63,6 @@ touch "${FAKE_GEMOP_WS}/agents/gct-test-003.md"
 mkdir -p "${FAKE_WS}/.claude/skills" "${FAKE_WS}/.claude/agents"
 ln -s "${FAKE_GEMOP_WS}/skills/skill-c" "${FAKE_WS}/.claude/skills/skill-c"
 ln -s "${FAKE_GEMOP_WS}/agents/gct-test-003.md" "${FAKE_WS}/.claude/agents/gct-test-003.md"
-mkdir -p "${FAKE_WS}/.claude"
 cat > "${FAKE_WS}/.claude/settings.json" <<'EOF'
 {"hooks": {"PreToolUse": [], "PostToolUse": []}}
 EOF

@@ -148,7 +148,7 @@ validate_git_config() {
 # Checks local filesystem only — no network, no interactive prompts.
 # Uses GFT_SSOT_GEMOP_PATH env var (default: ${HOME}/gft_studio/gcs-plt-gemop).
 check_orchestration_health() {
-    local gemop_path="${GFT_SSOT_GEMOP_PATH:-${HOME}/gft_studio/gcs-plt-gemop}"
+    local gemop_path="$GFT_SSOT_GEMOP_PATH"
     local workspace_claude="${GFT_WORKSPACE}/.claude"
     local claude_skills_dir="${workspace_claude}/skills"
     local claude_agents_dir="${workspace_claude}/agents"

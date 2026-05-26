@@ -23,10 +23,8 @@
 
 setup_agent_skills() {
     log_info "Deploying agent skills via symlinks..."
-    local target_skills_dir="${HOME}/.claude/skills"
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
 
-    # Auto-detect gemop path if not set
     if [[ -z "$gemop_path" ]]; then
         local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
         gemop_path="${workspace}/gcs-plt-gemop"
@@ -40,37 +38,37 @@ setup_agent_skills() {
         return 0
     fi
 
-    mkdir -p "$target_skills_dir"
-
+    local target_dirs=("${HOME}/.claude/skills" "${HOME}/.codex/skills")
     local linked=0 updated=0 skipped=0
-    for skill_dir in "${source_skills_dir}"/*/; do
-        if [[ -d "$skill_dir" ]]; then
-            skill_dir="${skill_dir%/}"
-            local skill_name
-            skill_name=$(basename "$skill_dir")
-            local target_link="${target_skills_dir}/${skill_name}"
 
-            if [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$skill_dir" ]]; then
-                skipped=$((skipped + 1))
-                continue
-            elif [[ -L "$target_link" ]]; then
-                log_info "  Updating symlink: ${skill_name}"
-                rm "$target_link"
-                updated=$((updated + 1))
-            else
-                log_info "  Linking skill: ${skill_name}"
-                linked=$((linked + 1))
+    for target_skills_dir in "${target_dirs[@]}"; do
+        mkdir -p "$target_skills_dir"
+        for skill_dir in "${source_skills_dir}"/*/; do
+            if [[ -d "$skill_dir" ]]; then
+                skill_dir="${skill_dir%/}"
+                local skill_name
+                skill_name=$(basename "$skill_dir")
+                local target_link="${target_skills_dir}/${skill_name}"
+
+                if [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$skill_dir" ]]; then
+                    skipped=$((skipped + 1))
+                    continue
+                elif [[ -L "$target_link" ]]; then
+                    rm "$target_link"
+                    updated=$((updated + 1))
+                else
+                    linked=$((linked + 1))
+                fi
+                ln -s "$skill_dir" "$target_link"
             fi
-            ln -s "$skill_dir" "$target_link"
-        fi
+        done
     done
 
-    log_success "Skills: ${linked} linked, ${updated} updated, ${skipped} already current."
+    log_success "Skills deployed: ${linked} linked, ${updated} updated, ${skipped} already current."
 }
 
 provision_agent_files() {
-    log_info "Provisioning agent files to ~/.claude/agents/..."
-    local target_agents_dir="${HOME}/.claude/agents"
+    log_info "Provisioning agent files..."
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
 
     if [[ -z "$gemop_path" ]]; then
@@ -85,33 +83,33 @@ provision_agent_files() {
         return 0
     fi
 
-    mkdir -p "$target_agents_dir"
-
+    local target_dirs=("${HOME}/.claude/agents" "${HOME}/.codex/agents")
     local linked=0 updated=0 skipped=0
-    while IFS= read -r -d '' agent_file; do
-        local agent_name
-        agent_name=$(basename "$agent_file")
-        # Skip grader.md — internal tool, not a deployable agent
-        if [[ "$agent_name" == "grader.md" ]]; then
-            continue
-        fi
-        local target_link="${target_agents_dir}/${agent_name}"
 
-        if [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$agent_file" ]]; then
-            skipped=$((skipped + 1))
-        elif [[ -L "$target_link" ]]; then
-            rm "$target_link"
-            ln -s "$agent_file" "$target_link"
-            updated=$((updated + 1))
-            log_info "  Updating agent: ${agent_name}"
-        else
-            ln -s "$agent_file" "$target_link"
-            linked=$((linked + 1))
-            log_info "  Linking agent: ${agent_name}"
-        fi
-    done < <(find "$source_agents_dir" -maxdepth 1 -name "*.md" -print0 | sort -z)
+    for target_agents_dir in "${target_dirs[@]}"; do
+        mkdir -p "$target_agents_dir"
+        while IFS= read -r -d '' agent_file; do
+            local agent_name
+            agent_name=$(basename "$agent_file")
+            if [[ "$agent_name" == "grader.md" ]]; then
+                continue
+            fi
+            local target_link="${target_agents_dir}/${agent_name}"
 
-    log_success "Agents: ${linked} linked, ${updated} updated, ${skipped} already current."
+            if [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$agent_file" ]]; then
+                skipped=$((skipped + 1))
+            elif [[ -L "$target_link" ]]; then
+                rm "$target_link"
+                ln -s "$agent_file" "$target_link"
+                updated=$((updated + 1))
+            else
+                ln -s "$agent_file" "$target_link"
+                linked=$((linked + 1))
+            fi
+        done < <(find "$source_agents_dir" -maxdepth 1 -name "*.md" -print0 | sort -z)
+    done
+
+    log_success "Agents deployed: ${linked} linked, ${updated} updated, ${skipped} already current."
 }
 
 generate_workspace_agent_md() {

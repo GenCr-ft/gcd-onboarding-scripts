@@ -37,8 +37,12 @@ configure_git() {
     local current_name
     current_name=$(git config --global user.name || echo "")
     if [[ -z "$current_name" ]]; then
-        read -r -p "Enter your full name for Git commits: " user_name
-        git config --global user.name "$user_name"
+        if [[ "${GFT_NON_INTERACTIVE:-}" == "true" ]]; then
+            git config --global user.name "Gencraft Developer"
+        else
+            read -r -p "Enter your full name for Git commits: " user_name
+            git config --global user.name "$user_name"
+        fi
     else
         log_info "Git user.name is already set to: $current_name"
     fi
@@ -46,8 +50,12 @@ configure_git() {
     local current_email
     current_email=$(git config --global user.email || echo "")
     if [[ -z "$current_email" ]]; then
-        read -r -p "Enter your email for Git commits: " user_email
-        git config --global user.email "$user_email"
+        if [[ "${GFT_NON_INTERACTIVE:-}" == "true" ]]; then
+            git config --global user.email "dev@gencraft.studio"
+        else
+            read -r -p "Enter your email for Git commits: " user_email
+            git config --global user.email "$user_email"
+        fi
     else
         log_info "Git user.email is already set to: $current_email"
     fi

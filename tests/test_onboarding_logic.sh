@@ -335,6 +335,36 @@ test_validate_env_has_set_e() {
     log_success "validate-environment.sh has set -e: PASSED"
 }
 
+test_headless_onboarding_non_interactive() {
+    log_info "[TEST SUITE 10] Testing Headless Onboarding Non-Interactive Override..."
+    local checks_failed=0
+
+    # Test 1: select_user_role auto-selects GFT_ROLE
+    local selected; selected=$(GFT_ROLE=programming select_user_role 2>&1)
+    if [[ "$selected" != *"programming"* ]]; then
+        log_error "FAIL: GFT_ROLE selection failed. Output: $selected"
+        ((checks_failed++))
+    fi
+
+    # Test 2: confirm_action auto-approves when GFT_NON_INTERACTIVE=true
+    if ! GFT_NON_INTERACTIVE=true confirm_action "Mock Question"; then
+        log_error "FAIL: confirm_action did not auto-approve under GFT_NON_INTERACTIVE."
+        ((checks_failed++))
+    fi
+
+    # Test 3: configure_git does not prompt under GFT_NON_INTERACTIVE=true
+    local mock_git_out
+    mock_git_out=$(GFT_NON_INTERACTIVE=true configure_git 2>&1)
+    local git_name; git_name=$(git config --global user.name || echo "")
+    if [[ -z "$git_name" ]]; then
+        log_error "FAIL: Git name not set."
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "Headless Onboarding Non-Interactive: PASSED"
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -355,6 +385,7 @@ main() {
     test_path_expansion_no_eval || ((failed_suites++))
     test_sed_inplace_portability || ((failed_suites++))
     test_validate_env_has_set_e || ((failed_suites++))
+    test_headless_onboarding_non_interactive || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

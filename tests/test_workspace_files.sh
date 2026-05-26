@@ -105,9 +105,61 @@ else
 fi
 export SCRIPT_DIR="$ORIG_SCRIPT_DIR"
 
+# ── Test 7: deploy_planning_metadata_hook with chaining ───────────────────────
+TMPDIR_HOOKS="$(mktemp -d)"
+export GFT_PROJECTS_HOME="$TMPDIR_HOOKS"
+
+# Create mock repos
+mkdir -p "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks"
+mkdir -p "${TMPDIR_HOOKS}/mock-repo-2/.git"
+
+# Create mock linter
+mkdir -p "${TMPDIR_HOOKS}/gcd-ops-scripts/src/gft_ops_scripts/linters"
+MOCK_LINTER_PATH="${TMPDIR_HOOKS}/gcd-ops-scripts/src/gft_ops_scripts/linters/validate_planning_metadata.py"
+echo "#!/usr/bin/env python3" > "$MOCK_LINTER_PATH"
+echo "print('Mock linter executed')" >> "$MOCK_LINTER_PATH"
+chmod +x "$MOCK_LINTER_PATH"
+
+# Create an existing legacy hook in mock-repo-1 to test chaining
+echo "#!/bin/sh" > "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks/pre-commit"
+echo "echo 'Legacy hook executed'" >> "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks/pre-commit"
+chmod +x "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks/pre-commit"
+
+if deploy_planning_metadata_hook 2>/dev/null; then
+  _pass "deploy_planning_metadata_hook exits 0 on success"
+else
+  _fail "deploy_planning_metadata_hook exits 0 on success"
+fi
+
+if [[ -f "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks/pre-commit" ]]; then
+  _pass "pre-commit hook wrapper created for mock-repo-1"
+else
+  _fail "pre-commit hook wrapper created for mock-repo-1"
+fi
+
+if [[ -f "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks/pre-commit.legacy" ]]; then
+  _pass "legacy hook successfully backed up to pre-commit.legacy"
+else
+  _fail "legacy hook successfully backed up to pre-commit.legacy"
+fi
+
+if grep -q "validate_planning_metadata.py" "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks/pre-commit"; then
+  _pass "pre-commit wrapper invokes planning metadata linter"
+else
+  _fail "pre-commit wrapper invokes planning metadata linter"
+fi
+
+if grep -q "pre-commit.legacy" "${TMPDIR_HOOKS}/mock-repo-1/.git/hooks/pre-commit"; then
+  _pass "pre-commit wrapper chains to pre-commit.legacy"
+else
+  _fail "pre-commit wrapper chains to pre-commit.legacy"
+fi
+
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 rm -rf "$TMPDIR_DEPLOY"
+rm -rf "$TMPDIR_HOOKS"
 
 echo ""
 echo "  workspace_files: Passed: $PASS  Failed: $FAIL"
 [[ "$FAIL" -eq 0 ]]
+

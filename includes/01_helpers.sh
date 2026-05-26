@@ -67,6 +67,10 @@ log_error() {
 # Usage: if confirm_action "Do the thing?"; then ...; fi
 confirm_action() {
     local prompt="$1"
+    if [[ "${GFT_NON_INTERACTIVE:-}" == "true" ]]; then
+        log_info "Non-interactive auto-confirm: $prompt -> yes"
+        return 0
+    fi
     while true; do
         read -r -p "$prompt [y/N]: " response
         case "$response" in
@@ -76,6 +80,7 @@ confirm_action() {
         esac
     done
 }
+
 
 # Fetches the version for a specific tool from the SSoT .tool-versions-gft file.
 # $1: The name of the tool as it appears in the .tool-versions-gft file (e.g., "nodejs").
@@ -182,6 +187,12 @@ select_user_role() {
         log_error "'yq' is not installed, but it is required to parse SSoT files."
         log_info "Please install 'yq' (e.g., 'sudo apt install yq' or 'brew install yq') and re-run the script."
         exit 1
+    fi
+
+    if [[ -n "${GFT_ROLE:-}" ]]; then
+        log_info "Auto-selecting role from GFT_ROLE: $GFT_ROLE"
+        echo "$GFT_ROLE"
+        return 0
     fi
 
     log_info "Please select your primary role in the studio:"

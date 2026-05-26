@@ -153,6 +153,7 @@ main() {
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
     deploy_workspace_files
+    deploy_planning_metadata_hook
     configure_agent_environment "$selected_role_name"
     register_studio_hooks
     setup_pcg_python_venv "$selected_role_name"
@@ -173,5 +174,13 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     setup_log_stream
     trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
+    
+    # Handle standalone synchronization execution
+    if [[ "${1:-}" == "--sync-hooks" ]]; then
+        deploy_planning_metadata_hook
+        exit 0
+    fi
+    
     main
 fi
+

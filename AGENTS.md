@@ -61,8 +61,8 @@ pre-commit run --all-files   # shellcheck (shell scripts), markdownlint, yamllin
 ## Commit & PR Conventions
 
 - Conventional Commits v1.0.0.
-- Branch naming: `feat/`, `fix/`, `docs/`, `chore/`.
-- AI commits: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+- Branch: Conforms strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug` branch naming standard (e.g., `feat/issue-104-inventory-service`).
+- Co-author trailer: Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.
 
 ## Inter-repo Dependencies
 

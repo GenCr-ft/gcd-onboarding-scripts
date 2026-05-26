@@ -178,7 +178,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Handle standalone synchronization execution
     if [[ "${1:-}" == "--sync-hooks" ]]; then
         deploy_planning_metadata_hook
-        exit 0
+        exit $?
     fi
     
     main

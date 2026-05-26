@@ -78,6 +78,7 @@ deploy_planning_metadata_hook() {
 
     # Scan all directories in target_dir to find Git repositories
     for repo_path in "${target_dir}"/*; do
+        [[ -e "$repo_path" ]] || continue
         if [[ -d "${repo_path}/.git" ]]; then
             local repo_name
             repo_name=$(basename "$repo_path")

@@ -13,21 +13,21 @@
 # --- Script Configuration and Robustness ---
 set -euo pipefail
 
+# Script directory — resolved first so path defaults below can reference it
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # --- Global Variables ---
 # These are identical to the main onboarding script to ensure consistency
 readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-devops-standards.git"
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
 readonly ROLE_MATRIX_FILE="foundations/governance/GOV-004-role-tooling-matrix.md"
 readonly TOOLING_SPECS_FILE="domains/tooling/standards/tool-002-technical-tooling-specifications.md"
-readonly GFT_WORKSPACE="${GFT_WORKSPACE:-${HOME}/gft_studio}"
-readonly GFT_SSOT_GEMOP_PATH="${GFT_SSOT_GEMOP_PATH:-${HOME}/gft_studio/gcs-plt-gemop}"
+readonly GFT_WORKSPACE="${GFT_WORKSPACE:-$(dirname "${SCRIPT_DIR}")}"
+readonly GFT_SSOT_GEMOP_PATH="${GFT_SSOT_GEMOP_PATH:-${GFT_WORKSPACE}/gcs-plt-gemop}"
 
 # Counters for the final report
 declare -i PASS_COUNT=0
 declare -i FAIL_COUNT=0
-
-# Script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- Helper Functions ---
 # (A minimal set of helpers for this script)

@@ -38,7 +38,7 @@ setup_agent_skills() {
         return 0
     fi
 
-    local target_dirs=("${HOME}/.claude/skills" "${HOME}/.codex/skills")
+    local target_dirs=("${HOME}/.claude/skills" "${HOME}/.codex/skills" "${HOME}/.antigravity/skills")
     local linked=0 updated=0 skipped=0
 
     for target_skills_dir in "${target_dirs[@]}"; do
@@ -83,7 +83,7 @@ provision_agent_files() {
         return 0
     fi
 
-    local target_dirs=("${HOME}/.claude/agents" "${HOME}/.codex/agents")
+    local target_dirs=("${HOME}/.claude/agents" "${HOME}/.codex/agents" "${HOME}/.antigravity/agents")
     local linked=0 updated=0 skipped=0
 
     for target_agents_dir in "${target_dirs[@]}"; do
@@ -159,10 +159,11 @@ $role_instructions
 - **Context:** Check \`~/.claude/projects/.../memory/MEMORY.md\`.
 
 ## Mandatory Skills
-Ensure these skills are available for your tasks. They are deployed to \`~/.claude/skills/\` by the onboarding script:
+Ensure these skills are available for your tasks. They are deployed to \`~/.claude/skills/\`, \`~/.codex/skills/\`, and \`~/.antigravity/skills/\` by the onboarding script:
+- \`work-item-refinement\` — Stream refinement, design sub-issue creation, and execution mapping
+- \`dev-work-item-authoring\` — Decomposing and filing GitHub Issues for gaps and action items (requires Refinement first)
 - \`gencraft-git-workflow\` — Branch creation, conventional commits, and PR workflow
 - \`pr-lifecycle\` — Driving PRs through review and merge
-- \`dev-work-item-authoring\` — Filing GitHub Issues for gaps and action items
 - \`ssot-document-authoring\` — Authoring SSoT documents with correct frontmatter
 - \`questioning-user\` — Structured clarification with the Studio Director
 - \`questioning-inter-gem\` — Routing questions and escalations between agents

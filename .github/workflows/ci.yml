@@ -37,7 +37,7 @@ jobs:
 
   ssot-compliance:
     name: SSoT Compliance Check
-    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.2.5
+    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.1
     secrets:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
     with:

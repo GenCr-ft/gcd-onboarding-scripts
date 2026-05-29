@@ -11,4 +11,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extend agent bootstrap logic to support global ~/.antigravity/ paths and bundle work-item-refinement skill. (#68, @Antigravity)
 
 ### Fixed
-- Correct workspace planning init path and add deployment regression coverage. (#70, @loigallain)
+- Correct workspace planning init path and add deployment regression coverage. (#71, @loigallain)

@@ -46,13 +46,13 @@ else
   _fail "AGENTS.md deployed"
 fi
 
-if grep -q "/home/lgan/.agents/skills/planning-with-files/scripts/init-session.sh" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+if grep -Fq "/home/lgan/.agents/skills/planning-with-files/scripts/init-session.sh" "${TMPDIR_DEPLOY}/AGENTS.md" 2>/dev/null; then
   _pass "AGENTS.md uses installed planning-with-files init path"
 else
   _fail "AGENTS.md uses installed planning-with-files init path"
 fi
 
-if ! grep -q "/home/lgan/.claude/skills/planning-with-files/scripts/init-session.sh" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+if ! grep -Fq "/home/lgan/.claude/skills/planning-with-files/scripts/init-session.sh" "${TMPDIR_DEPLOY}/AGENTS.md" 2>/dev/null; then
   _pass "AGENTS.md does not reference stale planning-with-files init path"
 else
   _fail "AGENTS.md does not reference stale planning-with-files init path"

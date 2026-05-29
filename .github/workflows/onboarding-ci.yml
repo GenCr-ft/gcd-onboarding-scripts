@@ -7,57 +7,54 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Restrict GITHUB_TOKEN to read-only. Self-hosted runner risk is low: private
+# org repo — only org members with write access can open PRs.
+permissions:
+  contents: read
+
 jobs:
   validate-scripts:
     name: Validate Bash Scripts
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: ShellCheck
-        run: |
-          sudo apt-get install -y shellcheck
-          find . -name "*.sh" -exec shellcheck {} +
+        run: find . -name "*.sh" -exec shellcheck --severity=error {} +
 
   dry-run-onboarding:
-    name: Dry Run Onboarding
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    name: Dry Run Onboarding (Linux)
+    runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Environment
         run: |
-          mkdir -p "$HOME/.agents/skills"
-          # Mock some prerequisites if needed
-          
+          TEST_HOME=$(mktemp -d)
+          echo "HOME=$TEST_HOME" >> "$GITHUB_ENV"
+          mkdir -p "$TEST_HOME/.agents/skills"
+
       - name: Dry Run Orchestrator
         run: |
-          # We use a mock selection for the role if the script supports it
-          # For now, just check syntax and help
           bash -n gft-onboarding.sh
           find includes -name "*.sh" -exec bash -n {} +
-          
+
       - name: Verify Agent Bootstrap Logic
         run: |
-          # Test the bootstrap logic in isolation if possible
           export SCRIPT_DIR="$(pwd)"
           source includes/01_helpers.sh
           source includes/05_agent_bootstrap.sh
-          
-          # Mock log functions
           log_info() { echo "[INFO] $1"; }
           log_success() { echo "[SUCCESS] $1"; }
           log_warn() { echo "[WARN] $1"; }
-          
-          # Test skill deployment (should use the local skills/ dir we created)
-          mkdir -p skills
-          touch skills/test-skill.skill
+          # Point setup_agent_skills at a local mock gemop skills directory
+          MOCK_GEMOP="$HOME/mock-gemop"
+          mkdir -p "$MOCK_GEMOP/skills/test-skill"
+          export GFT_SSOT_GEMOP_PATH="$MOCK_GEMOP"
           setup_agent_skills
-          
-          if [[ -d "$HOME/.agents/skills/test-skill" ]]; then
+          if [[ -d "$HOME/.claude/skills/test-skill" ]]; then
             echo "Skill deployment verified."
           else
             echo "Skill deployment failed."

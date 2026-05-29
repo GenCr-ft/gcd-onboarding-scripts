@@ -6,10 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
+# Restrict GITHUB_TOKEN to read-only. Self-hosted runner risk is low: private
+# org repo — only org members with write access can open PRs.
+permissions:
+  contents: read
+
 jobs:
   unit-tests:
     name: Shell Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,16 +26,14 @@ jobs:
 
   shellcheck:
     name: ShellCheck Lint
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install shellcheck
-        run: sudo apt-get update -qq && sudo apt-get install -y shellcheck
-
       - name: Run shellcheck on all shell scripts
-        run: find . -name "*.sh" -not -path "./.git/*" | xargs -r shellcheck
+        run: find . -name "*.sh" -not -path "./.git/*" | xargs -r shellcheck --severity=error
 
   ssot-compliance:
     name: SSoT Compliance Check

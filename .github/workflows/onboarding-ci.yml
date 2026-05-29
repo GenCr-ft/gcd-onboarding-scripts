@@ -54,7 +54,7 @@ jobs:
           mkdir -p "$MOCK_GEMOP/skills/test-skill"
           export GFT_SSOT_GEMOP_PATH="$MOCK_GEMOP"
           setup_agent_skills
-          if [[ -d "$HOME/.agents/skills/test-skill" ]]; then
+          if [[ -d "$HOME/.claude/skills/test-skill" ]]; then
             echo "Skill deployment verified."
           else
             echo "Skill deployment failed."

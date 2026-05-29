@@ -49,8 +49,10 @@ jobs:
           log_info() { echo "[INFO] $1"; }
           log_success() { echo "[SUCCESS] $1"; }
           log_warn() { echo "[WARN] $1"; }
-          mkdir -p skills
-          touch skills/test-skill.skill
+          # Point setup_agent_skills at a local mock gemop skills directory
+          MOCK_GEMOP="$HOME/mock-gemop"
+          mkdir -p "$MOCK_GEMOP/skills/test-skill"
+          export GFT_SSOT_GEMOP_PATH="$MOCK_GEMOP"
           setup_agent_skills
           if [[ -d "$HOME/.agents/skills/test-skill" ]]; then
             echo "Skill deployment verified."

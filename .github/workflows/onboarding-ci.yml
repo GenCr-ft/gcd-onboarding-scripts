@@ -7,10 +7,16 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# Restrict GITHUB_TOKEN to read-only. Self-hosted runner risk is low: private
+# org repo — only org members with write access can open PRs.
+permissions:
+  contents: read
+
 jobs:
   validate-scripts:
     name: Validate Bash Scripts
     runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
 
@@ -22,11 +28,15 @@ jobs:
   dry-run-onboarding:
     name: Dry Run Onboarding (Linux)
     runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Environment
-        run: mkdir -p "$HOME/.agents/skills"
+        run: |
+          TEST_HOME=$(mktemp -d)
+          echo "HOME=$TEST_HOME" >> "$GITHUB_ENV"
+          mkdir -p "$TEST_HOME/.agents/skills"
 
       - name: Dry Run Orchestrator
         run: |

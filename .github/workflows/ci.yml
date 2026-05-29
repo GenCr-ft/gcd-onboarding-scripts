@@ -6,10 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
+# Restrict GITHUB_TOKEN to read-only. Self-hosted runner risk is low: private
+# org repo — only org members with write access can open PRs.
+permissions:
+  contents: read
+
 jobs:
   unit-tests:
     name: Shell Unit Tests
     runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,6 +27,7 @@ jobs:
   shellcheck:
     name: ShellCheck Lint
     runs-on: [self-hosted, linux, x64]
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout
         uses: actions/checkout@v4

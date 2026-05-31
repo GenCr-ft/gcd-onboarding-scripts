@@ -225,6 +225,27 @@ else
   _pass "Docs do not mention Phase 5 in progress"
 fi
 
+# Deployed CLAUDE.md must not contain the stale "NOT STARTED" Phase 6 block
+if grep -Fq "NOT STARTED" "${TMPDIR_DEPLOY}/CLAUDE.md"; then
+  _fail "CLAUDE.md contains stale Phase 6 NOT STARTED status"
+else
+  _pass "CLAUDE.md does not contain stale Phase 6 NOT STARTED status"
+fi
+
+# Deployed docs must not contain absolute paths to file:///home/lgan/
+if grep -Fq "file:///home/lgan/" "${TMPDIR_DEPLOY}/README.md" || grep -Fq "file:///home/lgan/" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+  _fail "Docs contain absolute paths to file:///home/lgan/"
+else
+  _pass "Docs do not contain absolute paths to file:///home/lgan/"
+fi
+
+# Deployed AGENTS.md must not say "pending GDD spec approvals"
+if grep -Fq "pending GDD spec approvals" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+  _fail "AGENTS.md still says pending GDD spec approvals"
+else
+  _pass "AGENTS.md does not say pending GDD spec approvals"
+fi
+
 # ── Test 9: verify test-all.sh workspace selectors ───────────────────────────
 # Expose workspace selectors: --aethel, --evai-platform, --workspace-ops, --agent-factory, --studio-gencraft
 for opt in --aethel --evai-platform --workspace-ops --agent-factory --studio-gencraft; do
@@ -244,12 +265,26 @@ for opt in --server --pcg --client --ops; do
   fi
 done
 
+# test-all.sh must exit non-zero when both workspace and legacy selectors are passed
+if ! bash "${TMPDIR_DEPLOY}/test-all.sh" --aethel --server >/dev/null 2>&1; then
+  _pass "test-all.sh exits non-zero on conflicting selectors"
+else
+  _fail "test-all.sh exits 0 on conflicting selectors"
+fi
+
 # ── Test 10: verify workspace.sh gracefully prints help without Poetry ───────
 # We run workspace.sh --help. If we mock PATH or poetry command to not exist, it should exit 0 and print workspaces help.
 if env PATH="/usr/bin:/bin" bash "${TMPDIR_DEPLOY}/workspace.sh" --help >/dev/null 2>&1; then
   _pass "workspace.sh --help exits 0 without Poetry installed"
 else
   _fail "workspace.sh --help exits non-zero without Poetry installed"
+fi
+
+# workspace.sh must exit non-zero when executing a command without Poetry installed
+if ! env PATH="/usr/bin:/bin" bash "${TMPDIR_DEPLOY}/workspace.sh" status aethel >/dev/null 2>&1; then
+  _pass "workspace.sh status aethel exits non-zero without Poetry installed"
+else
+  _fail "workspace.sh status aethel exits 0 without Poetry installed"
 fi
 
 # ── Cleanup ───────────────────────────────────────────────────────────────────

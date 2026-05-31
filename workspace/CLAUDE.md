@@ -47,9 +47,26 @@ This workspace (`/home/lgan/hxgn/dev/claude/exp`) contains ~30 Git repositories 
 
 ---
 
-## Project Phase Status (as of 2026-05-13)
+## Workspace Status Files
 
-### Phase 4 — Walking Skeleton: COMPLETE ✅
+Fresh AI agent sessions and human contributors must orient themselves through bounded workspaces. Authoritative status, active tasks, blockers, and test matrices are found in:
+
+*   **Aethel Game (Project #17):** `gcs-project-management/workspaces/aethel/STATUS.md`
+*   **EVAI Platform (Project #18):** `gcs-project-management/workspaces/evai-platform/STATUS.md`
+*   **Workspace Operations (Project #19):** `gcs-project-management/workspaces/workspace-ops/STATUS.md`
+*   **Agent Factory (Project #20):** `gcs-project-management/workspaces/agent-factory/STATUS.md`
+*   **Studio GenCraft (Project #22):** `gcs-project-management/workspaces/studio-gencraft/STATUS.md`
+*   *Note:* **Project #21 (Recovery Portfolio)** is used strictly as a governance rollup and portfolio rollup, not as a contributor workspace.
+
+---
+
+## Project Phase Status
+
+### Phase 6 — State Persistence + Multiplayer: IN PROGRESS 🚧
+
+Phase 6 is the active development phase. Stream A (multiplayer infrastructure) is complete; Stream B (player state persistence) is unblocked and ready to implement. All status is tracked in the workspace STATUS files above.
+
+### Phase 4 & 5: COMPLETE ✅
 
 All work items merged and end-to-end confirmed on WSLg/llvmpipe (2026-05-02). The vertical slice is: Auth Service login → JWT → WebSocket upgrade → flat terrain chunk → Godot render → WASD player movement.
 
@@ -271,10 +288,7 @@ Physics runs in a `worker_threads` Worker. Communication uses `SharedArrayBuffer
 - **Branch naming:** `feat/`, `fix/`, `docs/`, `test/`, `chore/`, `refactor/`.
 - **Every PR requires a GitHub Issue.**
 - **No force-push to main** without explicit user instruction.
-- **Co-author trailer** on all AI-generated commits:
-  ```
-  Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
-  ```
+- **Co-author trailer:** Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.
 
 ---
 

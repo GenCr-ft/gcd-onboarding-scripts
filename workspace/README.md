@@ -2,51 +2,44 @@
 
 Welcome to the GenCr@ft Studio primary workspace. This is a multi-repository ecosystem dedicated to the development of the **Aethel** multiplayer voxel RPG and the underlying **GenCr@ft Platform**.
 
-## Overview
+## Bounded Workspaces
 
-GenCr@ft Studio is an AI-augmented game development environment. We combine a hybrid voxel engine, emergent RPG mechanics, and a robust creator ecosystem. This workspace orchestrates several dozen specialized repositories across four primary domains:
+Our workspace is structured into five bounded domains to ensure focused delivery and clean separation of concerns.
 
-1.  **Aethel Game Engine**: Core voxel logic, procedural generation (PCG), and real-time server/client synchronization.
-2.  **Core Services**: High-availability microservices for authentication, persistence, and shared UI components.
-3.  **Studio Platform**: AI agent blueprints, operational tools (DevSphere), and local development orchestration.
-4.  **Governance & Standards**: The "Single Source of Truth" (SSoT) for engineering, legal, security, and design.
+### 🎮 1. Aethel Game (Aethel)
+*   **Domain:** Core game engine, procedural generation, server, client, and voxel authority.
+*   **Source of Truth:** [gcs-project-management/workspaces/aethel/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/aethel/STATUS.md)
+*   **Project Board:** Project #17
+*   **Repositories:** `gcp-aethel-server`, `gcp-aethel-client`, `gcp-aethel-pcg`, `gcl-srv-authentication`, `gcl-srv-persistence`, `gcl-voxel-engine`, `gcl-ui-components`, `gcp-aethel-architecture`, `gcp-aethel-backlog`, `gcp-aethel-docs-gdd`, `gcp-aethel-docs-lw`, `gcp-aethel-docs-req`, `gcp-aethel-docs-external`
+
+### ⚡ 2. EVAI Platform (EVAI Platform)
+*   **Domain:** Developer agent pipelines, CLI orchestration, and Hermes API services.
+*   **Source of Truth:** [gcs-project-management/workspaces/evai-platform/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/evai-platform/STATUS.md)
+*   **Project Board:** Project #18
+*   **Repositories:** `gcs-plt-tools`, `gcs-plt-docs-req`
+
+### 🤖 3. Agent Factory (Agent Factory)
+*   **Domain:** AI Gem operational protocols, design blueprints, personas, and grader evaluations.
+*   **Source of Truth:** [gcs-project-management/workspaces/agent-factory/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/agent-factory/STATUS.md)
+*   **Project Board:** Project #20
+*   **Repositories:** `gcs-plt-gemop`, `gcs-plt-gembp`
+
+### 🛠️ 4. Workspace Operations (Workspace Operations)
+*   **Domain:** Onboarding scripts, CI/CD reusable workflows, OpenTofu IaC, and backup systems.
+*   **Source of Truth:** [gcs-project-management/workspaces/workspace-ops/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/workspace-ops/STATUS.md)
+*   **Project Board:** Project #19
+*   **Repositories:** `gcd-onboarding-scripts`, `gcd-ops-scripts`, `gcd-shared-actions`, `gcd-backup-utilities`, `gencraft-iac`
+
+### 📚 5. Studio GenCraft (Studio GenCraft)
+*   **Domain:** Studio manifestos, governance policies, security core, legal frameworks, and project tracking.
+*   **Source of Truth:** [gcs-project-management/workspaces/studio-gencraft/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/studio-gencraft/STATUS.md)
+*   **Project Board:** Project #22
+*   **Repositories:** `gcs-devops-standards`, `gcs-engineering-handbook`, `gcs-studio-handbook`, `gcs-security-core`, `gcs-studio-legal`, `gcs-project-management`, `gencr-ft.github.io`, `gct-repo-template-standard`, `gct-service-template-py`, `gct-ssot-templates`
 
 ---
 
-## Repository Map
-
-### 🎮 Aethel Game (Project Aethel)
-| Repository | Description | Classification |
-|:-----------|:------------|:---------------|
-| [`gcp-aethel-client`](./gcp-aethel-client) | Godot 4 game client (Desktop-first MVP) | application/service |
-| [`gcp-aethel-server`](./gcp-aethel-server) | Authoritative real-time game server (Node.js/TypeScript) | application/service |
-| [`gcp-aethel-pcg`](./gcp-aethel-pcg) | Procedural Content Generation engine (Rust/WASM) | application/service |
-| [`gcl-voxel-engine`](./gcl-voxel-engine) | Server-side voxel authority library | library/package |
-| [`gcp-aethel-backlog`](./gcp-aethel-backlog) | Engineering backlog and session reports | standards/docs |
-
-### 🛠️ Core Services
-| Repository | Description | Classification |
-|:-----------|:------------|:---------------|
-| [`gcl-srv-authentication`](./gcl-srv-authentication) | JWT-based auth service (NestJS) | application/service |
-| [`gcl-srv-persistence`](./gcl-srv-persistence) | Player & world data persistence (NestJS/Prisma) | application/service |
-| [`gcl-ui-components`](./gcl-ui-components) | Shared UI component library (Pending framework) | library/package |
-
-### 🤖 Studio Platform (AI-Augmented Dev)
-| Repository | Description | Classification |
-|:-----------|:------------|:---------------|
-| [`gcs-plt-tools`](./gcs-plt-tools) | **DevSphere**: Local dev orchestration and agent pipeline | CLI/tool |
-| [`gcs-plt-gemop`](./gcs-plt-gemop) | AI Gem operational protocols and prompts | standards/docs |
-| [`gcs-plt-gembp`](./gcs-plt-gembp) | Design blueprints for all 36 AI Gem roles | standards/docs |
-| [`gencraft-iac`](./gencraft-iac) | Infrastructure as Code (OpenTofu/Terraform) | infrastructure/IaC |
-
-### 📚 Governance & Handbooks
-| Repository | Description | Classification |
-|:-----------|:------------|:---------------|
-| [`gcs-studio-handbook`](./gcs-studio-handbook) | Main studio operational handbook | standards/docs |
-| [`gcs-engineering-handbook`](./gcs-engineering-handbook) | Cultural and technical engineering manifesto | standards/docs |
-| [`gcs-devops-standards`](./gcs-devops-standards) | CI/CD, IaC, and tooling standards | standards/docs |
-| [`gcs-security-core`](./gcs-security-core) | Security mandates and threat models | standards/docs |
-| [`gcs-studio-legal`](./gcs-studio-legal) | Legal drafts (Privacy, EULA, IP) | standards/docs |
+## Portfolio Governance
+*   **Project #21 (Recovery Portfolio):** Used strictly as a governance rollup and portfolio rollup. It is not an active contributor workspace.
 
 ---
 
@@ -61,30 +54,22 @@ To prepare your workstation for development across the entire studio:
     ./gft-onboarding.sh
     ```
 
-2.  **Start Local Services**:
-    Orchestrate the core platform and game server using DevSphere.
+2.  **Run Tests per Workspace**:
+    Use our orchestrator command to test a specific bounded workspace:
     ```bash
-    cd gcs-plt-tools
-    ./dev-up.sh
-    ```
-
-3.  **Run the Game**:
-    Launch the Godot 4 client and connect to your local server.
-    ```bash
-    # Open gcp-aethel-client/project.godot in Godot 4.2+
+    ./test-all.sh --aethel
     ```
 
 ## Development Standards
 
 Every repository in this workspace follows strict quality gates:
-- **Conventional Commits**: All messages must follow the [Angular convention](https://www.conventionalcommits.org/).
+- **Conventional Commits**: All messages must follow the Angular convention.
 - **SSoT Documentation**: Every Markdown file must include a `docId` and YAML frontmatter.
 - **Pre-commit Hooks**: Enforced via `pre-commit`; install locally with `pre-commit install` in any repository.
 
 ## Project Status
 
-- **Phase 4 (Walking Skeleton)**: COMPLETE.
-- **Phase 5 (PCG Integration)**: IN PROGRESS.
+- **Phase 6 (State Persistence + Multiplayer)**: IN PROGRESS.
 
 ---
 

@@ -228,7 +228,7 @@ fi
 # ── Test 9: verify test-all.sh workspace selectors ───────────────────────────
 # Expose workspace selectors: --aethel, --evai-platform, --workspace-ops, --agent-factory, --studio-gencraft
 for opt in --aethel --evai-platform --workspace-ops --agent-factory --studio-gencraft; do
-  if bash "${TMPDIR_DEPLOY}/test-all.sh" --help | grep -Fq "$opt"; then
+  if bash "${TMPDIR_DEPLOY}/test-all.sh" --help | grep -Fq -e "$opt"; then
     _pass "test-all.sh --help documents selector $opt"
   else
     _fail "test-all.sh --help missing selector $opt"
@@ -237,7 +237,7 @@ done
 
 # Proves existing test-all.sh flags still appear in --help and run/skip correctly
 for opt in --server --pcg --client --ops; do
-  if bash "${TMPDIR_DEPLOY}/test-all.sh" --help | grep -Fq "$opt"; then
+  if bash "${TMPDIR_DEPLOY}/test-all.sh" --help | grep -Fq -e "$opt"; then
     _pass "test-all.sh --help documents legacy selector $opt"
   else
     _fail "test-all.sh --help missing legacy selector $opt"

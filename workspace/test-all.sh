@@ -107,6 +107,13 @@ for arg in "$@"; do
   esac
 done
 
+# Check for conflicting selectors (cannot mix workspace and legacy technical selectors)
+if [[ "$ANY_WS_SELECTED" == "1" ]] && [[ "$ANY_LEGACY_SELECTED" == "1" ]]; then
+  echo "Error: Conflicting selectors. You cannot mix workspace selectors (--aethel, --evai-platform, etc.)" >&2
+  echo "       with legacy technical selectors (--server, --pcg, --client, --ops)." >&2
+  exit 1
+fi
+
 # Default: if no selectors passed, run all legacy groups
 if [[ "$ANY_WS_SELECTED" == "0" ]] && [[ "$ANY_LEGACY_SELECTED" == "0" ]]; then
   RUN_SERVER=1

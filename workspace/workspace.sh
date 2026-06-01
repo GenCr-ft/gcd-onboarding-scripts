@@ -22,10 +22,20 @@ print_workspace_help() {
   echo "  cd gcd-onboarding-scripts && ./gft-onboarding.sh"
 }
 
-# If help is requested, or if Poetry/gft surface is missing during early checkout
-if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]] || ! command -v poetry >/dev/null 2>&1 || [[ ! -d "${GFT_DIR}" ]]; then
+# If help is explicitly requested, print help and exit 0
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
   print_workspace_help
   exit 0
+fi
+
+# If a command is requested, but Poetry/gft surface is missing during early checkout
+if ! command -v poetry >/dev/null 2>&1 || [[ ! -d "${GFT_DIR}" ]]; then
+  print_workspace_help
+  echo "" >&2
+  echo "Error: Poetry is not installed or the gft toolchain is not built." >&2
+  echo "Please run onboarding to activate local CLI commands:" >&2
+  echo "  cd gcd-onboarding-scripts && ./gft-onboarding.sh" >&2
+  exit 1
 fi
 
 cd "${GFT_DIR}"

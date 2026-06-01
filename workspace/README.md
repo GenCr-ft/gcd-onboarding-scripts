@@ -8,31 +8,31 @@ Our workspace is structured into five bounded domains to ensure focused delivery
 
 ### 🎮 1. Aethel Game (Aethel)
 *   **Domain:** Core game engine, procedural generation, server, client, and voxel authority.
-*   **Source of Truth:** [gcs-project-management/workspaces/aethel/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/aethel/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/aethel/STATUS.md](./gcs-project-management/workspaces/aethel/STATUS.md)
 *   **Project Board:** Project #17
 *   **Repositories:** `gcp-aethel-server`, `gcp-aethel-client`, `gcp-aethel-pcg`, `gcl-srv-authentication`, `gcl-srv-persistence`, `gcl-voxel-engine`, `gcl-ui-components`, `gcp-aethel-architecture`, `gcp-aethel-backlog`, `gcp-aethel-docs-gdd`, `gcp-aethel-docs-lw`, `gcp-aethel-docs-req`, `gcp-aethel-docs-external`
 
 ### ⚡ 2. EVAI Platform (EVAI Platform)
 *   **Domain:** Developer agent pipelines, CLI orchestration, and Hermes API services.
-*   **Source of Truth:** [gcs-project-management/workspaces/evai-platform/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/evai-platform/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/evai-platform/STATUS.md](./gcs-project-management/workspaces/evai-platform/STATUS.md)
 *   **Project Board:** Project #18
 *   **Repositories:** `gcs-plt-tools`, `gcs-plt-docs-req`
 
 ### 🤖 3. Agent Factory (Agent Factory)
 *   **Domain:** AI Gem operational protocols, design blueprints, personas, and grader evaluations.
-*   **Source of Truth:** [gcs-project-management/workspaces/agent-factory/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/agent-factory/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/agent-factory/STATUS.md](./gcs-project-management/workspaces/agent-factory/STATUS.md)
 *   **Project Board:** Project #20
 *   **Repositories:** `gcs-plt-gemop`, `gcs-plt-gembp`
 
 ### 🛠️ 4. Workspace Operations (Workspace Operations)
 *   **Domain:** Onboarding scripts, CI/CD reusable workflows, OpenTofu IaC, and backup systems.
-*   **Source of Truth:** [gcs-project-management/workspaces/workspace-ops/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/workspace-ops/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/workspace-ops/STATUS.md](./gcs-project-management/workspaces/workspace-ops/STATUS.md)
 *   **Project Board:** Project #19
 *   **Repositories:** `gcd-onboarding-scripts`, `gcd-ops-scripts`, `gcd-shared-actions`, `gcd-backup-utilities`, `gencraft-iac`
 
 ### 📚 5. Studio GenCraft (Studio GenCraft)
 *   **Domain:** Studio manifestos, governance policies, security core, legal frameworks, and project tracking.
-*   **Source of Truth:** [gcs-project-management/workspaces/studio-gencraft/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/studio-gencraft/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/studio-gencraft/STATUS.md](./gcs-project-management/workspaces/studio-gencraft/STATUS.md)
 *   **Project Board:** Project #22
 *   **Repositories:** `gcs-devops-standards`, `gcs-engineering-handbook`, `gcs-studio-handbook`, `gcs-security-core`, `gcs-studio-legal`, `gcs-project-management`, `gencr-ft.github.io`, `gct-repo-template-standard`, `gct-service-template-py`, `gct-ssot-templates`
 

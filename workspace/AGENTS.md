@@ -10,7 +10,7 @@
 
 - **Studio:** GenCr@ft (GitHub org: `GenCr-ft`)
 - **Workspace:** 33 Git repos, side-by-side at `/home/lgan/hxgn/dev/claude/exp` (not a monorepo)
-- **Current phase:** Phase 6 — State Persistence + Multiplayer (Phases 4 + 5 complete; Phase 6 unblocked, pending GDD spec approvals — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34))
+- **Current phase:** Phase 6 — State Persistence + Multiplayer (Phases 4 + 5 complete; Phase 6 active and unblocked).
 
 ---
 
@@ -19,7 +19,7 @@
 Our repositories are divided into five bounded workspaces. Each has an authoritative `STATUS.md` file and an associated GitHub Project board:
 
 ### 🎮 Aethel Game Workspace (Project #17)
-*   **Source of Truth:** [gcs-project-management/workspaces/aethel/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/aethel/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/aethel/STATUS.md](./gcs-project-management/workspaces/aethel/STATUS.md)
 *   **Active Repositories:**
     *   `gcp-aethel-server` — Authoritative game server, simulation loop, WebSocket
     *   `gcp-aethel-client` — Game client, voxel rendering, player controller
@@ -36,13 +36,13 @@ Our repositories are divided into five bounded workspaces. Each has an authorita
     *   `gcp-aethel-docs-external` — External-facing documentation (stub)
 
 ### ⚡ EVAI Platform Workspace (Project #18)
-*   **Source of Truth:** [gcs-project-management/workspaces/evai-platform/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/evai-platform/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/evai-platform/STATUS.md](./gcs-project-management/workspaces/evai-platform/STATUS.md)
 *   **Active Repositories:**
     *   `gcs-plt-tools` — **DevSphere**: CLI orchestration and agent pipeline
     *   `gcs-plt-docs-req` — Platform requirements (stub)
 
 ### 🛠️ Workspace Operations (Project #19)
-*   **Source of Truth:** [gcs-project-management/workspaces/workspace-ops/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/workspace-ops/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/workspace-ops/STATUS.md](./gcs-project-management/workspaces/workspace-ops/STATUS.md)
 *   **Active Repositories:**
     *   `gcd-onboarding-scripts` — Onboarding orchestration scripts
     *   `gcd-ops-scripts` — SSoT compliance linters
@@ -51,13 +51,13 @@ Our repositories are divided into five bounded workspaces. Each has an authorita
     *   `gencraft-iac` — Infrastructure as Code (OpenTofu)
 
 ### 🤖 Agent Factory Workspace (Project #20)
-*   **Source of Truth:** [gcs-project-management/workspaces/agent-factory/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/agent-factory/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/agent-factory/STATUS.md](./gcs-project-management/workspaces/agent-factory/STATUS.md)
 *   **Active Repositories:**
     *   `gcs-plt-gemop` — AI Gem operational protocols
     *   `gcs-plt-gembp` — Design blueprints for 36 AI Gems
 
 ### 📚 Studio GenCraft Workspace (Project #22)
-*   **Source of Truth:** [gcs-project-management/workspaces/studio-gencraft/STATUS.md](file:///home/lgan/hxgn/dev/claude/exp/gcs-project-management/workspaces/studio-gencraft/STATUS.md)
+*   **Source of Truth:** [gcs-project-management/workspaces/studio-gencraft/STATUS.md](./gcs-project-management/workspaces/studio-gencraft/STATUS.md)
 *   **Active Repositories:**
     *   `gcs-devops-standards` — DevOps governance standards
     *   `gcs-engineering-handbook` — Engineering handbook

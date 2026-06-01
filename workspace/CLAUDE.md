@@ -94,10 +94,6 @@ All work items merged and end-to-end confirmed on WSLg/llvmpipe (2026-05-02). Th
 
 All work items merged (2026-05-10). Deliverables: Xoshiro256++ RNG parity (Rust ↔ Python), `HeightmapGenerator` with OpenSimplex fbm, WASM `generate_chunk`, Godot 4.5 migration + PCG visualizer, `pcg-cli` Heightmap command wired to real Simplex noise.
 
-### Phase 6 — State Persistence + Multiplayer: NOT STARTED
-
-Phase 5 is complete; Phase 6 is unblocked. Gate: GAM-SPEC-049, -066, and -085 must be approved before WI authoring — tracked in [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27) and [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34).
-
 ---
 
 ## Modus Operandi
@@ -340,4 +336,3 @@ Philosophy pillars: **Simplicity** (Unix way), **Rigor** (Dijkstra — readable,
 | Item | Repo | Tracking |
 |------|------|---------|
 | `gcp-aethel-docs-req` ADR-056/057 rename | `gcp-aethel-docs-req` | docId conflict with architecture ADRs — [`gcp-aethel-docs-req#44`](https://github.com/GenCr-ft/gcp-aethel-docs-req/issues/44) |
-| GDD specs blocking Phase 6 | `gcp-aethel-docs-gdd` | GAM-SPEC-049, -066, -085 must be approved — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34) |

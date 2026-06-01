@@ -43,22 +43,51 @@ Our workspace is structured into five bounded domains to ensure focused delivery
 
 ---
 
-## Getting Started
+## Getting Started — Onboarding Quick-Start
 
-To prepare your workstation for development across the entire studio:
+If you are willing to onboard our studio and start contributing to **Aethel** or the **GenCr@ft Platform**, follow this quick-start checklist:
 
-1.  **Bootstrap Environment**:
-    Use the onboarding script suite to install required tools (Docker, Node.js, Rust, Python, etc.) according to your assigned role.
-    ```bash
-    cd gcd-onboarding-scripts
-    ./gft-onboarding.sh
-    ```
+### 1. Prerequisite Environment Check
+Ensure you have the following system utilities loaded (or install them via your package manager):
+* **Git** & **curl** / **unzip**
+* **NVM** (Node Version Manager) or **Node.js v20 LTS**
+* **Rustup** (Rust toolchain) & **wasm-pack**
+* **Python v3.11+**
+* **Pre-commit** (install via `pip install pre-commit`)
 
-2.  **Run Tests per Workspace**:
-    Use our orchestrator command to test a specific bounded workspace:
-    ```bash
-    ./test-all.sh --aethel
-    ```
+### 2. Run the Studio Onboarding Orchestrator
+Execute the idempotent bootstrapping script to align your environment and verify system packages:
+```bash
+cd gcd-onboarding-scripts
+./gft-onboarding.sh
+cd ..
+```
+
+### 3. Sync Workspace Symlinks & relative Git Hooks
+Use our platform tool `gft` (GenCr@ft Platform Tools) to automatically synchronize settings, relative path hooks, and Claude environment configurations:
+```bash
+gft workspace sync
+```
+This command syncs all local repository pre-commit hooks and configures Claude workspace settings without any absolute local path leaks.
+
+### 4. Run Environment Diagnostics & Unit Tests
+Before coding, run the diagnostic engine to confirm everything is set up correctly:
+```bash
+gft workspace doctor evai-platform
+```
+Then run the base unit tests to verify full workspace sanity:
+```bash
+./test-all.sh --no-integration
+```
+
+### 5. Find Your Bounded Workspace & Pick a Task
+1. Look up the **STATUS.md** file for your assigned workspace under [gcs-project-management/workspaces/](./gcs-project-management/workspaces/) (e.g. `gcs-project-management/workspaces/aethel/STATUS.md`).
+2. Read the "Active Work" and "Next Action" sections to understand the current engineering sprint.
+3. Open **GitHub Project Board #16** (or your domain-specific project board #17, #18, #19, #20, #22) and select the next unassigned `Todo` issue.
+4. Cut a branch conforming strictly to our naming standard (`feat/issue-ID-slug` or `fix/issue-ID-slug`) using:
+   ```bash
+   gft branch create <issue_id>
+   ```
 
 ## Development Standards
 

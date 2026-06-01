@@ -7,6 +7,11 @@
 #   ./test-all.sh --pcg               PCG (Rust + Python) only
 #   ./test-all.sh --client            Godot GUT tests only
 #   ./test-all.sh --ops               ops tooling repos only
+#   ./test-all.sh --aethel            Aethel Game workspace tests
+#   ./test-all.sh --evai-platform     EVAI Platform workspace tests
+#   ./test-all.sh --workspace-ops     Workspace Operations tests
+#   ./test-all.sh --agent-factory     Agent Factory tests
+#   ./test-all.sh --studio-gencraft   Studio GenCraft tests
 #   ./test-all.sh --no-integration    unit tests only (default: forward --integration)
 #   ./test-all.sh --coverage          forward --coverage to each repo
 #   ./test-all.sh --help              show this message
@@ -27,22 +32,95 @@ set -euo pipefail
 WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PASS=0; FAIL=0; SKIP=0
 
+# Repos in Aethel Game Workspace (aethel)
+AETHEL_REPOS=(
+  "gcp-aethel-server"
+  "gcl-srv-persistence"
+  "gcl-srv-authentication"
+  "gcp-aethel-pcg"
+  "gcp-aethel-client"
+  "gcl-voxel-engine"
+  "gcl-ui-components"
+  "gcp-aethel-architecture"
+  "gcp-aethel-backlog"
+  "gcp-aethel-docs-gdd"
+  "gcp-aethel-docs-lw"
+  "gcp-aethel-docs-req"
+  "gcp-aethel-docs-external"
+)
+
+# Repos in EVAI Platform Workspace (evai-platform)
+EVAI_REPOS=(
+  "gcs-plt-tools"
+  "gcs-plt-docs-req"
+)
+
+# Repos in Workspace Operations Workspace (workspace-ops)
+OPS_REPOS=(
+  "gcd-onboarding-scripts"
+  "gcd-ops-scripts"
+  "gcd-shared-actions"
+  "gcd-backup-utilities"
+  "gencraft-iac"
+)
+
+# Repos in Agent Factory Workspace (agent-factory)
+FACTORY_REPOS=(
+  "gcs-plt-gemop"
+  "gcs-plt-gembp"
+)
+
+# Repos in Studio GenCraft Workspace (studio-gencraft)
+STUDIO_REPOS=(
+  "gcs-devops-standards"
+  "gcs-engineering-handbook"
+  "gcs-studio-handbook"
+  "gcs-security-core"
+  "gcs-studio-legal"
+  "gcs-project-management"
+  "gencr-ft.github.io"
+  "gct-repo-template-standard"
+  "gct-service-template-py"
+  "gct-ssot-templates"
+)
+
 # ─── flags ────────────────────────────────────────────────────────────────────
-RUN_SERVER=1; RUN_PCG=1; RUN_CLIENT=1; RUN_OPS=1
+RUN_AETHEL=0; RUN_EVAI=0; RUN_OPS_WS=0; RUN_FACTORY=0; RUN_STUDIO=0; ANY_WS_SELECTED=0
+RUN_SERVER=0; RUN_PCG=0; RUN_CLIENT=0; RUN_OPS=0; ANY_LEGACY_SELECTED=0
 RUN_INTEGRATION=1; RUN_COVERAGE=0
 
 for arg in "$@"; do
   case "$arg" in
-    --server)         RUN_SERVER=1; RUN_PCG=0; RUN_CLIENT=0; RUN_OPS=0 ;;
-    --pcg)            RUN_SERVER=0; RUN_PCG=1; RUN_CLIENT=0; RUN_OPS=0 ;;
-    --client)         RUN_SERVER=0; RUN_PCG=0; RUN_CLIENT=1; RUN_OPS=0 ;;
-    --ops)            RUN_SERVER=0; RUN_PCG=0; RUN_CLIENT=0; RUN_OPS=1 ;;
-    --no-integration) RUN_INTEGRATION=0 ;;
-    --coverage)       RUN_COVERAGE=1 ;;
+    --aethel)            RUN_AETHEL=1; ANY_WS_SELECTED=1 ;;
+    --evai-platform)     RUN_EVAI=1; ANY_WS_SELECTED=1 ;;
+    --workspace-ops)     RUN_OPS_WS=1; ANY_WS_SELECTED=1 ;;
+    --agent-factory)     RUN_FACTORY=1; ANY_WS_SELECTED=1 ;;
+    --studio-gencraft)   RUN_STUDIO=1; ANY_WS_SELECTED=1 ;;
+    --server)            RUN_SERVER=1; ANY_LEGACY_SELECTED=1 ;;
+    --pcg)               RUN_PCG=1; ANY_LEGACY_SELECTED=1 ;;
+    --client)            RUN_CLIENT=1; ANY_LEGACY_SELECTED=1 ;;
+    --ops)               RUN_OPS=1; ANY_LEGACY_SELECTED=1 ;;
+    --no-integration)    RUN_INTEGRATION=0 ;;
+    --coverage)          RUN_COVERAGE=1 ;;
     --help|-h)
       sed -n '2,/^[^#]/p' "$0" | grep '^#' | sed 's/^# \?//'; exit 0 ;;
   esac
 done
+
+# Check for conflicting selectors (cannot mix workspace and legacy technical selectors)
+if [[ "$ANY_WS_SELECTED" == "1" ]] && [[ "$ANY_LEGACY_SELECTED" == "1" ]]; then
+  echo "Error: Conflicting selectors. You cannot mix workspace selectors (--aethel, --evai-platform, etc.)" >&2
+  echo "       with legacy technical selectors (--server, --pcg, --client, --ops)." >&2
+  exit 1
+fi
+
+# Default: if no selectors passed, run all legacy groups
+if [[ "$ANY_WS_SELECTED" == "0" ]] && [[ "$ANY_LEGACY_SELECTED" == "0" ]]; then
+  RUN_SERVER=1
+  RUN_PCG=1
+  RUN_CLIENT=1
+  RUN_OPS=1
+fi
 
 # Build flags to forward to each repo's ./test.sh
 REPO_FLAGS=()
@@ -84,41 +162,56 @@ run_repo() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# Group 1 — Server & services
+# Execution
 # ═══════════════════════════════════════════════════════════════════════════════
-if [[ "$RUN_SERVER" == "1" ]]; then
-  header "Server & Service Tests"
-  run_repo "gcp-aethel-server"
-  run_repo "gcl-srv-persistence"
-  run_repo "gcl-srv-authentication"
-  run_repo "gcl-voxel-engine"
-  run_repo "gcl-ui-components"
-fi
+if [[ "$ANY_WS_SELECTED" == "1" ]]; then
+  if [[ "$RUN_AETHEL" == "1" ]]; then
+    header "Aethel Game Workspace Tests"
+    for r in "${AETHEL_REPOS[@]}"; do run_repo "$r"; done
+  fi
+  if [[ "$RUN_EVAI" == "1" ]]; then
+    header "EVAI Platform Workspace Tests"
+    for r in "${EVAI_REPOS[@]}"; do run_repo "$r"; done
+  fi
+  if [[ "$RUN_OPS_WS" == "1" ]]; then
+    header "Workspace Operations Workspace Tests"
+    for r in "${OPS_REPOS[@]}"; do run_repo "$r"; done
+  fi
+  if [[ "$RUN_FACTORY" == "1" ]]; then
+    header "Agent Factory Workspace Tests"
+    for r in "${FACTORY_REPOS[@]}"; do run_repo "$r"; done
+  fi
+  if [[ "$RUN_STUDIO" == "1" ]]; then
+    header "Studio GenCraft Workspace Tests"
+    for r in "${STUDIO_REPOS[@]}"; do run_repo "$r"; done
+  fi
+else
+  # Legacy groups
+  if [[ "$RUN_SERVER" == "1" ]]; then
+    header "Server & Service Tests"
+    run_repo "gcp-aethel-server"
+    run_repo "gcl-srv-persistence"
+    run_repo "gcl-srv-authentication"
+    run_repo "gcl-voxel-engine"
+    run_repo "gcl-ui-components"
+  fi
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Group 2 — PCG
-# ═══════════════════════════════════════════════════════════════════════════════
-if [[ "$RUN_PCG" == "1" ]]; then
-  header "PCG Tests (Rust + Python)"
-  run_repo "gcp-aethel-pcg"
-fi
+  if [[ "$RUN_PCG" == "1" ]]; then
+    header "PCG Tests (Rust + Python)"
+    run_repo "gcp-aethel-pcg"
+  fi
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Group 3 — Godot client
-# ═══════════════════════════════════════════════════════════════════════════════
-if [[ "$RUN_CLIENT" == "1" ]]; then
-  header "Godot GUT Tests"
-  run_repo "gcp-aethel-client"
-fi
+  if [[ "$RUN_CLIENT" == "1" ]]; then
+    header "Godot GUT Tests"
+    run_repo "gcp-aethel-client"
+  fi
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# Group 4 — Ops tooling
-# ═══════════════════════════════════════════════════════════════════════════════
-if [[ "$RUN_OPS" == "1" ]]; then
-  header "Ops Tooling Tests"
-  run_repo "gcs-plt-tools"
-  run_repo "gcd-ops-scripts"
-  run_repo "gcd-onboarding-scripts"
+  if [[ "$RUN_OPS" == "1" ]]; then
+    header "Ops Tooling Tests"
+    run_repo "gcs-plt-tools"
+    run_repo "gcd-ops-scripts"
+    run_repo "gcd-onboarding-scripts"
+  fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════

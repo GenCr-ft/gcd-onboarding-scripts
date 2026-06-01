@@ -10,74 +10,69 @@
 
 - **Studio:** GenCr@ft (GitHub org: `GenCr-ft`)
 - **Workspace:** 33 Git repos, side-by-side at `/home/lgan/hxgn/dev/claude/exp` (not a monorepo)
-- **Current phase:** Phase 6 — State Persistence + Multiplayer (Phases 4 + 5 complete; Phase 6 unblocked, pending GDD spec approvals — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34))
+- **Current phase:** Phase 6 — State Persistence + Multiplayer (Phases 4 + 5 complete; Phase 6 active and unblocked).
 
 ---
 
-## 2. Repo Index
+## 2. Bounded Workspace & Repo Index
 
-### Product — Aethel Game (`gcp-`)
+Our repositories are divided into five bounded workspaces. Each has an authoritative `STATUS.md` file and an associated GitHub Project board:
 
-| Repo | Stack | Purpose | AGENTS.md |
-|------|-------|---------|-----------|
-| `gcp-aethel-server` | TypeScript/NestJS | Authoritative game server, simulation loop, WebSocket | [→](gcp-aethel-server/AGENTS.md) |
-| `gcp-aethel-client` | Godot 4.5/GDScript | Game client, voxel rendering, player controller | [→](gcp-aethel-client/AGENTS.md) |
-| `gcp-aethel-pcg` | Rust+WASM / Python | Procedural content generation library | [→](gcp-aethel-pcg/AGENTS.md) |
-| `gcp-aethel-architecture` | Markdown/Mermaid | ADRs, C4 diagrams, NFRs, architectural principles | [→](gcp-aethel-architecture/AGENTS.md) |
-| `gcp-aethel-backlog` | Markdown | Engineering backlog (ENG-BACK-NNN), meeting notes, remediation plan | [→](gcp-aethel-backlog/AGENTS.md) |
-| `gcp-aethel-docs-gdd` | Markdown | Game Design Document (GAM-SPEC-NNN) | [→](gcp-aethel-docs-gdd/AGENTS.md) |
-| `gcp-aethel-docs-lw` | Markdown | Lore & World-Building "Truth Bible" | [→](gcp-aethel-docs-lw/AGENTS.md) |
-| `gcp-aethel-docs-req` | Markdown | Requirements SSoT (ENG-REQ-NNN) | [→](gcp-aethel-docs-req/AGENTS.md) |
-| `gcp-aethel-docs-external` | Markdown | External-facing player/modder documentation (stub) | [→](gcp-aethel-docs-external/AGENTS.md) |
+### 🎮 Aethel Game Workspace (Project #17)
+*   **Source of Truth:** [gcs-project-management/workspaces/aethel/STATUS.md](./gcs-project-management/workspaces/aethel/STATUS.md)
+*   **Active Repositories:**
+    *   `gcp-aethel-server` — Authoritative game server, simulation loop, WebSocket
+    *   `gcp-aethel-client` — Game client, voxel rendering, player controller
+    *   `gcp-aethel-pcg` — Procedural content generation library (Rust/WASM)
+    *   `gcl-srv-authentication` — Auth microservice (NestJS)
+    *   `gcl-srv-persistence` — Persistence microservice (Prisma/Postgres)
+    *   `gcl-voxel-engine` — Server-side voxel authority library (stub)
+    *   `gcl-ui-components` — Shared UI component library (stub)
+    *   `gcp-aethel-architecture` — ADRs, C4 diagrams, architectural principles
+    *   `gcp-aethel-backlog` — Engineering backlog
+    *   `gcp-aethel-docs-gdd` — Game Design Document
+    *   `gcp-aethel-docs-lw` — Lore & World-Building "Truth Bible"
+    *   `gcp-aethel-docs-req` — Requirements SSoT
+    *   `gcp-aethel-docs-external` — External-facing documentation (stub)
 
-### Shared Libraries & Microservices (`gcl-`)
+### ⚡ EVAI Platform Workspace (Project #18)
+*   **Source of Truth:** [gcs-project-management/workspaces/evai-platform/STATUS.md](./gcs-project-management/workspaces/evai-platform/STATUS.md)
+*   **Active Repositories:**
+    *   `gcs-plt-tools` — **DevSphere**: CLI orchestration and agent pipeline
+    *   `gcs-plt-docs-req` — Platform requirements (stub)
 
-| Repo | Stack | Purpose | AGENTS.md |
-|------|-------|---------|-----------|
-| `gcl-srv-authentication` | TypeScript/NestJS/Prisma | Auth microservice (RS256 JWT, RTR, JWKS) | [→](gcl-srv-authentication/AGENTS.md) |
-| `gcl-srv-persistence` | TypeScript/NestJS/Prisma | Persistence microservice (Tier 1 PostgreSQL) | [→](gcl-srv-persistence/AGENTS.md) |
-| `gcl-voxel-engine` | TypeScript (stub) | Server-side voxel authority library (stub) | [→](gcl-voxel-engine/AGENTS.md) |
-| `gcl-ui-components` | TBD (stub) | Shared UI component library (stub — framework decision pending) | [→](gcl-ui-components/AGENTS.md) |
+### 🛠️ Workspace Operations (Project #19)
+*   **Source of Truth:** [gcs-project-management/workspaces/workspace-ops/STATUS.md](./gcs-project-management/workspaces/workspace-ops/STATUS.md)
+*   **Active Repositories:**
+    *   `gcd-onboarding-scripts` — Onboarding orchestration scripts
+    *   `gcd-ops-scripts` — SSoT compliance linters
+    *   `gcd-shared-actions` — Reusable GitHub Actions workflows
+    *   `gcd-backup-utilities` — Backup utilities (stub)
+    *   `gencraft-iac` — Infrastructure as Code (OpenTofu)
 
-### DevOps / Tooling (`gcd-`)
+### 🤖 Agent Factory Workspace (Project #20)
+*   **Source of Truth:** [gcs-project-management/workspaces/agent-factory/STATUS.md](./gcs-project-management/workspaces/agent-factory/STATUS.md)
+*   **Active Repositories:**
+    *   `gcs-plt-gemop` — AI Gem operational protocols
+    *   `gcs-plt-gembp` — Design blueprints for 36 AI Gems
 
-| Repo | Stack | Purpose | AGENTS.md |
-|------|-------|---------|-----------|
-| `gcd-ops-scripts` | Python | SSoT compliance linters (pre-commit hooks + CI) | [→](gcd-ops-scripts/AGENTS.md) |
-| `gcd-shared-actions` | GitHub Actions YAML | Reusable CI/CD workflows for entire studio | [→](gcd-shared-actions/AGENTS.md) |
-| `gcd-onboarding-scripts` | Bash / PowerShell | Cross-platform developer onboarding orchestration | [→](gcd-onboarding-scripts/AGENTS.md) |
-| `gcd-backup-utilities` | TBD (stub) | Backup utilities (stub — scope pending) | [→](gcd-backup-utilities/AGENTS.md) |
+### 📚 Studio GenCraft Workspace (Project #22)
+*   **Source of Truth:** [gcs-project-management/workspaces/studio-gencraft/STATUS.md](./gcs-project-management/workspaces/studio-gencraft/STATUS.md)
+*   **Active Repositories:**
+    *   `gcs-devops-standards` — DevOps governance standards
+    *   `gcs-engineering-handbook` — Engineering handbook
+    *   `gcs-studio-handbook` — Studio operational handbook
+    *   `gcs-security-core` — Security standards and IR policies
+    *   `gcs-studio-legal` — Legal documents (drafts)
+    *   `gcs-project-management` — Project tracker
+    *   `gencr-ft.github.io` — Public studio website
+    *   `gct-repo-template-standard` — Scaffolding repo template
+    *   `gct-service-template-py` — Python service template
+    *   `gct-ssot-templates` — Governance templates
 
-### Studio-Wide Standards (`gcs-`)
-
-| Repo | Stack | Purpose | AGENTS.md |
-|------|-------|---------|-----------|
-| `gcs-devops-standards` | Markdown | DevOps governance SSoT ("The Law") | [→](gcs-devops-standards/AGENTS.md) |
-| `gcs-engineering-handbook` | Markdown | Engineering manifesto and technical guides | [→](gcs-engineering-handbook/AGENTS.md) |
-| `gcs-studio-handbook` | Markdown | Studio-wide operational SSoT and knowledge hub | [→](gcs-studio-handbook/AGENTS.md) |
-| `gcs-security-core` | Markdown | SSDLC mandate, threat model templates, legal IR procedure | [→](gcs-security-core/AGENTS.md) |
-| `gcs-studio-legal` | Markdown | Legal documents (ALL DRAFT — not legally binding) | [→](gcs-studio-legal/AGENTS.md) |
-| `gcs-plt-architecture` | Markdown | Platform architecture ADRs, TDDs, C4 diagrams | [→](gcs-plt-architecture/AGENTS.md) |
-| `gcs-plt-gembp` | YAML | Gem design specifications (36 AI agent blueprints) | [→](gcs-plt-gembp/AGENTS.md) |
-| `gcs-plt-gemop` | Markdown | Gem operations: system prompts, 18 skills, communication protocols | [→](gcs-plt-gemop/AGENTS.md) |
-| `gcs-plt-tools` | Python/Docker | EvolvAI DevSphere platform CLI + microservices | [→](gcs-plt-tools/AGENTS.md) |
-| `gcs-plt-docs-req` | Markdown | Platform requirements (stub — KG not yet assigned) | [→](gcs-plt-docs-req/AGENTS.md) |
-| `gcs-project-management` | Markdown/Python | Project tracker (PRO-REPO-002, 106 PROJ-* tasks) | [→](gcs-project-management/AGENTS.md) |
-
-### Templates (`gct-`)
-
-| Repo | Stack | Purpose | AGENTS.md |
-|------|-------|---------|-----------|
-| `gct-repo-template-standard` | Node/Markdown | Standard repo scaffolding template | [→](gct-repo-template-standard/AGENTS.md) |
-| `gct-service-template-py` | Python/Poetry | Python microservice bootstrap template | [→](gct-service-template-py/AGENTS.md) |
-| `gct-ssot-templates` | Markdown | 42 document, issue, and PR templates | [→](gct-ssot-templates/AGENTS.md) |
-
-### Infrastructure & Web
-
-| Repo | Stack | Purpose | AGENTS.md |
-|------|-------|---------|-----------|
-| `gencraft-iac` | OpenTofu / YAML | Infrastructure as Code (GitHub org + AWS/GCP environments) | [→](gencraft-iac/AGENTS.md) |
-| `gencr-ft.github.io` | HTML/Jekyll | Public studio website (GitHub Pages) | [→](gencr-ft.github.io/AGENTS.md) |
+### 📊 Portfolio Rollup (Project #21)
+*   **Source of Truth:** [gcs-project-management#140](https://github.com/GenCr-ft/gcs-project-management/issues/140)
+*   **Purpose:** Recovery Portfolio — used strictly as a governance rollup and portfolio rollup. It is not an active contributor workspace.
 
 ---
 
@@ -123,10 +118,7 @@ Types enforced by `commitlint.config.js`: `feat`, `fix`, `docs`, `style`, `refac
 
 Header max length: 100 characters.
 
-AI-generated commits must include:
-```
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
-```
+Co-author trailer: Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.
 
 ### SSoT Document Standard (all Markdown repos)
 
@@ -409,7 +401,7 @@ Every feature follows the red → green → blue cycle:
 - **One PR per work item.** PR title: `feat(scope): WI-X.Y — <description>`
 - **Every PR requires a GitHub Issue.**
 - **No force-push to main** without explicit user instruction.
-- **Co-author trailer on AI commits:** `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+- **Co-author trailer:** Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.
 
 ### Issue Lifecycle
 

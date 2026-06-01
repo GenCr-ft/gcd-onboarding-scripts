@@ -10,4 +10,5 @@ paths = [
     '''(^|/)integration_test_docs/''',
     '''(^|/)test[-_]keys?/''',
     '''(^|/)fixtures?/''',
+    '''(^|/)\.secrets\.baseline$''',
 ]

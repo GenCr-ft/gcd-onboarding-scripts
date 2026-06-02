@@ -1,6 +1,6 @@
 # AGENTS.md — GenCr@ft Studio Workspace
 
-> **Read this file first.** This is the authoritative onboarding guide for any contributor — human or AI — starting work in this workspace. It supersedes `AGENT.md`. Read `CLAUDE.md` alongside it for stack specifics, test commands, and critical code patterns.
+> **Read this file first.** This is the authoritative onboarding guide for any contributor — human or AI — starting work in this workspace. It supersedes `AGENT.md`. This file is the sole source for stack specifics, test commands, and critical code patterns.
 
 ---
 
@@ -572,7 +572,7 @@ Run at the start of every work session before touching any code:
 
 1. Read `MEMORY.md` at `/home/lgan/.claude/projects/-home-lgan-hxgn-dev-claude-exp/memory/MEMORY.md` — prior-session context
 2. Read this file (`AGENTS.md`)
-3. Read `CLAUDE.md` for stack, test commands, and critical code patterns
+3. Read `AGENTS.md` for stack, test commands, and critical code patterns
 4. Open `gcp-aethel-backlog/meeting-notes/senior-expertise-audit/REMEDIATION-PLAN.md` → current active wave
 5. Open Project #16 (`https://github.com/orgs/GenCr-ft/projects/16`) → open issues
 6. Open `gcs-project-management/PRO-REPO-002.master-action-tracker.md` → IN PROGRESS design tasks

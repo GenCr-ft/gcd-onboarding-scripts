@@ -17,3 +17,8 @@
 - Validation:
   - `bash tests/test_onboarding_logic.sh` passes
   - `bash test.sh` still fails due to unrelated workspace bundle drift; captured as `GenCr-ft/gcd-onboarding-scripts#96`
+- Addressed PR #97 review findings:
+  - `install_gft_cli()` now distinguishes pre-clone deferable calls from post-clone hard-failure calls
+  - `configure_gft_cli()` now fails fast instead of silently degrading when the canonical owner repo is missing
+  - delegated install test now uses `_sed_inplace` instead of a GNU-only `sed -i`
+  - added regression coverage for post-clone missing-owner failure semantics

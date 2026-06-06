@@ -146,18 +146,23 @@ install_wasm_bindgen_cli() {
 
 
 # Aligns gft installation with the canonical workspace-managed wrapper contract
-# owned by gcs-plt-tools. Pre-clone calls defer cleanly; post-clone calls
-# delegate to gcs-plt-tools/onboard.sh, which installs/repairs ~/.local/bin/gft
-# and ~/.config/gft/config.env for the active workspace.
+# owned by gcs-plt-tools. Pre-clone calls may defer cleanly; post-clone calls
+# must delegate to gcs-plt-tools/onboard.sh, which installs/repairs
+# ~/.local/bin/gft and ~/.config/gft/config.env for the active workspace.
 install_gft_cli() {
+    local allow_defer="${1:-true}"
     local workspace_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
     local plt_root="${workspace_root}/gcs-plt-tools"
     local onboard_script="${plt_root}/onboard.sh"
     local gft_bin="$HOME/.local/bin/gft"
 
     if [[ ! -f "$onboard_script" ]]; then
-        log_warn "gcs-plt-tools onboarding script not found at $onboard_script — deferring gft installation until repositories are cloned."
-        return 0
+        if [[ "$allow_defer" == "true" ]]; then
+            log_warn "gcs-plt-tools onboarding script not found at $onboard_script — deferring gft installation until repositories are cloned."
+            return 0
+        fi
+        log_error "gcs-plt-tools onboarding script not found at $onboard_script — cannot configure gft after clone without the canonical owner repo."
+        return 1
     fi
 
     log_info "Delegating gft installation to $onboard_script ..."

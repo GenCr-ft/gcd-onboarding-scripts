@@ -146,7 +146,7 @@ echo "delegated gft $*"
 INNER
 chmod +x "$HOME/.local/bin/gft"
 MOCK
-    sed -i "s|__LOG_FILE__|$log_file|" "$plt_root/onboard.sh"
+    _sed_inplace "s|__LOG_FILE__|$log_file|" "$plt_root/onboard.sh"
     chmod +x "$plt_root/onboard.sh"
 
     export HOME="$tmp_home"
@@ -344,6 +344,40 @@ MOCK
     log_success "configure_gft_cli bootstrap Logic: PASSED"
 }
 
+test_configure_gft_cli_fails_when_owner_repo_missing_post_clone() {
+    log_info "[TEST SUITE 6c] Testing configure_gft_cli fails without gcs-plt-tools after clone..."
+    local tmp_home; tmp_home=$(mktemp -d)
+    local tmp_workspace; tmp_workspace=$(mktemp -d)
+    local original_home="$HOME"
+    local original_workspace="${GFT_PROJECTS_HOME:-}"
+    local original_path="$PATH"
+
+    export HOME="$tmp_home"
+    export GFT_PROJECTS_HOME="$tmp_workspace"
+    export PATH="/usr/bin:/bin"
+
+    local output_file; output_file=$(mktemp)
+    local output
+    configure_gft_cli >"$output_file" 2>&1
+    local status=$?
+    output=$(<"$output_file")
+    local profile_file="$HOME/.bashrc"
+    local checks_failed=0
+
+    [[ $status -eq 0 ]] && log_error "FAIL (configure gft missing owner): configure_gft_cli should fail when gcs-plt-tools is missing post-clone." && ((checks_failed++))
+    [[ "$output" != *"cannot configure gft after clone without the canonical owner repo"* ]] && log_error "FAIL (configure gft missing owner): missing hard-failure message." && ((checks_failed++))
+    [[ -f "$profile_file" && "$(grep -c 'export GFT_PLT_ROOT=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (configure gft missing owner): GFT_PLT_ROOT should not be written on failure." && ((checks_failed++))
+    [[ -f "$profile_file" && "$(grep -c 'export GFT_WORKSPACE=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (configure gft missing owner): GFT_WORKSPACE should not be written on failure." && ((checks_failed++))
+
+    export HOME="$original_home"
+    export GFT_PROJECTS_HOME="$original_workspace"
+    export PATH="$original_path"
+    rm -rf "$tmp_home" "$tmp_workspace" "$output_file"
+
+    if [[ $checks_failed -ne 0 ]]; then echo "--- Raw configure_gft_cli missing-owner Output ---" && echo "$output" && return 1; fi
+    log_success "configure_gft_cli missing-owner Logic: PASSED"
+}
+
 test_path_expansion_no_eval() {
     log_info "[TEST SUITE 7] Testing safe tilde/HOME path expansion (no eval)..."
     local checks_failed=0
@@ -520,6 +554,7 @@ main() {
     test_performance_and_caching_logic || ((failed_suites++))
     test_final_validation_logic || ((failed_suites++))
     test_configure_gft_cli_bootstraps_cli_and_exports_env || ((failed_suites++))
+    test_configure_gft_cli_fails_when_owner_repo_missing_post_clone || ((failed_suites++))
     test_path_expansion_no_eval || ((failed_suites++))
     test_sed_inplace_portability || ((failed_suites++))
     test_validate_env_has_set_e || ((failed_suites++))

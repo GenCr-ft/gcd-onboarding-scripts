@@ -96,6 +96,86 @@ test_tool_installation_logic() {
     log_success "Tool Installation Logic: PASSED"
 }
 
+test_gft_install_deferred_until_clone() {
+    log_info "[TEST SUITE 1b] Testing deferred gft installation before repo clone..."
+    local tmp_home; tmp_home=$(mktemp -d)
+    local tmp_workspace; tmp_workspace=$(mktemp -d)
+    local original_home="$HOME"
+    local original_workspace="${GFT_PROJECTS_HOME:-}"
+    export HOME="$tmp_home"
+    export GFT_PROJECTS_HOME="$tmp_workspace"
+
+    local output; output=$(install_gft_cli 2>&1)
+    local status=$?
+
+    export HOME="$original_home"
+    export GFT_PROJECTS_HOME="$original_workspace"
+    rm -rf "$tmp_home" "$tmp_workspace"
+
+    if [[ $status -ne 0 ]]; then
+        log_error "FAIL (gft defer): install_gft_cli should return 0 when source is not cloned yet." && echo "$output" && return 1
+    fi
+    if [[ "$output" != *"deferring gft installation until repositories are cloned"* ]]; then
+        log_error "FAIL (gft defer): expected deferred-install warning not found." && echo "$output" && return 1
+    fi
+    log_success "Deferred gft installation Logic: PASSED"
+}
+
+test_gft_install_delegates_to_gcs_plt_tools_onboard() {
+    log_info "[TEST SUITE 1c] Testing delegated gft installation..."
+    local tmp_home; tmp_home=$(mktemp -d)
+    local tmp_workspace; tmp_workspace=$(mktemp -d)
+    local plt_root="$tmp_workspace/gcs-plt-tools"
+    local log_file="$tmp_workspace/onboard.called"
+    local original_home="$HOME"
+    local original_workspace="${GFT_PROJECTS_HOME:-}"
+    local original_path="$PATH"
+
+    mkdir -p "$plt_root"
+    cat > "$plt_root/onboard.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "delegated-onboard" >> "__LOG_FILE__"
+mkdir -p "$HOME/.local/bin"
+cat > "$HOME/.local/bin/gft" <<'INNER'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "version" ]]; then
+    echo "1.2.3-delegated"
+    exit 0
+fi
+echo "delegated gft $*"
+INNER
+chmod +x "$HOME/.local/bin/gft"
+MOCK
+    sed -i "s|__LOG_FILE__|$log_file|" "$plt_root/onboard.sh"
+    chmod +x "$plt_root/onboard.sh"
+
+    export HOME="$tmp_home"
+    export GFT_PROJECTS_HOME="$tmp_workspace"
+    export PATH="/usr/bin:/bin"
+
+    local output_file; output_file=$(mktemp)
+    local output
+    install_gft_cli >"$output_file" 2>&1
+    local status=$?
+    output=$(<"$output_file")
+    local checks_failed=0
+
+    [[ $status -ne 0 ]] && log_error "FAIL (gft delegate): install_gft_cli returned non-zero." && ((checks_failed++))
+    [[ ! -f "$log_file" ]] && log_error "FAIL (gft delegate): delegated onboard.sh was not called." && ((checks_failed++))
+    [[ "$output" != *"Delegating gft installation to $plt_root/onboard.sh"* ]] && log_error "FAIL (gft delegate): delegation log missing." && ((checks_failed++))
+    [[ "$PATH" != *"$HOME/.local/bin"* ]] && log_error "FAIL (gft delegate): PATH not updated for current session." && ((checks_failed++))
+    [[ ! -x "$HOME/.local/bin/gft" ]] && log_error "FAIL (gft delegate): wrapper binary not created." && ((checks_failed++))
+    [[ "$("$HOME/.local/bin/gft" version)" != "1.2.3-delegated" ]] && log_error "FAIL (gft delegate): delegated gft version check failed." && ((checks_failed++))
+
+    export HOME="$original_home"
+    export GFT_PROJECTS_HOME="$original_workspace"
+    export PATH="$original_path"
+    rm -rf "$tmp_home" "$tmp_workspace" "$output_file"
+
+    if [[ $checks_failed -ne 0 ]]; then echo "--- Raw Delegated gft Output ---" && echo "$output" && return 1; fi
+    log_success "Delegated gft installation Logic: PASSED"
+}
+
 test_repository_cloning_logic() {
     log_info "[TEST SUITE 2] Testing Repository Cloning Logic..."
     local output; output=$(clone_repositories_for_role "devops-specialist" 2>&1)
@@ -202,7 +282,7 @@ EOF
     local output; output=$(final_validation 2>&1)
     local checks_failed=0
 
-    [[ "$output" != *"MOCK_gft_CALLED_WITH:config setup"* ]] && log_error "FAIL (Validation): gft not invoked." && ((checks_failed++))
+    [[ "$output" != *"gft-cli is installed: MOCK_gft_CALLED_WITH:version"* ]] && log_error "FAIL (Validation): gft version check not reported." && ((checks_failed++))
     [[ "$output" != *"MOCK_pre-commit_CALLED_WITH:run --all-files"* ]] && log_error "FAIL (Validation): pre-commit not invoked." && ((checks_failed++))
 
     PATH="$original_path"
@@ -210,6 +290,58 @@ EOF
 
     if [[ $checks_failed -ne 0 ]]; then echo "--- Raw Validation Test Output ---" && echo "$output"; return 1; fi
     log_success "Final Validation Logic: PASSED"
+}
+
+test_configure_gft_cli_bootstraps_cli_and_exports_env() {
+    log_info "[TEST SUITE 6b] Testing configure_gft_cli bootstraps gft..."
+    local tmp_home; tmp_home=$(mktemp -d)
+    local tmp_workspace; tmp_workspace=$(mktemp -d)
+    local plt_root="$tmp_workspace/gcs-plt-tools"
+    local original_home="$HOME"
+    local original_workspace="${GFT_PROJECTS_HOME:-}"
+    local original_path="$PATH"
+
+    mkdir -p "$plt_root"
+    cat > "$plt_root/onboard.sh" <<'MOCK'
+#!/usr/bin/env bash
+mkdir -p "$HOME/.local/bin"
+cat > "$HOME/.local/bin/gft" <<'INNER'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "version" ]]; then
+    echo "2.0.0-configured"
+    exit 0
+fi
+echo "configured gft $*"
+INNER
+chmod +x "$HOME/.local/bin/gft"
+MOCK
+    chmod +x "$plt_root/onboard.sh"
+
+    export HOME="$tmp_home"
+    export GFT_PROJECTS_HOME="$tmp_workspace"
+    export PATH="/usr/bin:/bin"
+
+    local output_file; output_file=$(mktemp)
+    local output
+    configure_gft_cli >"$output_file" 2>&1
+    output=$(<"$output_file")
+    local profile_file="$HOME/.bashrc"
+    local checks_failed=0
+
+    [[ "$output" != *"Configuring gft CLI environment variables"* ]] && log_error "FAIL (configure gft): configure step did not run." && ((checks_failed++))
+    [[ ! -x "$HOME/.local/bin/gft" ]] && log_error "FAIL (configure gft): gft not installed via delegated onboard." && ((checks_failed++))
+    [[ "$PATH" != *"$HOME/.local/bin"* ]] && log_error "FAIL (configure gft): PATH not updated in current shell." && ((checks_failed++))
+    [[ ! -f "$profile_file" ]] && log_error "FAIL (configure gft): shell profile not created." && ((checks_failed++))
+    [[ ! -f "$profile_file" || "$(grep -c 'export GFT_PLT_ROOT=' "$profile_file")" -lt 1 ]] && log_error "FAIL (configure gft): GFT_PLT_ROOT not written to profile." && ((checks_failed++))
+    [[ ! -f "$profile_file" || "$(grep -c 'export GFT_WORKSPACE=' "$profile_file")" -lt 1 ]] && log_error "FAIL (configure gft): GFT_WORKSPACE not written to profile." && ((checks_failed++))
+
+    export HOME="$original_home"
+    export GFT_PROJECTS_HOME="$original_workspace"
+    export PATH="$original_path"
+    rm -rf "$tmp_home" "$tmp_workspace" "$output_file"
+
+    if [[ $checks_failed -ne 0 ]]; then echo "--- Raw configure_gft_cli Output ---" && echo "$output" && return 1; fi
+    log_success "configure_gft_cli bootstrap Logic: PASSED"
 }
 
 test_path_expansion_no_eval() {
@@ -378,10 +510,16 @@ main() {
 
     local failed_suites=0
     test_tool_installation_logic || ((failed_suites++))
+    test_gft_install_deferred_until_clone || ((failed_suites++))
+    test_gft_install_delegates_to_gcs_plt_tools_onboard || ((failed_suites++))
     test_repository_cloning_logic || ((failed_suites++))
     test_base_repository_injection_when_missing || ((failed_suites++))
     test_environment_variable_logic || ((failed_suites++))
     test_environment_variable_idempotency || ((failed_suites++))
+    test_vscode_extension_logic || ((failed_suites++))
+    test_performance_and_caching_logic || ((failed_suites++))
+    test_final_validation_logic || ((failed_suites++))
+    test_configure_gft_cli_bootstraps_cli_and_exports_env || ((failed_suites++))
     test_path_expansion_no_eval || ((failed_suites++))
     test_sed_inplace_portability || ((failed_suites++))
     test_validate_env_has_set_e || ((failed_suites++))

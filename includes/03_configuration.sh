@@ -240,6 +240,12 @@ clone_repositories_for_role() {
 # Writes GFT_PLT_ROOT and GFT_WORKSPACE into the shell profile so gft can
 # locate gcs-plt-tools without relying on the file-tree heuristic.
 configure_gft_cli() {
+    if ! install_gft_cli; then
+        log_warn "Unable to install or repair gft before environment configuration."
+    fi
+
+    export PATH="$HOME/.local/bin:$PATH"
+
     if ! command -v gft &>/dev/null; then
         log_warn "gft command not found — skipping environment configuration. Re-run after installing gft."
         return

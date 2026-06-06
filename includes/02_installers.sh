@@ -145,43 +145,33 @@ install_wasm_bindgen_cli() {
 }
 
 
-# Installs the gft unified CLI from the cloned gcs-plt-tools source into a
-# dedicated, isolated virtual environment at ~/.local/share/gft/venv.
-# A symlink at ~/.local/bin/gft points to the venv entry point so the command
-# is available on PATH without touching the system or user Python environment.
+# Aligns gft installation with the canonical workspace-managed wrapper contract
+# owned by gcs-plt-tools. Pre-clone calls defer cleanly; post-clone calls
+# delegate to gcs-plt-tools/onboard.sh, which installs/repairs ~/.local/bin/gft
+# and ~/.config/gft/config.env for the active workspace.
 install_gft_cli() {
-    local plt_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}/gcs-plt-tools"
-    local gft_pkg="${plt_root}/services/gft"
-    local gft_venv="$HOME/.local/share/gft/venv"
+    local workspace_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local plt_root="${workspace_root}/gcs-plt-tools"
+    local onboard_script="${plt_root}/onboard.sh"
     local gft_bin="$HOME/.local/bin/gft"
 
-    if [[ -x "$gft_bin" ]] && "$gft_bin" version &>/dev/null; then
-        log_info "gft is already installed: $("$gft_bin" version)"
+    if [[ ! -f "$onboard_script" ]]; then
+        log_warn "gcs-plt-tools onboarding script not found at $onboard_script — deferring gft installation until repositories are cloned."
         return 0
     fi
 
-    if [[ ! -d "$gft_pkg" ]]; then
-        log_error "gft package not found at $gft_pkg — ensure gcs-plt-tools is cloned first."
+    log_info "Delegating gft installation to $onboard_script ..."
+    if ! (cd "$plt_root" && bash "$onboard_script"); then
+        log_error "Delegated gft installation via $onboard_script failed."
         return 1
     fi
 
-    log_info "Creating isolated venv at $gft_venv ..."
-    python3 -m venv "$gft_venv"
-
-    log_info "Installing gft into venv from $gft_pkg ..."
-    "$gft_venv/bin/pip" install --quiet "$gft_pkg"
-
-    log_info "Linking $gft_venv/bin/gft → $gft_bin ..."
-    mkdir -p "$HOME/.local/bin"
-    ln -sf "$gft_venv/bin/gft" "$gft_bin"
-
-    # Ensure ~/.local/bin is on PATH for the remainder of this session.
     export PATH="$HOME/.local/bin:$PATH"
 
     if "$gft_bin" version &>/dev/null; then
         log_success "gft installed: $("$gft_bin" version)"
     else
-        log_error "gft installation failed — check $gft_venv for errors."
+        log_error "Delegated gft installation completed, but $gft_bin is still unavailable."
         return 1
     fi
 }

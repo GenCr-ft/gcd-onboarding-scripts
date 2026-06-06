@@ -35,13 +35,59 @@ metadata:
 
 This suite serves as the approved Single Source of Truth (SSoT) for onboarding developers into GenCr@ft Studio. It dynamically configures a standardized, compliant local development environment by consuming approved standards from the `gcs-devops-standards` repository.
 
+## Start Here
+
+`AGENTS.md` is the repo-local authority and the first read for agents.
+
+`gft-onboarding.sh` is the primary first-run entry point. `validate-environment.sh`,
+`validate-devops-environment.sh`, and `setup-local-tofu-env.sh` are the main
+post-install validation surfaces.
+
+`gcs-devops-standards` is the runtime SSoT source for role/tool matrices,
+version pins, and environment configuration. Treat copied output as derived, not
+authoritative.
+
+## Surface Map
+
+| Surface | Role | Notes |
+| --- | --- | --- |
+| `AGENTS.md` | Repo authority | First read for any contributor or agent |
+| `README.md` | Human-facing summary | Quick orientation only |
+| `gft-onboarding.sh` | Onboarding orchestrator | First-run path |
+| `onboarding-win.ps1` | Windows bootstrap | WSL2 / Windows delegation |
+| `validate-environment.sh` | Validator | Post-install validation |
+| `validate-devops-environment.sh` | Validator | DevOps baseline validation |
+| `setup-local-tofu-env.sh` | Helper | OpenTofu environment setup |
+| `includes/` | Helpers | Role discovery, install, and config modules |
+| `docs/` | Support docs | Reference material and auxiliary notes |
+| `spec/` | Specs | Behavioural and operational specs |
+| `tests/` | Test fixtures | Validation inputs and regression coverage |
+
+## Command Matrix
+
+| Task | Command | Result |
+| --- | --- | --- |
+| Run onboarding | `bash gft-onboarding.sh [--role <role-name>]` | Installs and configures the local environment |
+| Validate environment | `bash validate-environment.sh` | Checks installed tools against the selected role |
+| Validate DevOps baseline | `bash validate-devops-environment.sh` | Checks DevOps tooling prerequisites |
+| Configure local OpenTofu | `bash setup-local-tofu-env.sh` | Prepares local OpenTofu variables |
+| Run tests | `bash test.sh` | Executes the repo test suite |
+
+## Generated / No-Edit Surfaces
+
+- Logs under `~/gft_onboarding_<date>_<time>.log` are generated output.
+- Role/tool data is read from `gcs-devops-standards` at runtime; do not treat
+  copied data as a source of truth.
+- Installation output and cached environment state are derived artifacts, not
+  active authoring surfaces.
+
 ### Key Principles
 
-  * **SSoT-Driven:** Pulls standards exclusively from `gcs-devops-standards`.
-  * **Role-Based:** Respects the role matrix; agents/users never install unsanctioned tooling.
-  * **Idempotent:** Safe to re-run; checks system state before action.
-  * **Transparent:** Streams output to console and saves detailed logs (`~/gft_onboarding_<date>_<time>.log`).
-  * **Cross-Platform:** Supports macOS (zsh), Linux (bash/zsh), and Windows 10/11 (via WSL2/Ubuntu LTS).
+- **SSoT-Driven:** Pulls standards exclusively from `gcs-devops-standards`.
+- **Role-Based:** Respects the role matrix; agents/users never install unsanctioned tooling.
+- **Idempotent:** Safe to re-run; checks system state before action.
+- **Transparent:** Streams output to console and saves detailed logs (`~/gft_onboarding_<date>_<time>.log`).
+- **Cross-Platform:** Supports macOS (zsh), Linux (bash/zsh), and Windows 10/11 (via WSL2/Ubuntu LTS).
 
 ## Architecture & Dependencies
 
@@ -51,10 +97,10 @@ See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descr
 
 ## Prerequisites
 
-1.  **Permissions:** `sudo` (macOS/Linux) or Administrator (Windows).
-2.  **Connectivity:** Internet access for cloning and package downloads.
-3.  **Accounts:** Active GenCr@ft GitHub account (login required).
-4.  **System Tools:** Script `check_prerequisites` auto-detects/installs `git`, `curl`, `yq`, and `python3`.
+1. **Permissions:** `sudo` (macOS/Linux) or Administrator (Windows).
+2. **Connectivity:** Internet access for cloning and package downloads.
+3. **Accounts:** Active GenCr@ft GitHub account (login required).
+4. **System Tools:** Script `check_prerequisites` auto-detects/installs `git`, `curl`, `yq`, and `python3`.
 
 ## Installation & Usage
 
@@ -87,21 +133,22 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
 ## Execution Flow
 
-1.  **Prerequisite Scan:** Checks/installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
-2.  **SSoT Sync:** Clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
-3.  **Role Selection:** Prompts user for role; loads configuration via `load_ssot_configuration`.
-4.  **Installation:** Installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.
-5.  **Configuration:** Sets Git identity, SSH keys, VS Code extensions, Env Vars, clones repos, and runs `gft config setup`.
-6.  **Validation:** Runs `pre-commit run --all-files` in the standards repo.
+1. **Prerequisite Scan:** Checks/installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
+2. **SSoT Sync:** Clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
+3. **Role Selection:** Prompts user for role; loads configuration via `load_ssot_configuration`.
+4. **Installation:** Installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.
+5. **Configuration:** Sets Git identity, SSH keys, VS Code extensions, Env Vars, clones repos, and runs `gft config setup`.
+6. **Validation:** Runs `pre-commit run --all-files` in the standards repo.
 
 ## Post-Installation & Validation
 
-1.  **Restart:** Close/reopen terminals and restart VS Code.
-2.  **Validation Scripts:**
-      * Run `./validate-environment.sh` to verify role-specific tools/repos.
-      * Run `./validate-gft-devops-environment.sh` for DevOps tooling baselines.
-      * Run `gft doctor` for a CLI-native health report.
-3.  **Manual Check:** Verify pre-commit hooks:
+1. **Restart:** Close/reopen terminals and restart VS Code.
+2. **Validation Scripts:**
+   - Run `./validate-environment.sh` to verify role-specific tools/repos.
+   - Run `./validate-gft-devops-environment.sh` for DevOps tooling baselines.
+   - Run `gft doctor` for a CLI-native health report.
+3. **Manual Check:** Verify pre-commit hooks:
+
     ```bash
     cd "$GFT_PROJECTS_HOME/gcs-devops-standards" && pre-commit run --all-files
     ```
@@ -129,14 +176,14 @@ There is no `onboard.sh` in this repo — it *is* the onboarding system.
 
 ### Diagnostics
 
-  * **Logs:** Check `~/gft_onboarding_<date>_<time>.log`.
-  * **Testing:** Use `TEST_ENV=1 ./gft-onboarding.sh` to skip confirmation prompts (CI/testing).
-  * **Support:** Contact `#devops-support` on Slack or open an issue in `GenCr-ft/gcd-onboarding-scripts` with logs attached.
+- **Logs:** Check `~/gft_onboarding_<date>_<time>.log`.
+- **Testing:** Use `TEST_ENV=1 ./gft-onboarding.sh` to skip confirmation prompts (CI/testing).
+- **Support:** Contact `#devops-support` on Slack or open an issue in `GenCr-ft/gcd-onboarding-scripts` with logs attached.
 
 ### Documentation
 
-  * **Auxiliary Scripts:** See `docs/auxiliary-scripts.md` for details on `onboarding-win.ps1` and validators.
-  * **Knowledge Base:** Link this README in the "How-To: Onboard devs" KB entry.
+- **Auxiliary Scripts:** See `docs/auxiliary-scripts.md` for details on `onboarding-win.ps1` and validators.
+- **Knowledge Base:** Link this README in the "How-To: Onboard devs" KB entry.
 
 ---
 

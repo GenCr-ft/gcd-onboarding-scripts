@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# GenCr@t Studio - Environment Validation Script V2
+# GenCr@ft Studio - Environment Validation Script V2
 #
 # Version: 2.0.0
 #
@@ -241,7 +241,7 @@ main() {
         return
     fi
 
-    log_info "Starting GenCr@t Environment Validator..."
+    log_info "Starting GenCr@ft Environment Validator..."
 
     # Clone/update SSoT
     if [ -d "$GFT_SSOT_PATH" ]; then (cd "$GFT_SSOT_PATH" && git pull); else git clone --depth 1 "$GFT_SSOT_REPO" "$GFT_SSOT_PATH"; fi

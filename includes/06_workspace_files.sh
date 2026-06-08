@@ -140,3 +140,115 @@ EOF
     return "$failed"
 }
 
+setup_workspace_from_yaml() {
+    local ws_name="$1"
+    local yaml_file="${SCRIPT_DIR}/workspace/workspaces.yaml"
+    local ws_root="${HOME}/gft_studio/${ws_name}_workspace"
+    local deps_dir="${ws_root}/dependencies"
+
+    log_info "Setting up workspace '${ws_name}' from ${yaml_file}..."
+
+    if [[ ! -f "$yaml_file" ]]; then
+        log_error "workspaces.yaml not found at ${yaml_file}."
+        return 1
+    fi
+
+    local ws_exists
+    ws_exists=$(yq e ".workspaces | has(\"${ws_name}\")" "$yaml_file")
+    if [[ "$ws_exists" != "true" ]]; then
+        log_error "Workspace '${ws_name}' not defined in ${yaml_file}."
+        return 1
+    fi
+
+    mkdir -p "$ws_root"
+    mkdir -p "$deps_dir"
+
+    local rw_repos
+    rw_repos=$(yq e ".workspaces.${ws_name}.repos[].name" "$yaml_file" 2>/dev/null || true)
+    
+    for repo in $rw_repos; do
+        if [[ -n "$repo" && "$repo" != "null" ]]; then
+            log_info "Cloning R/W repo: ${repo}"
+            if [[ ! -d "${ws_root}/${repo}" ]]; then
+                git clone "https://github.com/GenCr-ft/${repo}.git" "${ws_root}/${repo}"
+            else
+                log_info "Repo ${repo} already exists, skipping."
+            fi
+        fi
+    done
+
+    local num_deps
+    num_deps=$(yq e ".workspaces.${ws_name}.dependencies | length" "$yaml_file" 2>/dev/null || echo 0)
+    
+    local i=0
+    while [[ $i -lt $num_deps ]]; do
+        local dep_name
+        local dep_tag
+        dep_name=$(yq e ".workspaces.${ws_name}.dependencies[${i}].name" "$yaml_file")
+        dep_tag=$(yq e ".workspaces.${ws_name}.dependencies[${i}].default_tag" "$yaml_file")
+        
+        if [[ -n "$dep_name" && "$dep_name" != "null" ]]; then
+            log_info "Cloning dependency repo: ${dep_name} (Tag: ${dep_tag})"
+            if [[ ! -d "${deps_dir}/${dep_name}" ]]; then
+                git clone --branch "${dep_tag}" --depth 1 "https://github.com/GenCr-ft/${dep_name}.git" "${deps_dir}/${dep_name}"
+                chmod -R 444 "${deps_dir}/${dep_name}"
+                find "${deps_dir}/${dep_name}" -type d -exec chmod 555 {} +
+            else
+                log_info "Dependency ${dep_name} already exists, skipping."
+            fi
+        fi
+        i=$((i + 1))
+    done
+
+    local vscode_ws_file="${HOME}/gft_studio/${ws_name}.code-workspace"
+    log_info "Generating VS Code workspace file at ${vscode_ws_file}..."
+
+    cat <<EOF > "$vscode_ws_file"
+{
+  "folders": [
+EOF
+    
+    local is_first=true
+    for repo in $rw_repos; do
+        if [[ -n "$repo" && "$repo" != "null" ]]; then
+            if [[ "$is_first" == "true" ]]; then
+                is_first=false
+            else
+                echo "," >> "$vscode_ws_file"
+            fi
+            echo "    { \"name\": \"R/W: ${repo}\", \"path\": \"./${ws_name}_workspace/${repo}\" }" >> "$vscode_ws_file"
+        fi
+    done
+
+    i=0
+    while [[ $i -lt $num_deps ]]; do
+        local dep_name
+        dep_name=$(yq e ".workspaces.${ws_name}.dependencies[${i}].name" "$yaml_file")
+        if [[ -n "$dep_name" && "$dep_name" != "null" ]]; then
+            if [[ "$is_first" == "true" ]]; then
+                is_first=false
+            else
+                echo "," >> "$vscode_ws_file"
+            fi
+            echo "    { \"name\": \"R/O: ${dep_name}\", \"path\": \"./${ws_name}_workspace/dependencies/${dep_name}\" }" >> "$vscode_ws_file"
+        fi
+        i=$((i + 1))
+    done
+
+    cat <<EOF >> "$vscode_ws_file"
+  ],
+  "settings": {
+    "files.readonlyInclude": {
+      "**/dependencies/**": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/target": true,
+      "**/pkg": true
+    }
+  }
+}
+EOF
+
+    log_success "Workspace '${ws_name}' setup complete."
+}

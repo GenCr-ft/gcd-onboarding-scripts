@@ -1,0 +1,39 @@
+workspaces:
+  governance:
+    repos:
+      - name: gcs-studio-handbook
+        mode: rw
+      - name: gcs-engineering-handbook
+        mode: rw
+      - name: gcs-studio-legal
+        mode: rw
+      - name: gcp-aethel-docs-gdd
+        mode: rw
+    dependencies: []
+  operations:
+    repos:
+      - name: gcs-plt-tools
+        mode: rw
+      - name: gcs-plt-gemop
+        mode: rw
+      - name: gcs-plt-gembp
+        mode: rw
+    dependencies:
+      - name: gcs-devops-standards
+        mode: ro
+        default_tag: v1.4.0
+  aethel:
+    repos:
+      - name: gcp-aethel-client
+        mode: rw
+      - name: gcp-aethel-server
+        mode: rw
+      - name: gcp-aethel-pcg
+        mode: rw
+    dependencies:
+      - name: gcs-devops-standards
+        mode: ro
+        default_tag: v1.4.0
+      - name: gcs-studio-handbook
+        mode: ro
+        default_tag: v1.1.0

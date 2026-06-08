@@ -123,11 +123,11 @@ test_environment_variable_logic() {
     local MOCK_PROFILE_FILE; MOCK_PROFILE_FILE=$(mktemp)
     local MOCK_HOME; MOCK_HOME=$(mktemp -d)
     trap "rm -f '$MOCK_PROFILE_FILE'; rm -rf '$MOCK_HOME'; trap - RETURN" RETURN
-    
+
     # Temporarily override HOME for the test to verify directory creation
     local ORIGINAL_HOME="$HOME"
     export HOME="$MOCK_HOME"
-    
+
     local output; output=$(configure_environment_variables "devops-specialist" "$MOCK_PROFILE_FILE" 2>&1)
     local checks_failed=0
 

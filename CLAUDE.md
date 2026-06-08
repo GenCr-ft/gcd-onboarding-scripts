@@ -3,7 +3,7 @@
 > **Note:** This repo has migrated. `AGENTS.md` is the authoritative source for all agent instructions and technical internals. Refer there first.
 
 ## Project Overview
-SSoT-driven onboarding script suite for GenCr@t Studio. Automates local development environment setup by consuming standards from `gcs-devops-standards`.
+SSoT-driven onboarding script suite for GenCr@ft Studio. Automates local development environment setup by consuming standards from `gcs-devops-standards`.
 
 ## Prerequisites
 - Bash (Linux/macOS) or PowerShell (Windows)

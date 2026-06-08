@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
 # ID: GFT_ONBOARDING_MAIN_ORCHESTRATOR
-# Title: GenCr@t Studio - Onboarding Script V2 (Main Orchestrator)
+# Title: GenCr@ft Studio - Onboarding Script V2 (Main Orchestrator)
 # Author(s): Gem-BB (Camille)
 # Creation Date: 2025-06-09
 # Last Modified Date: 2026-05-11
 # Version: 2.3.0
 #
 # Description:
-#   This script is the main entry point for the GenCr@t developer onboarding process.
+#   This script is the main entry point for the GenCr@ft developer onboarding process.
 #   It orchestrates the validation of prerequisites, setup of the SSoT repository,
 #   and calls the various installation and configuration modules.
 #
@@ -129,7 +129,7 @@ PYEOF
 
 # --- Main Orchestration ---
 main() {
-    log_info "Welcome to the GenCr@t Studio Onboarding Script V2!"
+    log_info "Welcome to the GenCr@ft Studio Onboarding Script V2!"
 
     # --- Prerequisite & SSoT Setup ---
     check_prerequisites
@@ -165,7 +165,7 @@ main() {
 
     # Final summary
     log_success "############################################################"
-    log_success "# Onboarding Complete! Welcome to GenCr@t Studio.           #"
+    log_success "# Onboarding Complete! Welcome to GenCr@ft Studio.          #"
     log_success "############################################################"
     log_info "Please restart your terminal session for all changes to take effect."
 }

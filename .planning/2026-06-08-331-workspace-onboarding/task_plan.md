@@ -1,8 +1,9 @@
 ---
-github-issue: "331"
+docId: GOV-PLAN-331
+issue-id: "GenCr-ft/gcs-plt-tools#331"
 status: "in_progress"
 ---
-# Task Plan for Issue 331: Workspace Onboarding
+# [CODE] Task Plan for Issue 331: Workspace Onboarding
 
 1. Add `setup_workspace_from_yaml` logic to `includes/06_workspace_files.sh`.
 2. Add `--workspace` flag to `gft-onboarding.sh`.

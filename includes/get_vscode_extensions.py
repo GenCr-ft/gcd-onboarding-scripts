@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Parse VSCODE_RECOMMENDATIONS.md and print extension identifiers."""
+
 import os
 import re
 import sys

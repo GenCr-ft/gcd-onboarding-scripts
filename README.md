@@ -136,7 +136,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 1. **Prerequisite Scan:** Checks/installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
 2. **SSoT Sync:** Clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
 3. **Role Selection:** Prompts user for role; loads configuration via `load_ssot_configuration`.
-4. **Installation:** Installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.
+4. **Installation:** Installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI. `gft` itself is delegated to the cloned `gcs-plt-tools/onboard.sh` flow once the workspace exists, so there is one canonical owner for the global wrapper contract.
 5. **Configuration:** Sets Git identity, SSH keys, VS Code extensions, Env Vars, clones repos, and runs `gft config setup`.
 6. **Validation:** Runs `pre-commit run --all-files` in the standards repo.
 

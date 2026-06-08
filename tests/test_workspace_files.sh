@@ -167,6 +167,126 @@ else
   _fail "pre-commit wrapper chains to pre-commit.legacy"
 fi
 
+# ── Test 8: verify bounded workspace documentation in AGENTS.md and README.md ────
+# We deployed files to $TMPDIR_DEPLOY. Let's inspect $TMPDIR_DEPLOY/README.md and $TMPDIR_DEPLOY/AGENTS.md.
+# They should contain the five workspace IDs: aethel, evai-platform, workspace-ops, agent-factory, studio-gencraft
+for ws in aethel evai-platform workspace-ops agent-factory studio-gencraft; do
+  if grep -Fq "$ws" "${TMPDIR_DEPLOY}/README.md" && grep -Fq "$ws" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+    _pass "Bounded workspace '$ws' mentioned in README.md and AGENTS.md"
+  else
+    _fail "Bounded workspace '$ws' missing in README.md or AGENTS.md"
+  fi
+done
+
+# They should reference the STATUS.md paths
+for ws in aethel evai-platform workspace-ops agent-factory studio-gencraft; do
+  if grep -Fq "gcs-project-management/workspaces/${ws}/STATUS.md" "${TMPDIR_DEPLOY}/README.md" || grep -Fq "gcs-project-management/workspaces/${ws}/STATUS.md" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+    _pass "STATUS.md path for '$ws' referenced in docs"
+  else
+    _fail "STATUS.md path for '$ws' missing in docs"
+  fi
+done
+
+# They should reference Projects #17, #18, #19, #20, #22
+for proj in "#17" "#18" "#19" "#20" "#22"; do
+  if grep -Fq "$proj" "${TMPDIR_DEPLOY}/README.md" || grep -Fq "$proj" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+    _pass "Project $proj referenced in docs"
+  else
+    _fail "Project $proj missing in docs"
+  fi
+done
+
+# They should describe Project #21 as governance/rollup only
+if grep -Fq "#21" "${TMPDIR_DEPLOY}/README.md" || grep -Fq "#21" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+  if grep -i -Fq "rollup" "${TMPDIR_DEPLOY}/AGENTS.md" || grep -i -Fq "governance" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+    _pass "Project #21 correctly classified as governance/rollup"
+  else
+    _fail "Project #21 not classified as governance/rollup"
+  fi
+else
+  _fail "Project #21 missing in docs"
+fi
+
+# Deployed docs must not contain contradictory Co-Authored-By instructions
+if grep -Fq "Co-Authored-By:" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+  _fail "AGENTS.md contains forbidden Co-Authored-By trailer instruction"
+else
+  _pass "AGENTS.md does not contain forbidden Co-Authored-By instruction"
+fi
+
+# Deployed docs must not contain stale Phase 5 status or flat-only references
+if grep -Fq "Phase 5" "${TMPDIR_DEPLOY}/README.md" || grep -Fq "Phase 5" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+  if grep -Fq "Phase 6" "${TMPDIR_DEPLOY}/README.md" && ! grep -Fq "Phase 5 (PCG Integration): IN PROGRESS" "${TMPDIR_DEPLOY}/README.md"; then
+    _pass "Docs reflect Phase 6 status"
+  else
+    _fail "Docs still reference stale Phase 5 in progress"
+  fi
+else
+  _pass "Docs do not mention Phase 5 in progress"
+fi
+
+# Deployed CLAUDE.md must not contain the stale "NOT STARTED" Phase 6 block
+if grep -Fq "NOT STARTED" "${TMPDIR_DEPLOY}/CLAUDE.md"; then
+  _fail "CLAUDE.md contains stale Phase 6 NOT STARTED status"
+else
+  _pass "CLAUDE.md does not contain stale Phase 6 NOT STARTED status"
+fi
+
+# Deployed docs must not contain absolute paths to file:///home/lgan/
+if grep -Fq "file:///home/lgan/" "${TMPDIR_DEPLOY}/README.md" || grep -Fq "file:///home/lgan/" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+  _fail "Docs contain absolute paths to file:///home/lgan/"
+else
+  _pass "Docs do not contain absolute paths to file:///home/lgan/"
+fi
+
+# Deployed AGENTS.md must not say "pending GDD spec approvals"
+if grep -Fq "pending GDD spec approvals" "${TMPDIR_DEPLOY}/AGENTS.md"; then
+  _fail "AGENTS.md still says pending GDD spec approvals"
+else
+  _pass "AGENTS.md does not say pending GDD spec approvals"
+fi
+
+# ── Test 9: verify test-all.sh workspace selectors ───────────────────────────
+# Expose workspace selectors: --aethel, --evai-platform, --workspace-ops, --agent-factory, --studio-gencraft
+for opt in --aethel --evai-platform --workspace-ops --agent-factory --studio-gencraft; do
+  if bash "${TMPDIR_DEPLOY}/test-all.sh" --help | grep -Fq -e "$opt"; then
+    _pass "test-all.sh --help documents selector $opt"
+  else
+    _fail "test-all.sh --help missing selector $opt"
+  fi
+done
+
+# Proves existing test-all.sh flags still appear in --help and run/skip correctly
+for opt in --server --pcg --client --ops; do
+  if bash "${TMPDIR_DEPLOY}/test-all.sh" --help | grep -Fq -e "$opt"; then
+    _pass "test-all.sh --help documents legacy selector $opt"
+  else
+    _fail "test-all.sh --help missing legacy selector $opt"
+  fi
+done
+
+# test-all.sh must exit non-zero when both workspace and legacy selectors are passed
+if ! bash "${TMPDIR_DEPLOY}/test-all.sh" --aethel --server >/dev/null 2>&1; then
+  _pass "test-all.sh exits non-zero on conflicting selectors"
+else
+  _fail "test-all.sh exits 0 on conflicting selectors"
+fi
+
+# ── Test 10: verify workspace.sh gracefully prints help without Poetry ───────
+# We run workspace.sh --help. If we mock PATH or poetry command to not exist, it should exit 0 and print workspaces help.
+if env PATH="/usr/bin:/bin" bash "${TMPDIR_DEPLOY}/workspace.sh" --help >/dev/null 2>&1; then
+  _pass "workspace.sh --help exits 0 without Poetry installed"
+else
+  _fail "workspace.sh --help exits non-zero without Poetry installed"
+fi
+
+# workspace.sh must exit non-zero when executing a command without Poetry installed
+if ! env PATH="/usr/bin:/bin" bash "${TMPDIR_DEPLOY}/workspace.sh" status aethel >/dev/null 2>&1; then
+  _pass "workspace.sh status aethel exits non-zero without Poetry installed"
+else
+  _fail "workspace.sh status aethel exits 0 without Poetry installed"
+fi
+
 # ── Cleanup ───────────────────────────────────────────────────────────────────
 rm -rf "$TMPDIR_DEPLOY"
 rm -rf "$TMPDIR_HOOKS"

@@ -1,6 +1,6 @@
 # AGENTS.md — GenCr@ft Studio Workspace
 
-> **Read this file first.** This is the authoritative onboarding guide for any contributor — human or AI — starting work in this workspace. It supersedes `AGENT.md`. Read `CLAUDE.md` alongside it for stack specifics, test commands, and critical code patterns.
+> **Read this file first.** This is the authoritative onboarding guide for any contributor — human or AI — starting work in this workspace. It supersedes `AGENT.md`. This file is the sole source for stack specifics, test commands, and critical code patterns.
 
 ---
 
@@ -10,7 +10,18 @@
 
 - **Studio:** GenCr@ft (GitHub org: `GenCr-ft`)
 - **Workspace:** 33 Git repos, side-by-side at `/home/lgan/hxgn/dev/claude/exp` (not a monorepo)
-- **Current phase:** Phase 6 — State Persistence + Multiplayer (Phases 4 + 5 complete; Phase 6 unblocked, pending GDD spec approvals — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34))
+- **Current phase:** Phase 6 — State Persistence + Multiplayer (Phases 4 + 5 complete; Phase 6 active, with remaining design-contract work tracked in [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27) and [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34))
+
+### Bounded Workspaces
+
+The studio workspace is managed as five bounded delivery domains:
+
+- `aethel` — source of truth: `gcs-project-management/workspaces/aethel/STATUS.md`, Project `#17`
+- `evai-platform` — source of truth: `gcs-project-management/workspaces/evai-platform/STATUS.md`, Project `#18`
+- `workspace-ops` — source of truth: `gcs-project-management/workspaces/workspace-ops/STATUS.md`, Project `#19`
+- `agent-factory` — source of truth: `gcs-project-management/workspaces/agent-factory/STATUS.md`, Project `#20`
+- `studio-gencraft` — source of truth: `gcs-project-management/workspaces/studio-gencraft/STATUS.md`, Project `#22`
+- Recovery portfolio governance rollup: Project `#21`
 
 ---
 
@@ -123,10 +134,7 @@ Types enforced by `commitlint.config.js`: `feat`, `fix`, `docs`, `style`, `refac
 
 Header max length: 100 characters.
 
-AI-generated commits must include:
-```
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
-```
+Co-author trailer: Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.
 
 ### SSoT Document Standard (all Markdown repos)
 
@@ -405,11 +413,11 @@ Every feature follows the red → green → blue cycle:
 ### Git Workflow
 
 - **Conventional Commits v1.0.0** — enforced by `commitlint`.
-- **Branch naming:** `feat/`, `fix/`, `docs/`, `test/`, `chore/`, `refactor/`, `ci/`
+- **Branch naming:** Conforms strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug` branch naming standard (e.g., `feat/issue-104-inventory-service`).
 - **One PR per work item.** PR title: `feat(scope): WI-X.Y — <description>`
 - **Every PR requires a GitHub Issue.**
 - **No force-push to main** without explicit user instruction.
-- **Co-author trailer on AI commits:** `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+- **Co-author trailer:** Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.
 
 ### Issue Lifecycle
 
@@ -417,6 +425,19 @@ Every feature follows the red → green → blue cycle:
 2. `gh project item-add 16 --owner GenCr-ft --url <issue-url>`
 3. Create branch, reference issue in PR body.
 4. Close with: `Resolved by PR GenCr-ft/<repo>#<n>`
+
+### The Agent Traceability Framework
+
+To guarantee that no plan, memory, finding, or update remains "local" to an agent or hidden in ephemeral system files, the following seven rules are strictly enforced:
+
+- **Rule 1: Planning Directory Mapping:** For any active work, the `.planning/` directory must be named precisely matching the active tracker issue: `.planning/YYYY-MM-DD-[issue-id]-[short-slug]/`. The `task_plan.md` must declare its `github-issue` reference in its YAML frontmatter.
+- **Rule 2: Memory Log Linkage:** Every completed bullet point in `.remember/today-YYYY-MM-DD.md` must link to its issue ID: `- [x] #{issue_number} ({repo_name}): description`.
+- **Rule 3: Finding & Audit Ingestion:** Gaps uncovered during execution must be written locally to a git-tracked markdown file (e.g., `_AGY_ANALYSIS.md` in `/expert/`) first, then converted into GitHub issues via `gh issue create` referencing that file, before writing any code fixes.
+- **Rule 4: The Code-Only PR Prohibition (Dark Update Blocker):** Production code modifications cannot be merged without planning or memory log changes in the same PR.
+- **Rule 5: Local Host Cache Sweep:** Session start sweeps detect orphaned plans residing in host folders.
+- **Rule 6: Git-First Session Cold-Starts:** Agents must initialize context strictly from git-versioned directories.
+- **Rule 7: Changelog Traceability Sync:** Every code-modifying PR must append a formatted, single-line entry describing the changes under the appropriate standard heading in the root `CHANGELOG.md` within the `[Unreleased]` section. Format: `- <description>. (#<PR number>, @<author>)`.
+
 
 ### Gap Identification Protocol
 
@@ -536,11 +557,11 @@ Physics runs in a `worker_threads` Worker. Main thread calls `Atomics.wait(contr
 | Stream | Scope | Status |
 |--------|-------|--------|
 | Stream 1 — Security & Code Bugs | `gcl-srv-persistence`, `gcl-srv-authentication`, `gcp-aethel-server`, `gcp-aethel-pcg`, `gcp-aethel-client`, `gcs-plt-tools` | ✅ Done (2026-05-10) |
-| Stream 2 — Infrastructure & DevOps | `gencraft-iac`, `gcd-ops-scripts`, `gcd-shared-actions`, `gcd-onboarding-scripts` | 🔄 Partial — branch protections, detect-secrets CI, ProductionResolver, gitleaks CI gate (PR#28) all done; gcd-onboarding-scripts audit remaining ([`gcp-aethel-backlog#30`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/30)) |
-| Stream 3 — Architecture & ADRs | `gcp-aethel-architecture` | 🔄 Partial — ADRs 062–069 merged, Wave 1 architecture hygiene done ([`gcp-aethel-backlog#39`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/39) closed); ADR-gap register content and ENG-ADR-07x (UI framework, Phase 6 gate) still open |
-| Stream 4 — GDD Design Contracts | `gcp-aethel-docs-gdd` | 🔄 Partial — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27) (GAM-SPEC-066), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34) (remaining specs) open |
-| Stream 5 — Governance & Templates | `gcs-studio-handbook`, `gct-ssot-templates`, others | ⏳ Not started — [`gcs-project-management#10`](https://github.com/GenCr-ft/gcs-project-management/issues/10), [`gcs-project-management#12`](https://github.com/GenCr-ft/gcs-project-management/issues/12) |
-| Stream 6 — SSoT Compliance Sweep | 15 repos | 🔄 Partial — [`gcp-aethel-backlog#40`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/40) (599 broken xrefs), [`gcp-aethel-backlog#41`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/41) (lore compliance) open |
+| Stream 2 — Infrastructure & DevOps | `gencraft-iac`, `gcd-ops-scripts`, `gcd-shared-actions`, `gcd-onboarding-scripts` | 🔄 Code complete — all P1 items merged ([`gcp-aethel-backlog#30`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/30) closed 2026-05-14); `branch_protections.tf` written + committed (N-01) but **`tofu apply` not yet run** — branch protections not live on GitHub |
+| Stream 3 — Architecture & ADRs | `gcp-aethel-architecture` | ⛔ Blocked — Phase 6 ADRs ([`gcp-aethel-backlog#81`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/81)) blocked by Stream 4 GDD specs; cannot start until #27 + #34 approved |
+| Stream 4 — GDD Design Contracts | `gcp-aethel-docs-gdd` | 🔄 Partial — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27) (GAM-SPEC-066 Inventory System), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34) (GAM-SPEC-026/085/088/002) open — **Phase 6 gate** |
+| Stream 5 — Governance & Templates | `gcs-studio-handbook`, `gct-ssot-templates`, others | ✅ Done — [`gcs-project-management#10`](https://github.com/GenCr-ft/gcs-project-management/issues/10) + [`#12`](https://github.com/GenCr-ft/gcs-project-management/issues/12) closed (2026-05-14) |
+| Stream 6 — SSoT Compliance Sweep | 15 repos | 🔄 Partial — [`gcp-aethel-backlog#40`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/40) (599 broken xrefs in docs-req, P1) and [`gcp-aethel-backlog#41`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/41) (lore compliance, P3) open |
 
 Full detail: `gcp-aethel-backlog/meeting-notes/senior-expertise-audit/REMEDIATION-PLAN.md`
 
@@ -562,7 +583,7 @@ Run at the start of every work session before touching any code:
 
 1. Read `MEMORY.md` at `/home/lgan/.claude/projects/-home-lgan-hxgn-dev-claude-exp/memory/MEMORY.md` — prior-session context
 2. Read this file (`AGENTS.md`)
-3. Read `CLAUDE.md` for stack, test commands, and critical code patterns
+3. Read `AGENTS.md` for stack, test commands, and critical code patterns
 4. Open `gcp-aethel-backlog/meeting-notes/senior-expertise-audit/REMEDIATION-PLAN.md` → current active wave
 5. Open Project #16 (`https://github.com/orgs/GenCr-ft/projects/16`) → open issues
 6. Open `gcs-project-management/PRO-REPO-002.master-action-tracker.md` → IN PROGRESS design tasks

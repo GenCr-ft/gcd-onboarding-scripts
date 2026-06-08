@@ -133,7 +133,7 @@ generate_workspace_agent_md() {
 - **MO:** Focus on automation and infrastructure robustness."
             ;;
         *)
-            role_instructions="- **Orientation:** Refer to \`CLAUDE.md\` for general workspace patterns.
+            role_instructions="- **Orientation:** Refer to \`AGENTS.md\` for general workspace patterns.
 - **Tests:** Run root \`./test-all.sh\` to verify your changes."
             ;;
     esac
@@ -150,8 +150,8 @@ $role_instructions
 
 ## Quick Start
 1. **Validate:** Run \`gft aethel validate\` to check binaries and repo clones.
-2. **Read:** \`CLAUDE.md\` at root for patterns and workflows.
-3. **Status:** Check \`REMEDIATION.md\` for roadmap status.
+2. **Read:** \`AGENTS.md\` at root for patterns and workflows.
+3. **Status:** Check \`AGENTS.md\` for current phase status and \`gcs-project-management/workspaces/workspace-ops/STATUS.md\` for active work.
 
 ## Productivity Cheat Sheet
 - **Common Tests:** \`./test-all.sh --no-integration\`

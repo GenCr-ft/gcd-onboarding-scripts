@@ -174,13 +174,12 @@ main() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     setup_log_stream
     trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
-    
+
     # Handle standalone synchronization execution
     if [[ "${1:-}" == "--sync-hooks" ]]; then
         deploy_planning_metadata_hook
         exit $?
     fi
-    
+
     main
 fi
-

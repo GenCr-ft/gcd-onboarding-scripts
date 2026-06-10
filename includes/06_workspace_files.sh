@@ -139,4 +139,3 @@ EOF
     log_success "Pre-commit hooks deployed: ${deployed} wrapper(s) installed, ${skipped} skipped, ${failed} failed."
     return "$failed"
 }
-

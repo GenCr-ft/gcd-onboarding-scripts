@@ -13,7 +13,7 @@
 
 setup_pcg_python_venv() {
     local role_name="$1"
-    
+
     # This setup is specifically for PCG specialists or rendering developers
     if [[ "$role_name" != "pcg-specialist" && "$role_name" != "rendering-engine-developer" && "$role_name" != "architecture-lead" ]]; then
         return 0
@@ -37,7 +37,7 @@ setup_pcg_python_venv() {
 
     (
         cd "$pcg_dir" || exit 1
-        
+
         # Robust check: does the binary exist and is it executable?
         if [ -x ".pcg/bin/python3" ]; then
             log_info "PCG virtual environment already exists and is functional. Updating dependencies..."
@@ -46,7 +46,7 @@ setup_pcg_python_venv() {
             rm -rf .pcg # Cleanup any corrupted state
             python3 -m venv .pcg
         fi
-        
+
         log_info "Installing PCG research dependencies (noise, pytest)..."
         ./.pcg/bin/pip install --upgrade pip > /dev/null
         if ./.pcg/bin/pip install noise pytest > /dev/null; then

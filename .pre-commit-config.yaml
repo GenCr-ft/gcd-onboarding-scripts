@@ -113,7 +113,7 @@ repos:
     rev: v0.45.0
     hooks:
       - id: markdownlint
-        exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|README\.md|\.planning/|spec/|CHANGELOG\.md|AGENTS\.md|\.github/|docs/|workspace/)
+        exclude: &markdownlint_exclude ^(tests/fixtures/|integration_test_docs/|README\.md|\.planning/|spec/|CHANGELOG\.md|AGENTS\.md|\.github/|docs/|workspace/)
         args: ["--config", ".markdownlint.yaml"]
 
   # ===== Gencraft SSoT Linters (Custom Hooks) =====
@@ -121,7 +121,7 @@ repos:
     rev: e180b7d11f94efadbcaaa5064b37961852dbb653  # pragma: allowlist secret
     hooks:
       - id: metadata-linter
-        exclude: *ssot_exclude
+        exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|README\.md|\.planning/|spec/|CHANGELOG\.md|AGENTS\.md|\.github/|docs/|workspace/)
       - id: naming-linter
         exclude: *ssot_exclude
       - id: link-linter

@@ -154,8 +154,8 @@ clone_repositories_for_role() {
     mkdir -p "$gft_workspace"
 
     local -a base_repos=(
-        "gcs-devops-standards"
-        "gcs-studio-handbook"
+        "gcs-core-governance"
+        "gcs-core-governance"
     )
 
     local python_helper_script="${SCRIPT_DIR}/includes/get_role_repos.py"
@@ -310,7 +310,7 @@ final_validation() {
 
     local standards_dir
     local projects_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
-    standards_dir="${projects_root}/gcs-devops-standards"
+    standards_dir="${projects_root}/gcs-core-governance"
     local precommit_status=0
 
     if ! command -v pre-commit &> /dev/null; then
@@ -321,7 +321,7 @@ final_validation() {
         precommit_status=1
     else
         if (cd "$standards_dir" && pre-commit run --all-files); then
-            log_success "pre-commit hooks passed for gcs-devops-standards."
+            log_success "pre-commit hooks passed for gcs-core-governance."
         else
             precommit_status=$?
             log_error "pre-commit run reported issues (exit $precommit_status)."

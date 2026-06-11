@@ -116,13 +116,34 @@ repos:
         exclude: &markdownlint_exclude ^(tests/fixtures/|integration_test_docs/|README\.md|\.planning/|spec/|CHANGELOG\.md|AGENTS\.md|\.github/|docs/|workspace/)
         args: ["--config", ".markdownlint.yaml"]
 
-  # ===== Gencraft SSoT Linters (Custom Hooks) =====
-  - repo: https://github.com/GenCr-ft/gcd-ops-scripts.git
-    rev: e180b7d11f94efadbcaaa5064b37961852dbb653  # pragma: allowlist secret
+    # ===== Gencraft SSoT Linters (Custom Hooks) =====
+  - repo: local
     hooks:
       - id: metadata-linter
-        exclude: &ssot_exclude ^(tests/fixtures/|integration_test_docs/|\.planning/|spec/|CHANGELOG\.md|AGENTS\.md|\.github/|docs/|workspace/)
+        name: SSoT Metadata Linter
+        entry: 'bash -c ''command -v gft >/dev/null 2>&1 || { echo "ERROR: gft CLI not found. Please run the onboarding script or pipx install gft-ops-scripts." >&2; exit 1; }; exec gft verify --metadata "$@"'' --'
+        language: system
+        types: [markdown]
+        exclude: &ssot_exclude '^(tests/fixtures/|integration_test_docs/|README\.md|CHANGELOG\.md|reference-libraries/|AGENTS\.md|CLAUDE\.md|\.planning/)'
+
       - id: naming-linter
-        exclude: *ssot_exclude
+        name: SSoT Naming Linter
+        entry: 'bash -c ''command -v gft >/dev/null 2>&1 || { echo "ERROR: gft CLI not found. Please run the onboarding script or pipx install gft-ops-scripts." >&2; exit 1; }; exec gft verify --naming "$@"'' --'
+        language: system
+        types: [markdown]
+        exclude: '^(tests/fixtures/|integration_test_docs/|README\.md|CHANGELOG\.md|reference-libraries/|AGENTS\.md|CLAUDE\.md|\.planning/|\.github/)'
+
       - id: link-linter
+        name: SSoT Link Linter
+        entry: 'bash -c ''command -v gft >/dev/null 2>&1 || { echo "ERROR: gft CLI not found. Please run the onboarding script or pipx install gft-ops-scripts." >&2; exit 1; }; exec gft verify --links "$@"'' --'
+        language: system
+        types: [markdown]
         exclude: *ssot_exclude
+
+      - id: validate-planning-metadata
+        name: SSoT Planning Metadata Linter
+        entry: 'bash -c ''command -v gft >/dev/null 2>&1 || { echo "ERROR: gft CLI not found. Please run the onboarding script or pipx install gft-ops-scripts." >&2; exit 1; }; exec gft verify --planning "$@"'' --'
+        language: system
+        types: [markdown]
+        exclude: *ssot_exclude
+        pass_filenames: false

@@ -33,9 +33,9 @@ This workspace (`/home/lgan/hxgn/dev/claude/exp`) contains ~30 Git repositories 
 | `gcd-ops-scripts` | Python-based SSoT linters (CI + pre-commit) | Operational |
 | `gcd-onboarding-scripts` | Cross-platform dev onboarding automation | Operational |
 | `gcd-shared-actions` | Reusable GitHub Actions workflows | Operational |
-| `gcs-devops-standards` | Canonical DevOps/tooling SSoT | Complete |
+| `gcs-core-governance` | Canonical DevOps/tooling SSoT | Complete |
 | `gcs-engineering-handbook` | Engineering manifesto | Complete |
-| `gcs-studio-handbook` | Studio-wide SSoT for all processes | Complete |
+| `gcs-core-governance` | Studio-wide SSoT for all processes | Complete |
 | `gcs-security-core` | Security standards | Operational |
 | `gcs-plt-architecture` | Platform architecture | Operational |
 | `gcs-plt-gembp` | GEM Blueprint (36/36 roles) | Complete |

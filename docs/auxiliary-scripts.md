@@ -36,7 +36,7 @@ This document supplements the main README by detailing helper scripts that suppo
   ./validate-environment.sh
   ```
 - **Flow**:
-  1. Syncs `gcs-devops-standards` into `/tmp/gft-ssot-validation`.
+  1. Syncs `gcs-core-governance` into `/tmp/gft-ssot-validation`.
   2. Extracts YAML from `GOV-004-role-tooling-matrix.md` and `tool-002-technical-tooling-specifications.md`.
   3. Prompts for the role, then validates tools (`validate_tool`), repositories, and Git config.
   4. Prints pass/fail counts; success is zero failures.

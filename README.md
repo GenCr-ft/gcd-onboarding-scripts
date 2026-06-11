@@ -13,7 +13,7 @@ knowledgeGuardian:
 language: en
 summary: >
   Approved Single Source of Truth (SSoT) for onboarding developers into GenCr@ft Studio.
-  Automates environment configuration via gcs-devops-standards.
+  Automates environment configuration via gcs-core-governance.
 metadata:
   lifecycle-stage: approved
   keywords:
@@ -33,7 +33,7 @@ metadata:
 
 ## Overview
 
-This suite serves as the approved Single Source of Truth (SSoT) for onboarding developers into GenCr@ft Studio. It dynamically configures a standardized, compliant local development environment by consuming approved standards from the `gcs-devops-standards` repository.
+This suite serves as the approved Single Source of Truth (SSoT) for onboarding developers into GenCr@ft Studio. It dynamically configures a standardized, compliant local development environment by consuming approved standards from the `gcs-core-governance` repository.
 
 ## Start Here
 
@@ -43,7 +43,7 @@ This suite serves as the approved Single Source of Truth (SSoT) for onboarding d
 `validate-devops-environment.sh`, and `setup-local-tofu-env.sh` are the main
 post-install validation surfaces.
 
-`gcs-devops-standards` is the runtime SSoT source for role/tool matrices,
+`gcs-core-governance` is the runtime SSoT source for role/tool matrices,
 version pins, and environment configuration. Treat copied output as derived, not
 authoritative.
 
@@ -76,14 +76,14 @@ authoritative.
 ## Generated / No-Edit Surfaces
 
 - Logs under `~/gft_onboarding_<date>_<time>.log` are generated output.
-- Role/tool data is read from `gcs-devops-standards` at runtime; do not treat
+- Role/tool data is read from `gcs-core-governance` at runtime; do not treat
   copied data as a source of truth.
 - Installation output and cached environment state are derived artifacts, not
   active authoring surfaces.
 
 ### Key Principles
 
-- **SSoT-Driven:** Pulls standards exclusively from `gcs-devops-standards`.
+- **SSoT-Driven:** Pulls standards exclusively from `gcs-core-governance`.
 - **Role-Based:** Respects the role matrix; agents/users never install unsanctioned tooling.
 - **Idempotent:** Safe to re-run; checks system state before action.
 - **Transparent:** Streams output to console and saves detailed logs (`~/gft_onboarding_<date>_<time>.log`).
@@ -91,7 +91,7 @@ authoritative.
 
 ## Architecture & Dependencies
 
-The script pulls its role/tool matrix from `gcs-devops-standards` at runtime, resolves a 3-tier inheritance chain (`default_repositories` → `common-base` → specific role), and configures the machine to match. The workstation must be able to pull `https://github.com/GenCr-ft/gcs-devops-standards.git`.
+The script pulls its role/tool matrix from `gcs-core-governance` at runtime, resolves a 3-tier inheritance chain (`default_repositories` → `common-base` → specific role), and configures the machine to match. The workstation must be able to pull `https://github.com/GenCr-ft/gcs-core-governance.git`.
 
 See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descriptions, and role inheritance model.
 
@@ -134,7 +134,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ## Execution Flow
 
 1. **Prerequisite Scan:** Checks/installs `git`, `curl`, `yq`, `python3` via OS package manager (`brew`, `apt`, `dnf`, etc.).
-2. **SSoT Sync:** Clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
+2. **SSoT Sync:** Clones `gcs-core-governance` to `/tmp/gft-ssot-onboarding`.
 3. **Role Selection:** Prompts user for role; loads configuration via `load_ssot_configuration`.
 4. **Installation:** Installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI. `gft` itself is delegated to the cloned `gcs-plt-tools/onboard.sh` flow once the workspace exists, so there is one canonical owner for the global wrapper contract.
 5. **Configuration:** Sets Git identity, SSH keys, VS Code extensions, Env Vars, clones repos, and runs `gft config setup`.
@@ -150,7 +150,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 3. **Manual Check:** Verify pre-commit hooks:
 
     ```bash
-    cd "$GFT_PROJECTS_HOME/gcs-devops-standards" && pre-commit run --all-files
+    cd "$GFT_PROJECTS_HOME/gcs-core-governance" && pre-commit run --all-files
     ```
 
 ## Development & Testing

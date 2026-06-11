@@ -6,7 +6,7 @@ title: Mock Role Tooling Matrix with Inheritance
 
 ```yaml
 default_repositories:
-  - "gcs-devops-standards"
+  - "gcs-core-governance"
 
 roles:
   - name: common-base
@@ -15,7 +15,7 @@ roles:
       - git
       - github-cli
     repositories:
-      - "gcs-studio-handbook"
+      - "gcs-core-governance"
     # NOUVELLE SECTION AJOUTÉE
     environment_variables:
       GFT_PROJECTS_HOME: "$HOME/gft_studio"

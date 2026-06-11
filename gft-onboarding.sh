@@ -54,7 +54,7 @@ setup_log_stream() {
 }
 
 # --- SSoT Configuration ---
-readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-devops-standards.git"
+readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-core-governance.git"
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-onboarding"
 
 # --- Hook Registration ---

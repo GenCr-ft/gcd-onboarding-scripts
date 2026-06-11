@@ -146,7 +146,7 @@ echo "======================================================================"
 
 # 1. Git (Version Control)
 print_header "1" "Git (Version Control)"
-if check_command_exists "git" "Git" "gcs-devops-standards/tooling/TOOL_00X_Git_Usage_Standard.md" "sudo apt update && sudo apt install git -y"; then
+if check_command_exists "git" "Git" "gcs-core-governance/tooling/TOOL_00X_Git_Usage_Standard.md" "sudo apt update && sudo apt install git -y"; then
     check_version "git --version" "Git" "$EXPECTED_GIT_VERSION_MAJOR" 0 'git version \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 
     GIT_USER_NAME=$(git config --global user.name)
@@ -162,7 +162,7 @@ fi
 
 # 2. GitHub CLI (gh)
 print_header "2" "GitHub CLI (gh)"
-if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005_GitHub_CLI_Standard.md" "See https://github.com/cli/cli#installation (Linux/Debian/Ubuntu instructions)"; then
+if check_command_exists "gh" "GitHub CLI" "gcs-core-governance/tooling/TOOL_005_GitHub_CLI_Standard.md" "See https://github.com/cli/cli#installation (Linux/Debian/Ubuntu instructions)"; then
     check_version "gh --version" "GitHub CLI" "$EXPECTED_GH_VERSION_MAJOR" 0 'gh version \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 
     print_status "Checking GitHub CLI authentication (gh auth status)..." "INFO"
@@ -174,31 +174,31 @@ if check_command_exists "gh" "GitHub CLI" "gcs-devops-standards/tooling/TOOL_005
         print_status "GitHub CLI (gh): Not authenticated." "FAIL"
         print_status "  Please run 'gh auth login' and ensure you have the required permissions for organisation '$ORGANIZATION'." "INFO"
     fi
-    print_status "  Permissions reference: gcs-studio-handbook/02-knowledge-base-hub/02-knowledge-base-hub/kb-domain-security/access-control-policy.md" "INFO"
+    print_status "  Permissions reference: gcs-core-governance/02-knowledge-base-hub/02-knowledge-base-hub/kb-domain-security/access-control-policy.md" "INFO"
 
 fi
 
 # 3. OpenTofu (tofu) - IaC Tool
 print_header "3" "OpenTofu (tofu) - IaC Tool"
-if check_command_exists "tofu" "OpenTofu" "gcs-devops-standards/iac/IAC_001_OpenTofu_Tooling_Standard.md" "See https://opentofu.org/docs/intro/install (Linux/Debian/Ubuntu)"; then
+if check_command_exists "tofu" "OpenTofu" "gcs-core-governance/iac/IAC_001_OpenTofu_Tooling_Standard.md" "See https://opentofu.org/docs/intro/install (Linux/Debian/Ubuntu)"; then
     check_version "tofu version" "OpenTofu" "$EXPECTED_OPENTOFU_VERSION_MAJOR" "$EXPECTED_OPENTOFU_VERSION_MINOR" 'OpenTofu v\K([0-9]+\.[0-9]+(\.[0-9]+)?)'
 fi
 
 # 4. Data Processing Tools (jq)
 print_header "4" "Data Processing Tools"
-check_command_exists "jq" "jq (JSON processor)" "gcs-devops-standards/tooling/TOOL_006_JQ_Usage_Standard.md" "sudo apt install jq -y"
+check_command_exists "jq" "jq (JSON processor)" "gcs-core-governance/tooling/TOOL_006_JQ_Usage_Standard.md" "sudo apt install jq -y"
 
 # 5. Linting and Code Quality Tools
 print_header "5" "Linting and Quality Tools"
-check_command_exists "mdl" "Markdownlint (mdl)" "gcs-studio-handbook/04-tooling-and-automation-hub/Tools/GCT-TOOL-MDLINT-V1.md" "sudo apt install ruby-full build-essential -y && sudo gem install mdl" "brew install mdl"
-check_command_exists "tflint" "TFLint (OpenTofu Linter)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "See https://github.com/terraform-linters/tflint#installation"
-check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "gcs-devops-standards/iac/iac-007-iac-static-analysis-standard.md" "See https://aquasecurity.github.io/tfsec/latest/getting-started/installation/" "brew install tfsec"
+check_command_exists "mdl" "Markdownlint (mdl)" "gcs-core-governance/04-tooling-and-automation-hub/Tools/GCT-TOOL-MDLINT-V1.md" "sudo apt install ruby-full build-essential -y && sudo gem install mdl" "brew install mdl"
+check_command_exists "tflint" "TFLint (OpenTofu Linter)" "gcs-core-governance/iac/iac-007-iac-static-analysis-standard.md" "See https://github.com/terraform-linters/tflint#installation"
+check_command_exists "tfsec" "TFSec (IaC Security Scanner)" "gcs-core-governance/iac/iac-007-iac-static-analysis-standard.md" "See https://aquasecurity.github.io/tfsec/latest/getting-started/installation/" "brew install tfsec"
 
 if check_command_exists "python3" "Python 3" "" "sudo apt install python3 python3-pip python3-venv -y"; then
     check_version "python3 --version" "Python 3" "$EXPECTED_PYTHON_VERSION_MAJOR" "$EXPECTED_PYTHON_VERSION_MINOR" 'Python \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
     if check_command_exists "pip3" "pip3 (Python Package Installer)"; then
         # Check for pre-commit
-        if check_command_exists "pre-commit" "Pre-commit framework" "gcs-devops-standards/tooling/TOOL_004_Git_Hooks_Standard.md" "pip3 install pre-commit" "pip3 install pre-commit"; then
+        if check_command_exists "pre-commit" "Pre-commit framework" "gcs-core-governance/tooling/TOOL_004_Git_Hooks_Standard.md" "pip3 install pre-commit" "pip3 install pre-commit"; then
              check_version "pre-commit --version" "Pre-commit" "$EXPECTED_PRECOMMIT_VERSION_MAJOR" 0 'pre-commit \K([0-9]+\.[0-9]+(\.[0-9]+)?)'
         fi
     fi
@@ -218,8 +218,8 @@ else
     print_status "Please fix the ERRORS before running PROJ-103 operations." "FAIL"
 fi
 echo "Consult the GenCr@ft standards for exact versions and detailed configurations."
-echo "  - All standards and protocols are in: gcs-studio-handbook"
-echo "  - Specific DevOps standards are in:   gcs-devops-standards"
+echo "  - All standards and protocols are in: gcs-core-governance"
+echo "  - Specific DevOps standards are in:   gcs-core-governance"
 echo "======================================================================"
 
 exit $FAIL_COUNT

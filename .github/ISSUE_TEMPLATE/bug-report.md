@@ -77,7 +77,7 @@ messages if any.
 **5. Environment & Context:**
 
 - **Gencraft System/Game/Tool & Version:** [e.g., Gencraft Flagship Game v0.1.2,
-  `gcs-studio-handbook` KB Search `Tool` v1.0]
+  `gcs-core-governance` KB Search `Tool` v1.0]
 - **GemID Reporting (if applicable):** [e.g., @Marc, @Iris]
 - **Operating System (if relevant for client-side bugs):** [e.g., Windows 11,
   Linux (Kernel X.Y)]
@@ -92,7 +92,7 @@ Lead/Product Owner):**
 
 - **Proposed Severity:** [Critical / High / Medium / Low - Briefly justify based
   on impact on functionality/data]
-    *Refer to `gcs-studio-handbook/02-knowledge-base-hub/KB-Domain-QA-Testing/Bug-Severity-Priority-Matrix.md` for guidance.*
+    *Refer to `gcs-core-governance/02-knowledge-base-hub/KB-Domain-QA-Testing/Bug-Severity-Priority-Matrix.md` for guidance.*
 
 **7. Logs, Screenshots, or Supporting Data:**
 [Please attach or link to any relevant logs, screenshots, error messages, or

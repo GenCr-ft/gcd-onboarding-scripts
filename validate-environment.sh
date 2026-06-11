@@ -6,7 +6,7 @@
 # Version: 2.0.0
 #
 # This script validates the local environment against the standards defined
-# in the gcs-devops-standards repository for a specific role.
+# in the gcs-core-governance repository for a specific role.
 # It is designed to be run at any time to check for compliance.
 # ==============================================================================
 
@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- Global Variables ---
 # These are identical to the main onboarding script to ensure consistency
-readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-devops-standards.git"
+readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-core-governance.git"
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
 readonly ROLE_MATRIX_FILE="foundations/governance/GOV-004-role-tooling-matrix.md"
 readonly TOOLING_SPECS_FILE="domains/tooling/standards/tool-002-technical-tooling-specifications.md"

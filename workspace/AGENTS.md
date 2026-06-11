@@ -63,9 +63,9 @@ The studio workspace is managed as five bounded delivery domains:
 
 | Repo | Stack | Purpose | AGENTS.md |
 |------|-------|---------|-----------|
-| `gcs-devops-standards` | Markdown | DevOps governance SSoT ("The Law") | [→](gcs-devops-standards/AGENTS.md) |
+| `gcs-core-governance` | Markdown | DevOps governance SSoT ("The Law") | [→](gcs-core-governance/AGENTS.md) |
 | `gcs-engineering-handbook` | Markdown | Engineering manifesto and technical guides | [→](gcs-engineering-handbook/AGENTS.md) |
-| `gcs-studio-handbook` | Markdown | Studio-wide operational SSoT and knowledge hub | [→](gcs-studio-handbook/AGENTS.md) |
+| `gcs-core-governance` | Markdown | Studio-wide operational SSoT and knowledge hub | [→](gcs-core-governance/AGENTS.md) |
 | `gcs-security-core` | Markdown | SSDLC mandate, threat model templates, legal IR procedure | [→](gcs-security-core/AGENTS.md) |
 | `gcs-studio-legal` | Markdown | Legal documents (ALL DRAFT — not legally binding) | [→](gcs-studio-legal/AGENTS.md) |
 | `gcs-plt-architecture` | Markdown | Platform architecture ADRs, TDDs, C4 diagrams | [→](gcs-plt-architecture/AGENTS.md) |
@@ -111,7 +111,7 @@ The studio workspace is managed as five bounded delivery domains:
 
 ### Pre-commit Hooks (all repos)
 
-All repos use the studio-canonical `.pre-commit-config.yaml` (v1.0) from `gcs-devops-standards`. It runs:
+All repos use the studio-canonical `.pre-commit-config.yaml` (v1.0) from `gcs-core-governance`. It runs:
 - `detect-secrets` — blocks committed secrets
 - `markdownlint` — Markdown formatting (v1.3 Approved config)
 - `yamllint` — YAML validation (line-length: 120)
@@ -281,7 +281,7 @@ python3 gcs-project-management/scripts/validate_tracker_rows.py
              └──────────────┘  └──────────────┘  └──────────────┘
 
   Governance chain (all repos):
-  gcs-devops-standards → gcd-ops-scripts → gcd-shared-actions → all repos (via pre-commit + CI)
+  gcs-core-governance → gcd-ops-scripts → gcd-shared-actions → all repos (via pre-commit + CI)
 
   ADR authority:
   gcp-aethel-architecture (game) + gcs-plt-architecture (platform) → all implementation repos
@@ -375,7 +375,7 @@ This studio uses the **plan-with-files** methodology. Every contributor must fol
 | Per-repo improvement backlog | `gcp-aethel-backlog/meeting-notes/senior-expertise-audit/ENG-BACK-NNN.*` |
 | Sequenced wave execution plan | `gcp-aethel-backlog/meeting-notes/senior-expertise-audit/REMEDIATION-PLAN.md` |
 | Active work items | GitHub Issues + Project #16 |
-| Studio-wide operational standards | `gcs-studio-handbook/` |
+| Studio-wide operational standards | `gcs-core-governance/` |
 | Engineering standards | `gcs-engineering-handbook/` |
 | AI Gem profiles | `gcs-plt-gemop/` |
 | AI Gem blueprints | `gcs-plt-gembp/` |
@@ -560,7 +560,7 @@ Physics runs in a `worker_threads` Worker. Main thread calls `Atomics.wait(contr
 | Stream 2 — Infrastructure & DevOps | `gencraft-iac`, `gcd-ops-scripts`, `gcd-shared-actions`, `gcd-onboarding-scripts` | 🔄 Code complete — all P1 items merged ([`gcp-aethel-backlog#30`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/30) closed 2026-05-14); `branch_protections.tf` written + committed (N-01) but **`tofu apply` not yet run** — branch protections not live on GitHub |
 | Stream 3 — Architecture & ADRs | `gcp-aethel-architecture` | ⛔ Blocked — Phase 6 ADRs ([`gcp-aethel-backlog#81`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/81)) blocked by Stream 4 GDD specs; cannot start until #27 + #34 approved |
 | Stream 4 — GDD Design Contracts | `gcp-aethel-docs-gdd` | 🔄 Partial — [`gcp-aethel-backlog#27`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/27) (GAM-SPEC-066 Inventory System), [`gcp-aethel-backlog#34`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/34) (GAM-SPEC-026/085/088/002) open — **Phase 6 gate** |
-| Stream 5 — Governance & Templates | `gcs-studio-handbook`, `gct-ssot-templates`, others | ✅ Done — [`gcs-project-management#10`](https://github.com/GenCr-ft/gcs-project-management/issues/10) + [`#12`](https://github.com/GenCr-ft/gcs-project-management/issues/12) closed (2026-05-14) |
+| Stream 5 — Governance & Templates | `gcs-core-governance`, `gct-ssot-templates`, others | ✅ Done — [`gcs-project-management#10`](https://github.com/GenCr-ft/gcs-project-management/issues/10) + [`#12`](https://github.com/GenCr-ft/gcs-project-management/issues/12) closed (2026-05-14) |
 | Stream 6 — SSoT Compliance Sweep | 15 repos | 🔄 Partial — [`gcp-aethel-backlog#40`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/40) (599 broken xrefs in docs-req, P1) and [`gcp-aethel-backlog#41`](https://github.com/GenCr-ft/gcp-aethel-backlog/issues/41) (lore compliance, P3) open |
 
 Full detail: `gcp-aethel-backlog/meeting-notes/senior-expertise-audit/REMEDIATION-PLAN.md`

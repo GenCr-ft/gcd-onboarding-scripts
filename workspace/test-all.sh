@@ -72,9 +72,9 @@ FACTORY_REPOS=(
 
 # Repos in Studio GenCraft Workspace (studio-gencraft)
 STUDIO_REPOS=(
-  "gcs-devops-standards"
+  "gcs-core-governance"
   "gcs-engineering-handbook"
-  "gcs-studio-handbook"
+  "gcs-core-governance"
   "gcs-security-core"
   "gcs-studio-legal"
   "gcs-project-management"

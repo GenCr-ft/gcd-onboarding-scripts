@@ -1,5 +1,5 @@
 # gitleaks configuration — GenCr@ft Studio
-# Ref: gcs-devops-standards/domains/security/.gitleaks.toml
+# Ref: gcs-core-governance/domains/security/.gitleaks.toml
 [extend]
 useDefault = true
 

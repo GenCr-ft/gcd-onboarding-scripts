@@ -34,7 +34,7 @@ Our workspace is structured into five bounded domains to ensure focused delivery
 *   **Domain:** Studio manifestos, governance policies, security core, legal frameworks, and project tracking.
 *   **Source of Truth:** [gcs-project-management/workspaces/studio-gencraft/STATUS.md](./gcs-project-management/workspaces/studio-gencraft/STATUS.md)
 *   **Project Board:** Project #22
-*   **Repositories:** `gcs-devops-standards`, `gcs-engineering-handbook`, `gcs-studio-handbook`, `gcs-security-core`, `gcs-studio-legal`, `gcs-project-management`, `gencr-ft.github.io`, `gct-repo-template-standard`, `gct-service-template-py`, `gct-ssot-templates`
+*   **Repositories:** `gcs-core-governance`, `gcs-engineering-handbook`, `gcs-core-governance`, `gcs-security-core`, `gcs-studio-legal`, `gcs-project-management`, `gencr-ft.github.io`, `gct-repo-template-standard`, `gct-service-template-py`, `gct-ssot-templates`
 
 ---
 

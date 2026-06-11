@@ -179,8 +179,8 @@ MOCK
 test_repository_cloning_logic() {
     log_info "[TEST SUITE 2] Testing Repository Cloning Logic..."
     local output; output=$(clone_repositories_for_role "devops-specialist" 2>&1)
-    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-devops-standards"* ]]; then
-        log_error "FAIL (Repo): 'gcs-devops-standards' was not cloned." && echo "$output" && return 1
+    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-core-governance"* ]]; then
+        log_error "FAIL (Repo): 'gcs-core-governance' was not cloned." && echo "$output" && return 1
     fi
     log_success "Repository Cloning Logic: PASSED"
 }
@@ -192,8 +192,8 @@ test_base_repository_injection_when_missing() {
     local output; output=$(clone_repositories_for_role "devops-specialist" 2>&1)
     MOCK_ROLE_REPO_OUTPUT="$previous_mock"
 
-    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-devops-standards"* ]]; then
-        log_error "FAIL (Base Repo): 'gcs-devops-standards' was not injected when missing." && echo "$output" && return 1
+    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-core-governance"* ]]; then
+        log_error "FAIL (Base Repo): 'gcs-core-governance' was not injected when missing." && echo "$output" && return 1
     fi
     log_success "Base Repository Injection Logic: PASSED"
 }
@@ -260,7 +260,7 @@ test_performance_and_caching_logic() {
 test_final_validation_logic() {
     log_info "[TEST SUITE 6] Testing Final Validation Logic..."
     local workspace; workspace=$(mktemp -d)
-    mkdir -p "$workspace/gcs-devops-standards"
+    mkdir -p "$workspace/gcs-core-governance"
     export GFT_PROJECTS_HOME="$workspace"
 
     local mock_bin; mock_bin=$(mktemp -d)

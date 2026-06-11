@@ -40,7 +40,7 @@ The ambition is to streamline and standardize the technical integration of new <
 
 ### 1.4. Central Single Source of Truth (SSoT)
 
-The SSoT for all DevOps and development standards is the `GenCr-ft/gcs-devops-standards` repository.
+The SSoT for all DevOps and development standards is the `GenCr-ft/gcs-core-governance` repository.
 All configurations, scripts, template contents, and tool versions generated **MUST** be rigorously aligned with the standards and files documented within this repository. The onboarding script must explicitly reference it.
 
 **Key SSoT Files to be Used by the Script:**
@@ -81,7 +81,7 @@ The script must be developed in Bash for compatibility with target environments:
 
 * Display a welcome message.
 * Detect and confirm the OS.
-* Fetch SSoT files: Download or clone `GenCr-ft/gcs-devops-standards` to a temporary location to read `.tool-versions-gft`, `.docker-images-gft`, the role-tooling matrix, and other configs.
+* Fetch SSoT files: Download or clone `GenCr-ft/gcs-core-governance` to a temporary location to read `.tool-versions-gft`, `.docker-images-gft`, the role-tooling matrix, and other configs.
 * **Determine User Role:** Interactively ask the user for their primary role (e.g., `devops-specialist`, `lead-developer-tech-lead`).
 * Execute other modules sequentially, passing the user's role and SSoT info.
 * Execute Final Configuration & Validation Module.
@@ -151,26 +151,26 @@ Check for `~/.ssh/id_ed25519`. If missing, guide user through generation, adding
 * Create the global hooks directory: `mkdir -p ~/.gft-git-hooks`.
 * **`commit-msg` Hook:**
   * Create an executable `~/.gft-git-hooks/commit-msg` script that runs `commitlint` (note: the tool itself is installed in section 2.3.7).
-  * The script must copy `GenCr-ft/gcs-devops-standards/tooling/git-hooks/commitlint.config.js` to `~/.gft-git-hooks/`.
+  * The script must copy `GenCr-ft/gcs-core-governance/tooling/git-hooks/commitlint.config.js` to `~/.gft-git-hooks/`.
 * **`pre-commit` Hooks (Tooling Setup):**
   * Install global managers: `pnpm add -g lint-staged` and `pip install pre-commit`.
   * Inform user that these are activated by project-level configurations.
 
 ### 2.7. Environment Variables Module
 
-* Reference `GenCr-ft/gcs-devops-standards/tooling/ENV_VARIABLES_STANDARD.md`.
+* Reference `GenCr-ft/gcs-core-governance/tooling/ENV_VARIABLES_STANDARD.md`.
 * For each variable, check and append to the correct shell profile file if not already present.
 * Create the `$GFT_PROJECTS_HOME` directory.
 
 ### 2.8. VS Code Configuration Module
 
-* Reference `GenCr-ft/gcs-devops-standards/tooling/VSCODE_RECOMMENDATIONS.md`.
+* Reference `GenCr-ft/gcs-core-governance/tooling/VSCODE_RECOMMENDATIONS.md`.
 * Install recommended extensions and prompt user to merge `settings.json`.
 
 ### 2.9. Repository Cloning Module
 
 * Use the `$GFT_PROJECTS_HOME` path.
-* Interactively determine which repositories to clone based on user role. Always clone `gcs-devops-standards`.
+* Interactively determine which repositories to clone based on user role. Always clone `gcs-core-governance`.
 * Use `git clone git@github.com:GenCr-ft/REPO_NAME.git "$GFT_PROJECTS_HOME/REPO_NAME"`.
 
 ### 2.10. Final Configuration & Validation Module
@@ -180,12 +180,12 @@ Check for `~/.ssh/id_ed25519`. If missing, guide user through generation, adding
 #### 2.10.1. Execute `gft-cli` Configuration Setup
 
 * Run the command `gft config setup`.
-* Expected `gft-cli` behavior: Interactively prompt for the local path to `gcs-devops-standards` and create `~/.gft/config.yaml`.
+* Expected `gft-cli` behavior: Interactively prompt for the local path to `gcs-core-governance` and create `~/.gft/config.yaml`.
 
 #### 2.10.2. Validate Environment Readiness
 
 * Example Validation Step:
-  * `cd "$GFT_PROJECTS_HOME/gcs-devops-standards"`.
+  * `cd "$GFT_PROJECTS_HOME/gcs-core-governance"`.
   * Run `pre-commit run --all-files` to test SSoT linters.
   * Check exit code for configuration errors.
   * `cd -`.
@@ -204,7 +204,7 @@ Check for `~/.ssh/id_ed25519`. If missing, guide user through generation, adding
 
 ## 3. Specifications for GitHub Repository Templates (for IaC Context)
 
-This section specifies the expected content of repository templates. The source for all standard files is the `GenCr-ft/gcs-devops-standards` repository.
+This section specifies the expected content of repository templates. The source for all standard files is the `GenCr-ft/gcs-core-governance` repository.
 
 ### 3.1. Files Common to All Templates
 
@@ -212,14 +212,14 @@ This section specifies the expected content of repository templates. The source 
 * `.editorconfig`: Copy of the studio standard file.
 * `.gitignore`: Base template plus language-specific entries.
 * `LICENSE`: Studio standard license file.
-* `README.md`: Structured template linking to `gcs-devops-standards`.
+* `README.md`: Structured template linking to `gcs-core-governance`.
 * `CONTRIBUTING.md` & `CODE_OF_CONDUCT.md`: Linking to standard versions.
 
 ### 3.2. Specific Additions per Template Type
 
 * **Template: TypeScript/Node.js Service:**
   * `package.json` with scripts and standard `devDependencies`.
-  * Configuration files (`.eslintrc.js`, etc.) using base configs from `gcs-devops-standards/tooling/configs/`.
+  * Configuration files (`.eslintrc.js`, etc.) using base configs from `gcs-core-governance/tooling/configs/`.
   * Husky configuration for `pre-commit` and `commit-msg`.
   * `.github/workflows/ci-ts.yml` calling the reusable CI workflow.
 * **Template: Python/Poetry Application:**
@@ -233,7 +233,7 @@ This section specifies the expected content of repository templates. The source 
 ## 4. Documentation and Maintenance
 
 * **Script Documentation:** A comprehensive `README.md` in the script's repository (e.g., `GenCr-ft/gft-onboarding-script`).
-* **Template Documentation:** Documented in `GenCr-ft/gcs-devops-standards/repository-templates/README.md`.
+* **Template Documentation:** Documented in `GenCr-ft/gcs-core-governance/repository-templates/README.md`.
 * **Evolution:** All artifacts are living documents and must be updated via Pull Requests and formal reviews.
 
 ---

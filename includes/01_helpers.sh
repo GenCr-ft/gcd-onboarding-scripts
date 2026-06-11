@@ -142,7 +142,7 @@ check_prerequisites() {
 
 # --- SSoT Management ---
 
-# Clones or pulls the gcs-devops-standards repository to a temporary path.
+# Clones or pulls the gcs-core-governance repository to a temporary path.
 # This ensures the script always uses the latest SSoT configuration.
 setup_ssot_repository() {
     log_info "Setting up SSoT configuration repository..."

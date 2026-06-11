@@ -2,14 +2,14 @@
 
 ## Project Overview
 
-Cross-platform developer onboarding orchestration for GenCr@ft Studio. The main script (`gft-onboarding.sh`) is role-based and idempotent — it reads the role/tool matrix from `gcs-devops-standards`, clones the repos required for the selected role, installs tools, configures the environment, and runs post-install validators. A PowerShell entry point (`onboarding-win.ps1`) bootstraps Windows/WSL2 before delegating to the bash orchestrator.
+Cross-platform developer onboarding orchestration for GenCr@ft Studio. The main script (`gft-onboarding.sh`) is role-based and idempotent — it reads the role/tool matrix from `gcs-core-governance`, clones the repos required for the selected role, installs tools, configures the environment, and runs post-install validators. A PowerShell entry point (`onboarding-win.ps1`) bootstraps Windows/WSL2 before delegating to the bash orchestrator.
 
 ## Prerequisites
 
 - Bash 4+ (Linux/macOS) or WSL2 (Windows)
 - Python 3.9+ (for YAML-parsing helpers in `includes/`)
 - Internet access (or internal mirror) for tool downloads
-- `gcs-devops-standards` must be accessible (pulled at runtime for role matrix and version pins)
+- `gcs-core-governance` must be accessible (pulled at runtime for role matrix and version pins)
 
 ## Quick Commands
 
@@ -68,15 +68,15 @@ pre-commit run --all-files   # shellcheck (shell scripts), markdownlint, yamllin
 
 | Dependency | Repo | How used |
 |-----------|------|---------|
-| Role/tool matrix | `gcs-devops-standards` | GOV-GUIDE-010 pulled at runtime for role → tool mapping |
-| Version pinning | `gcs-devops-standards` | Tool version specs and ENV_VARIABLES_STANDARD |
-| VS Code recommendations | `gcs-devops-standards` | Workspace config pulled during setup |
+| Role/tool matrix | `gcs-core-governance` | GOV-GUIDE-010 pulled at runtime for role → tool mapping |
+| Version pinning | `gcs-core-governance` | Tool version specs and ENV_VARIABLES_STANDARD |
+| VS Code recommendations | `gcs-core-governance` | Workspace config pulled during setup |
 
 ## SSoT Configuration Paths
 
-All role/tool data is read at runtime from `gcs-devops-standards` (cloned to `/tmp/gft-ssot-onboarding`). The relevant paths are:
+All role/tool data is read at runtime from `gcs-core-governance` (cloned to `/tmp/gft-ssot-onboarding`). The relevant paths are:
 
-| Capability | Path in `gcs-devops-standards` | Purpose |
+| Capability | Path in `gcs-core-governance` | Purpose |
 | :--- | :--- | :--- |
 | **Role/Tool Data** | `foundations/governance/GOV-GUIDE-010.role-tooling--resource-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
 | **Version Pinning** | `tooling/ssot/.tool-versions-gft` | Canonical versions for `get_ssot_tool_version`. |
@@ -100,16 +100,16 @@ All role/tool data is read at runtime from `gcs-devops-standards` (cloned to `/t
 
 Repositories and tools are resolved via a 3-tier inheritance chain defined in `GOV-004-role-tooling-matrix.md`:
 
-1. **`default_repositories`** — top-level list cloned for every role (e.g., `gcs-devops-standards`).
-2. **`common-base`** — inherits `default_repositories`; adds shared repos (e.g., `gcs-studio-handbook`).
+1. **`default_repositories`** — top-level list cloned for every role (e.g., `gcs-core-governance`).
+2. **`common-base`** — inherits `default_repositories`; adds shared repos (e.g., `gcs-core-governance`).
 3. **Specific role** — inherits `common-base`; adds role-specific repos (e.g., `gct-service-template-py`, `gencraft-iac`).
 
-Changes to this model require updating `gcs-devops-standards` first and testing across all roles.
+Changes to this model require updating `gcs-core-governance` first and testing across all roles.
 
 ## Execution Flow
 
 1. **Prerequisite Scan** — checks and installs `git`, `curl`, `yq`, `python3`, `unzip` via OS package manager (`brew`, `apt`, `dnf`, etc.).
-2. **SSoT Sync** — clones `gcs-devops-standards` to `/tmp/gft-ssot-onboarding`.
+2. **SSoT Sync** — clones `gcs-core-governance` to `/tmp/gft-ssot-onboarding`.
 3. **Role Selection** — prompts for role; loads configuration via `load_ssot_configuration` (calls Python helpers).
 4. **Installation** — installs binaries (nvm, pyenv, OpenTofu, GFT CLI, etc.) and verifies Docker/AWS CLI.
 5. **Configuration** — sets Git identity, SSH keys, VS Code extensions, env vars, clones repos, runs `gft config setup`.
@@ -117,15 +117,15 @@ Changes to this model require updating `gcs-devops-standards` first and testing 
 
 ## Key Patterns
 
-- **Adding a new tool**: update `gcs-devops-standards` first — never hardcode tool versions or paths in this repo; everything is read from SSoT at runtime.
+- **Adding a new tool**: update `gcs-core-governance` first — never hardcode tool versions or paths in this repo; everything is read from SSoT at runtime.
 - **Cross-platform shell detection** lives in `includes/01_helpers.sh`; adding a new platform requires changes there.
 - **`TEST_ENV=1`** skips confirmation prompts — always set in CI runs and unit tests.
-- **Testing against the SSoT locally**: unit tests use mock fixtures in `tests/fixtures/mock_ssot/`; do not let tests reach the real `gcs-devops-standards`.
+- **Testing against the SSoT locally**: unit tests use mock fixtures in `tests/fixtures/mock_ssot/`; do not let tests reach the real `gcs-core-governance`.
 
 ## Notes for Agents
 
 - **Idempotency is critical** — every action must check system state before executing (never blindly re-install or overwrite).
 - Cross-platform support: shell detection (bash vs zsh vs PowerShell) must be maintained.
-- When adding a new tool to the matrix, update `gcs-devops-standards` first; this script reads from that SSoT at runtime.
+- When adding a new tool to the matrix, update `gcs-core-governance` first; this script reads from that SSoT at runtime.
 - Shell scripts must pass `shellcheck` without warnings.
 - All Markdown files must carry valid SSoT YAML frontmatter.

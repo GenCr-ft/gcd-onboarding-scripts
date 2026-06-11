@@ -1,5 +1,5 @@
 # Gencraft Standard .markdownlint.yaml (v1.3 - Approved)
-# SSoT: gcs-devops-standards/tooling/assets/configs/.markdownlint.yaml
+# SSoT: gcs-core-governance/foundations/devops-standards/tooling/assets/configs/.markdownlint.yaml
 # This version is refined to be less restrictive on legitimate formatting choices.
 
 default: true

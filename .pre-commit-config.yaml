@@ -1,7 +1,7 @@
 ---
 # ===================================================================
 # Gencraft Studio - Canonical Pre-Commit Configuration v1.0
-# SSoT: gcs-devops-standards/.pre-commit-config.yaml
+# SSoT: gcs-core-governance/foundations/devops-standards/.pre-commit-config.yaml
 # ===================================================================
 
 repos:

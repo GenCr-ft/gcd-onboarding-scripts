@@ -6,7 +6,7 @@
 # --- Script Configuration & Globals ---
 $ScriptVersion = "1.0.13"
 $DefaultWSLDistroBaseName = "Ubuntu"
-$BashOnboardingScriptName = "gft_onboarding.sh"
+$BashOnboardingScriptName = "gft-onboarding.sh"
 $EnvFileName = ".env" # Name of the environment file to look for
 
 # --- Helper Functions ---

@@ -59,6 +59,45 @@ readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-core-governance.git"
 # shellcheck disable=SC2034
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-onboarding"
 
+parse_cli_args() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --role)
+                if [[ -z "${2:-}" ]]; then
+                    log_error "--role requires a role name."
+                    return 1
+                fi
+                export GFT_ROLE="$2"
+                shift 2
+                ;;
+            --role=*)
+                export GFT_ROLE="${1#--role=}"
+                shift
+                ;;
+            --sync-hooks)
+                export GFT_SYNC_HOOKS_ONLY=true
+                shift
+                ;;
+            --help|-h)
+                cat <<'EOF'
+Usage:
+  bash gft-onboarding.sh [--role <role-name>]
+  bash gft-onboarding.sh --sync-hooks
+
+Options:
+  --role <role-name>  Select a role without prompting.
+  --sync-hooks        Deploy planning metadata hooks only.
+  --help, -h          Show this help.
+EOF
+                exit 0
+                ;;
+            *)
+                log_error "Unknown argument: $1"
+                return 1
+                ;;
+        esac
+    done
+}
 
 # --- Hook Registration ---
 register_studio_hooks() {
@@ -179,8 +218,9 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     setup_log_stream
     trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
 
-    # Handle standalone synchronization execution
-    if [[ "${1:-}" == "--sync-hooks" ]]; then
+    parse_cli_args "$@"
+
+    if [[ "${GFT_SYNC_HOOKS_ONLY:-}" == "true" ]]; then
         deploy_planning_metadata_hook
         exit $?
     fi

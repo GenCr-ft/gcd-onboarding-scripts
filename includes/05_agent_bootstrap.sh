@@ -139,11 +139,12 @@ generate_workspace_agent_md() {
     esac
 
     cat << EOF > "$target_file"
-# AGENT.md — GenCr@ft Studio Workspace ($role_name)
+# AGENT.md — Compatibility Pointer for GenCr@ft Studio Workspace ($role_name)
 
 ## Orientation
-You are an agent (AI or Human) in the **$role_name** role.
-This workspace contains ~30 repositories for the **Aethel** project.
+This file is generated for legacy tooling compatibility. The authoritative workspace instructions are in \`AGENTS.md\`.
+
+You are an agent (AI or Human) in the **$role_name** role. This workspace contains the GenCr@ft Studio repositories needed for your selected role.
 
 ## Role Specifics
 $role_instructions

@@ -106,25 +106,24 @@ See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descr
 
 ### macOS & Linux
 
-Run the following to download, verify checksums, and execute:
+Clone the full onboarding repository, then run the orchestrator from the repo
+root. The script is modular and requires the checked-in `includes/` directory.
 
 ```bash
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
-sha256sum --check gft-onboarding.sh.sha256
-chmod +x gft-onboarding.sh
-./gft-onboarding.sh
+git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git
+cd gcd-onboarding-scripts
+bash gft-onboarding.sh
+
+# Optional: select a role without an interactive prompt.
+bash gft-onboarding.sh --role devops-specialist
 ```
 
 ### Windows (via WSL2)
 
-Run via PowerShell as Administrator to verify checksums and bootstrap WSL2:
+Clone or download the full onboarding repository, then run the PowerShell
+bootstrapper from the repo root as Administrator:
 
 ```powershell
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1 -o onboarding-win.ps1
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1.sha256 -o onboarding-win.ps1.sha256
-Get-FileHash onboarding-win.ps1 -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  onboarding-win.ps1" } | Select-String -Pattern (Get-Content onboarding-win.ps1.sha256)
-
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 .\onboarding-win.ps1
 ```
@@ -145,7 +144,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 1. **Restart:** Close/reopen terminals and restart VS Code.
 2. **Validation Scripts:**
    - Run `./validate-environment.sh` to verify role-specific tools/repos.
-   - Run `./validate-gft-devops-environment.sh` for DevOps tooling baselines.
+   - Run `./validate-devops-environment.sh` for DevOps tooling baselines.
    - Run `gft doctor` for a CLI-native health report.
 3. **Manual Check:** Verify pre-commit hooks:
 
@@ -172,7 +171,7 @@ There is no `onboard.sh` in this repo — it *is* the onboarding system.
 | **Permission denied** | Ensure executable permissions (`chmod +x`) and run with appropriate user rights. |
 | **Package fails** | Check internet; update package manager (`apt update`/`brew update`). |
 | **Auth fails** | Run `gh auth login` or `docker info` manually. |
-| **Checksum mismatch** | Re-download script and `.sha256` file. |
+| **Incomplete checkout** | Clone or download the full repo; `gft-onboarding.sh` requires files under `includes/`. |
 
 ### Diagnostics
 

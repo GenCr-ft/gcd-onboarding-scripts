@@ -34,13 +34,13 @@ def gather_default_repositories(matrix_data, roles_map):
     if not isinstance(matrix_data, dict):
         return default_repos
 
-    for repo in matrix_data.get('default_repositories') or []:
+    for repo in matrix_data.get("default_repositories") or []:
         if repo:
             default_repos.add(repo)
 
-    common_base = roles_map.get('common-base')
+    common_base = roles_map.get("common-base")
     if common_base:
-        for repo in common_base.get('repositories') or []:
+        for repo in common_base.get("repositories") or []:
             if repo:
                 default_repos.add(repo)
 
@@ -50,7 +50,7 @@ def gather_default_repositories(matrix_data, roles_map):
 def get_all_repos_for_role(matrix_data, role_name):
     all_repos = set()
     try:
-        roles_map = {role['name']: role for role in matrix_data.get('roles', [])}
+        roles_map = {role["name"]: role for role in matrix_data.get("roles", [])}
     except (TypeError, KeyError, AttributeError):
         return []
 
@@ -72,16 +72,17 @@ def get_all_repos_for_role(matrix_data, role_name):
 
         current_role_data = roles_map[current_role_name]
 
-        repositories = current_role_data.get('repositories') or []
+        repositories = current_role_data.get("repositories") or []
         for repo in repositories:
             if repo:
                 all_repos.add(repo)
 
-        parent_role = current_role_data.get('inherits')
+        parent_role = current_role_data.get("inherits")
         if parent_role:
             roles_to_process.append(parent_role)
 
     return sorted(list(all_repos))
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

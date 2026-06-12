@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC1091,SC2119,SC2120,SC2015
 #
 # ID: GFT_ONBOARDING_INSTALLERS_02
 # Title: Onboarding Script - SSoT-Driven Tool Installers
@@ -180,6 +181,42 @@ install_gft_cli() {
         return 1
     fi
 }
+
+
+# Installs the SSoT compliance linter tool (gcd-ops-scripts) globally using pipx.
+install_gft_ops_scripts() {
+    local workspace_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local ops_scripts_path="${workspace_root}/gcd-ops-scripts"
+
+    if [[ ! -d "$ops_scripts_path" ]]; then
+        log_warn "gcd-ops-scripts directory not found at $ops_scripts_path — skipping pipx installation."
+        return 0
+    fi
+
+    log_info "Installing gft-ops-scripts via pipx..."
+
+    # Ensure pipx is installed
+    if ! command -v pipx &>/dev/null; then
+        log_info "pipx not found. Installing pipx..."
+        python3 -m pip install --user pipx
+        export PATH="${HOME}/.local/bin:${PATH}"
+    fi
+
+    if ! command -v pipx &>/dev/null; then
+        log_error "pipx is not available in PATH and could not be installed."
+        return 1
+    fi
+
+    log_info "Running pipx install for gft-ops-scripts..."
+    if pipx list | grep -q "gft-ops-scripts"; then
+        log_info "gft-ops-scripts is already installed in pipx. Reinstalling..."
+        pipx install --force "$ops_scripts_path"
+    else
+        pipx install "$ops_scripts_path"
+    fi
+    log_success "gft-ops-scripts successfully installed via pipx."
+}
+
 
 # --- Main Installation Dispatcher ---
 install_tool() {

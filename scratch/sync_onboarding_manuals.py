@@ -6,7 +6,6 @@
 # Creation Date: 2026-05-24
 # Version:      1.3.0
 
-import os
 import re
 from pathlib import Path
 
@@ -14,11 +13,26 @@ WORKSPACE_DIR = Path("/home/lgan/hxgn/dev/claude/exp").resolve()
 
 # Directories to skip entirely
 SKIP_DIRS = {
-    ".git", ".remember", ".planning", ".keys", ".claude", ".antigravitycli",
-    ".github", ".github-private", "Godot_v4.5-stable_linux.x86_64",
-    "Godot_v4.2-stable_linux.x86_64", "senior expertise", "docs", "wt-gut",
-    "wt-jest-nestjs", "wt-jest-ts", "wt-nestjs-hexarch", "wt-pytest", "test-results"
+    ".git",
+    ".remember",
+    ".planning",
+    ".keys",
+    ".claude",
+    ".antigravitycli",
+    ".github",
+    ".github-private",
+    "Godot_v4.5-stable_linux.x86_64",
+    "Godot_v4.2-stable_linux.x86_64",
+    "senior expertise",
+    "docs",
+    "wt-gut",
+    "wt-jest-nestjs",
+    "wt-jest-ts",
+    "wt-nestjs-hexarch",
+    "wt-pytest",
+    "test-results",
 }
+
 
 def sync_agents_md(agents_file: Path) -> bool:
     """Updates AGENTS.md with aligned branch naming and co-author constraints using regex/string replacement."""
@@ -30,29 +44,27 @@ def sync_agents_md(agents_file: Path) -> bool:
         content = re.sub(
             r"Branch(?: naming)?:\s*`feat/`,\s*`fix/`,\s*`(?:docs|test)/`,\s*`chore/`.*?(?=\n|$)",
             r"Branch: Conforms strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug` branch naming standard (e.g., `feat/issue-104-inventory-service`).",
-            content
+            content,
         )
 
         # 2. Update WI Title formats if present
         content = re.sub(
             r"Title:\s*`feat\([^)]+\):\s*WI-X\.Y\s*—\s*description`.*?(?=\n|$)",
             r"Title: `feat(scope): issue-ID-slug — description`.",
-            content
+            content,
         )
 
         # 3. Update Co-author trailer prohibition
         content = re.sub(
             r"- AI commits:\s*`Co-Authored-By: Claude Sonnet 4\.6 <noreply@anthropic\.com>`",
             r"- Co-author trailer: Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.",
-            content
+            content,
         )
 
         # Fallback raw string replacements for safety
         replacements = {
-            "Branch naming: `docs/`, `feat/`, `fix/`, `chore/`":
-                "Branch: Conforms strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug` branch naming standard (e.g., `feat/issue-104-inventory-service`)",
-            "Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>":
-                "Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer."
+            "Branch naming: `docs/`, `feat/`, `fix/`, `chore/`": "Branch: Conforms strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug` branch naming standard (e.g., `feat/issue-104-inventory-service`)",
+            "Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>": "Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.",
         }
         for old, new in replacements.items():
             content = content.replace(old, new)
@@ -66,6 +78,7 @@ def sync_agents_md(agents_file: Path) -> bool:
         print(f"Error processing {agents_file}: {e}")
         return False
 
+
 def sync_claude_md(claude_file: Path) -> bool:
     """Updates CLAUDE.md with aligned branch naming and co-author constraints."""
     try:
@@ -76,7 +89,7 @@ def sync_claude_md(claude_file: Path) -> bool:
         content = re.sub(
             r"- \*\*Branch naming:\*\* `feat/`,\s*`fix/`,\s*`docs/`,\s*`test/`,\s*`chore/`,\s*`refactor/`.*?(?=\n|$)",
             r"- **Branch naming:** Conforms strictly to `feat/issue-ID-slug` and `fix/issue-ID-slug` branch naming standard (e.g., `feat/issue-104-inventory-service`).",
-            content
+            content,
         )
 
         # Replace co-author block
@@ -84,13 +97,12 @@ def sync_claude_md(claude_file: Path) -> bool:
             r"- \*\*Co-author trailer\*\* on all AI-generated commits:\s*```\s*Co-Authored-By: Claude Sonnet 4\.6 <noreply@anthropic\.com>\s*```",
             r"- **Co-author trailer:** Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer.",
             content,
-            flags=re.DOTALL
+            flags=re.DOTALL,
         )
 
         # Fallback raw string replacements
         replacements = {
-            "Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>":
-                "Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer."
+            "Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>": "Strictly prohibited in this workspace due to administrative blocks. Do NOT write or push commits containing the `Co-Authored-By` trailer."
         }
         for old, new in replacements.items():
             content = content.replace(old, new)
@@ -103,6 +115,7 @@ def sync_claude_md(claude_file: Path) -> bool:
     except Exception as e:
         print(f"Error processing {claude_file}: {e}")
         return False
+
 
 def main():
     print(f"Starting onboarding manuals sync inside workspace: {WORKSPACE_DIR}")
@@ -132,6 +145,7 @@ def main():
     print(f"AGENTS.md files updated:     {updated_agents}")
     print(f"CLAUDE.md files updated:     {updated_claudes}")
     print("Done!")
+
 
 if __name__ == "__main__":
     main()

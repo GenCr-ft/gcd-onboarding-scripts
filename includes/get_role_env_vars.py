@@ -22,6 +22,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from simple_yaml import load_yaml_string
 
+
 def get_all_env_vars_for_role(matrix_data, role_name):
     """
     Recursively finds all environment variables for a given role.
@@ -33,20 +34,24 @@ def get_all_env_vars_for_role(matrix_data, role_name):
     # First, build the full inheritance chain
     inheritance_chain = []
     current_role = role_name
-    roles_map = {role['name']: role for role in matrix_data.get('roles', [])}
+    roles_map = {role["name"]: role for role in matrix_data.get("roles", [])}
 
     while current_role and current_role not in visited_roles:
         inheritance_chain.append(current_role)
         visited_roles.add(current_role)
-        current_role = roles_map.get(current_role, {}).get('inherits')
+        current_role = roles_map.get(current_role, {}).get("inherits")
 
     # Apply variables from parent to child, allowing overrides
     for role in reversed(inheritance_chain):
         role_data = roles_map.get(role, {})
-        if 'environment_variables' in role_data and role_data['environment_variables'] is not None:
-            final_vars.update(role_data['environment_variables'])
+        if (
+            "environment_variables" in role_data
+            and role_data["environment_variables"] is not None
+        ):
+            final_vars.update(role_data["environment_variables"])
 
     return final_vars
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -34,12 +34,20 @@ def get_all_env_vars_for_role(matrix_data, role_name):
     # First, build the full inheritance chain
     inheritance_chain = []
     current_role = role_name
-    roles_map = {role["name"]: role for role in matrix_data.get("roles", [])}
+    try:
+        roles_map = {
+            role["name"]: role
+            for role in matrix_data.get("roles", [])
+            if role and isinstance(role, dict) and "name" in role
+        }
+    except (TypeError, AttributeError, KeyError) as e:
+        print(f"Error parsing role map: {e}", file=sys.stderr)
+        return {}
 
     while current_role and current_role not in visited_roles:
         inheritance_chain.append(current_role)
         visited_roles.add(current_role)
-        current_role = roles_map.get(current_role, {}).get("inherits")
+        current_role = roles_map.get(current_role, {}).get("inherits") if roles_map else None
 
     # Apply variables from parent to child, allowing overrides
     for role in reversed(inheritance_chain):

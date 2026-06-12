@@ -198,16 +198,19 @@ install_gft_ops_scripts() {
     # Ensure pipx is installed
     if ! command -v pipx &>/dev/null; then
         log_info "pipx not found. Attempting to install pipx..."
+        local installed=false
         if command -v apt-get &>/dev/null; then
-            sudo apt-get update && sudo apt-get install -y pipx
+            sudo apt-get update && sudo apt-get install -y pipx && installed=true
         elif command -v brew &>/dev/null; then
-            brew install pipx
+            brew install pipx && installed=true
         elif command -v dnf &>/dev/null; then
-            sudo dnf install -y pipx
+            sudo dnf install -y pipx && installed=true
         elif command -v pacman &>/dev/null; then
-            sudo pacman -S --noconfirm python-pipx
-        else
-            log_warn "No supported package manager found. Falling back to pip with --break-system-packages..."
+            sudo pacman -S --noconfirm python-pipx && installed=true
+        fi
+
+        if ! $installed; then
+            log_warn "Package manager installation failed or not found. Falling back to pip with --break-system-packages..."
             python3 -m pip install --user pipx --break-system-packages || python3 -m pip install --user pipx
         fi
         export PATH="${HOME}/.local/bin:${PATH}"

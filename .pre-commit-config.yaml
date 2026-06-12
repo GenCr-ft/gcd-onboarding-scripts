@@ -116,7 +116,7 @@ repos:
         exclude: &markdownlint_exclude ^(tests/fixtures/|integration_test_docs/|README\.md|\.planning/|spec/|CHANGELOG\.md|AGENTS\.md|\.github/|docs/|workspace/)
         args: ["--config", ".markdownlint.yaml"]
 
-    # ===== Gencraft SSoT Linters (Custom Hooks) =====
+      # ===== Gencraft SSoT Linters (Custom Hooks) =====
   - repo: local
     hooks:
       - id: metadata-linter

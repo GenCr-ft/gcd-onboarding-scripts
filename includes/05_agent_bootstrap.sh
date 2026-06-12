@@ -26,7 +26,8 @@ setup_agent_skills() {
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
 
     if [[ -z "$gemop_path" ]]; then
-        local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
+        local workspace
+        workspace=$(gft_workspace_root)
         gemop_path="${workspace}/gcs-plt-gemop"
     fi
 
@@ -72,7 +73,8 @@ provision_agent_files() {
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
 
     if [[ -z "$gemop_path" ]]; then
-        local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
+        local workspace
+        workspace=$(gft_workspace_root)
         gemop_path="${workspace}/gcs-plt-gemop"
     fi
 
@@ -116,7 +118,8 @@ generate_workspace_agent_md() {
     local role_name="${1:-generic-contributor}"
     log_info "Generating role-specific AGENT.md for: $role_name"
 
-    local target_dir="${GFT_PROJECTS_HOME:-$(pwd)}"
+    local target_dir
+    target_dir=$(gft_workspace_root)
     local target_file="${target_dir}/AGENT.md"
 
     # Role-specific content

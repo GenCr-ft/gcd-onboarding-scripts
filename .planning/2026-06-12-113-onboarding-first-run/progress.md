@@ -21,6 +21,12 @@
 - Reviewed stale-reference scan, syntax checks, and git diff.
 - Pushed branch `fix/issue-113-onboarding-first-run`.
 - Opened PR https://github.com/GenCr-ft/gcd-onboarding-scripts/pull/114.
+- Addressed subagent review findings from PR #114:
+  - Added missing Git email fallback for SSH key creation.
+  - Rejected empty `--role=` values.
+  - Moved parse failure outside the unexpected-abort trap.
+  - Added shared workspace path expansion for `~` and literal `$HOME`.
+  - Kept regression test runtime SSoT writes outside the checked-in fixture tree.
 
 ### Test Results
 | Test | Expected | Actual | Status |
@@ -30,6 +36,7 @@
 | `bash test.sh` | Pass | Passed, 5 test files run | Green |
 | `bash -n ...` | Pass | Passed | Green |
 | stale filename scan | No stale broken references | Passed; only intentional log filename remains | Green |
+| `bash test.sh` after review fixes | Pass | Passed, 5 test files run | Green |
 
 ### Errors
 | Error | Resolution |

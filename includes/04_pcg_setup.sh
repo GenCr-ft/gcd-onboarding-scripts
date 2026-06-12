@@ -21,7 +21,8 @@ setup_pcg_python_venv() {
 
     log_info "Setting up PCG Python research environment..."
 
-    local gft_workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local gft_workspace
+    gft_workspace=$(gft_workspace_root)
     local pcg_dir="${gft_workspace}/gcp-aethel-pcg/pcg-godot"
 
     if [ ! -d "$pcg_dir" ]; then

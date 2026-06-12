@@ -81,6 +81,27 @@ confirm_action() {
     done
 }
 
+gft_expand_path() {
+    local raw_path="$1"
+    local stripped="${raw_path//\"/}"
+
+    if [[ "$stripped" == '~' ]]; then
+        printf '%s\n' "$HOME"
+    elif [[ "$stripped" == '~/'* ]]; then
+        printf '%s\n' "${HOME}/${stripped:2}"
+    elif [[ "$stripped" == '$HOME' ]]; then
+        printf '%s\n' "$HOME"
+    elif [[ "$stripped" == '$HOME/'* ]]; then
+        printf '%s\n' "${HOME}/${stripped:6}"
+    else
+        printf '%s\n' "$stripped"
+    fi
+}
+
+gft_workspace_root() {
+    gft_expand_path "${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+}
+
 
 # Fetches the version for a specific tool from the SSoT .tool-versions-gft file.
 # $1: The name of the tool as it appears in the .tool-versions-gft file (e.g., "nodejs").

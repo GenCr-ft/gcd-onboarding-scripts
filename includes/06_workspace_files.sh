@@ -11,8 +11,28 @@
 #   bundle in this repo to $GFT_PROJECTS_HOME (default: ~/gft_studio).
 #   Idempotent: skips files that are already up to date; updates changed ones.
 
+if ! declare -f gft_workspace_root >/dev/null 2>&1; then
+    gft_workspace_root() {
+        local raw_path="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
+        local stripped="${raw_path//\"/}"
+
+        if [[ "$stripped" == '~' ]]; then
+            printf '%s\n' "$HOME"
+        elif [[ "$stripped" == '~/'* ]]; then
+            printf '%s\n' "${HOME}/${stripped:2}"
+        elif [[ "$stripped" == '$HOME' ]]; then
+            printf '%s\n' "$HOME"
+        elif [[ "$stripped" == '$HOME/'* ]]; then
+            printf '%s\n' "${HOME}/${stripped:6}"
+        else
+            printf '%s\n' "$stripped"
+        fi
+    }
+fi
+
 deploy_workspace_files() {
-    local target="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
+    local target
+    target=$(gft_workspace_root)
     local source_dir="${SCRIPT_DIR}/workspace"
 
     log_info "Deploying workspace-level files to ${target}..."
@@ -55,7 +75,8 @@ deploy_workspace_files() {
 }
 
 deploy_planning_metadata_hook() {
-    local target_dir="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
+    local target_dir
+    target_dir=$(gft_workspace_root)
     log_info "Deploying central planning metadata pre-commit hook..."
 
     # Canonical linter script path (resolved relative to the side-by-side repo layout)

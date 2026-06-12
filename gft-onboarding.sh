@@ -71,7 +71,12 @@ parse_cli_args() {
                 shift 2
                 ;;
             --role=*)
-                export GFT_ROLE="${1#--role=}"
+                local role_value="${1#--role=}"
+                if [[ -z "$role_value" ]]; then
+                    log_error "--role requires a role name."
+                    return 1
+                fi
+                export GFT_ROLE="$role_value"
                 shift
                 ;;
             --sync-hooks)
@@ -105,7 +110,8 @@ register_studio_hooks() {
 
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
     if [[ -z "$gemop_path" ]]; then
-        local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
+        local workspace
+        workspace=$(gft_workspace_root)
         gemop_path="${workspace}/gcs-plt-gemop"
     fi
 
@@ -216,9 +222,12 @@ main() {
 # --- Script Execution ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     setup_log_stream
-    trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
 
-    parse_cli_args "$@"
+    if ! parse_cli_args "$@"; then
+        exit 2
+    fi
+
+    trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
 
     if [[ "${GFT_SYNC_HOOKS_ONLY:-}" == "true" ]]; then
         deploy_planning_metadata_hook

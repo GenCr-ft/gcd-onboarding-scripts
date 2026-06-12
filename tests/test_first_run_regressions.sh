@@ -6,7 +6,6 @@ PROJECT_ROOT=$(cd "$TEST_SCRIPT_PATH/.." && pwd)
 
 export TEST_ENV=true
 export SCRIPT_DIR="$PROJECT_ROOT"
-export GFT_SSOT_PATH="${TEST_SCRIPT_PATH}/fixtures/mock_ssot"
 
 source "${PROJECT_ROOT}/gft-onboarding.sh"
 eval "$(declare -f main | sed '1s/main/onboarding_main/')"
@@ -15,6 +14,7 @@ log_test() { echo "[TEST] $*"; }
 fail() { echo "[FAIL] $*" >&2; return 1; }
 
 ensure_runtime_mock_ssot() {
+    [[ "$GFT_SSOT_PATH" != "$PROJECT_ROOT"* ]] || fail "runtime mock SSoT must not write into the checked-in repo"
     mkdir -p "$GFT_SSOT_PATH/tooling" "$GFT_SSOT_PATH/tooling/ssot" "$GFT_SSOT_PATH/foundations/governance"
     cp "${TEST_SCRIPT_PATH}/fixtures/mock_ssot/tooling/ENV_VARIABLES_STANDARD.md" "$GFT_SSOT_PATH/tooling/ENV_VARIABLES_STANDARD.md"
     cp "${TEST_SCRIPT_PATH}/fixtures/mock_ssot/tooling/VSCODE_RECOMMENDATIONS.md" "$GFT_SSOT_PATH/tooling/VSCODE_RECOMMENDATIONS.md"
@@ -51,6 +51,35 @@ test_role_selection_stdout_is_role_only() {
 
     [[ "$selected" == "devops-specialist" ]] || fail "expected exact role on stdout, got: $selected"
     [[ "$stderr_output" == *"Auto-selecting role from GFT_ROLE"* ]] || fail "expected role selection log on stderr"
+}
+
+test_cli_rejects_empty_role_without_abort_trap() {
+    log_test "CLI parsing rejects empty --role without unexpected-abort trap"
+
+    local tmp_home stdout_file stderr_file status
+    tmp_home=$(mktemp -d)
+    stdout_file=$(mktemp)
+    stderr_file=$(mktemp)
+
+    HOME="$tmp_home" bash "$PROJECT_ROOT/gft-onboarding.sh" --role= >"$stdout_file" 2>"$stderr_file"
+    status=$?
+
+    [[ "$status" -eq 2 ]] || {
+        local output
+        output=$(cat "$stdout_file" "$stderr_file")
+        rm -rf "$tmp_home" "$stdout_file" "$stderr_file"
+        fail "expected exit 2 for empty role, got $status: $output"
+        return 1
+    }
+    ! grep -q "Onboarding aborted unexpectedly" "$stderr_file" || {
+        local output
+        output=$(cat "$stdout_file" "$stderr_file")
+        rm -rf "$tmp_home" "$stdout_file" "$stderr_file"
+        fail "parse error triggered unexpected-abort trap: $output"
+        return 1
+    }
+
+    rm -rf "$tmp_home" "$stdout_file" "$stderr_file"
 }
 
 test_configure_environment_variables_accepts_one_argument_under_nounset() {
@@ -111,6 +140,36 @@ test_setup_ssh_key_creates_ssh_directory() {
     rm -rf "$tmp_home" /tmp/gft-ssh-key.out /tmp/gft-ssh-key.err
 }
 
+test_setup_ssh_key_handles_missing_git_email() {
+    log_test "setup_ssh_key handles missing git user.email"
+    local tmp_home original_home
+    tmp_home=$(mktemp -d)
+    original_home="$HOME"
+
+    confirm_action() { return 1; }
+
+    export HOME="$tmp_home"
+
+    setup_ssh_key >/tmp/gft-ssh-fallback.out 2>/tmp/gft-ssh-fallback.err || {
+        local err
+        err=$(cat /tmp/gft-ssh-fallback.err 2>/dev/null || true)
+        export HOME="$original_home"
+        rm -rf "$tmp_home" /tmp/gft-ssh-fallback.out /tmp/gft-ssh-fallback.err
+        fail "setup_ssh_key failed without git email: $err"
+        return 1
+    }
+
+    [[ -f "$tmp_home/.ssh/id_ed25519" ]] || {
+        export HOME="$original_home"
+        rm -rf "$tmp_home" /tmp/gft-ssh-fallback.out /tmp/gft-ssh-fallback.err
+        fail "expected SSH key with fallback comment"
+        return 1
+    }
+
+    export HOME="$original_home"
+    rm -rf "$tmp_home" /tmp/gft-ssh-fallback.out /tmp/gft-ssh-fallback.err
+}
+
 test_clone_repositories_uses_gft_projects_home() {
     log_test "clone_repositories_for_role uses GFT_PROJECTS_HOME"
     load_mock_role_matrix
@@ -166,6 +225,38 @@ test_clone_repositories_uses_gft_projects_home() {
     export HOME="$original_home"
     export GFT_PROJECTS_HOME="$original_workspace"
     rm -rf "$tmp_home" "$tmp_workspace" /tmp/gft-clone.out /tmp/gft-clone.err
+}
+
+test_workspace_root_expands_home_syntax() {
+    log_test "workspace root expands ~ and literal HOME syntax"
+    local tmp_home original_home original_workspace
+    tmp_home=$(mktemp -d)
+    original_home="$HOME"
+    original_workspace="${GFT_PROJECTS_HOME:-}"
+
+    export HOME="$tmp_home"
+
+    export GFT_PROJECTS_HOME='~/studio'
+    [[ "$(gft_workspace_root)" == "$tmp_home/studio" ]] || {
+        export HOME="$original_home"
+        export GFT_PROJECTS_HOME="$original_workspace"
+        rm -rf "$tmp_home"
+        fail "tilde workspace path did not expand"
+        return 1
+    }
+
+    export GFT_PROJECTS_HOME='$HOME/workspace'
+    [[ "$(gft_workspace_root)" == "$tmp_home/workspace" ]] || {
+        export HOME="$original_home"
+        export GFT_PROJECTS_HOME="$original_workspace"
+        rm -rf "$tmp_home"
+        fail "literal HOME workspace path did not expand"
+        return 1
+    }
+
+    export HOME="$original_home"
+    export GFT_PROJECTS_HOME="$original_workspace"
+    rm -rf "$tmp_home"
 }
 
 test_documented_filenames_match_repo_files() {
@@ -297,9 +388,12 @@ run_tests() {
     local failed=0
     test_detect_os_is_available_to_main || ((failed+=1))
     test_role_selection_stdout_is_role_only || ((failed+=1))
+    test_cli_rejects_empty_role_without_abort_trap || ((failed+=1))
     test_configure_environment_variables_accepts_one_argument_under_nounset || ((failed+=1))
     test_setup_ssh_key_creates_ssh_directory || ((failed+=1))
+    test_setup_ssh_key_handles_missing_git_email || ((failed+=1))
     test_clone_repositories_uses_gft_projects_home || ((failed+=1))
+    test_workspace_root_expands_home_syntax || ((failed+=1))
     test_documented_filenames_match_repo_files || ((failed+=1))
     test_readme_does_not_advertise_missing_standalone_artifacts || ((failed+=1))
     test_main_smoke_uses_isolated_workspace || ((failed+=1))

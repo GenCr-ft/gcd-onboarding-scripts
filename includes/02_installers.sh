@@ -152,7 +152,8 @@ install_wasm_bindgen_cli() {
 # ~/.local/bin/gft and ~/.config/gft/config.env for the active workspace.
 install_gft_cli() {
     local allow_defer="${1:-true}"
-    local workspace_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local workspace_root
+    workspace_root=$(gft_workspace_root)
     local plt_root="${workspace_root}/gcs-plt-tools"
     local onboard_script="${plt_root}/onboard.sh"
     local gft_bin="$HOME/.local/bin/gft"
@@ -185,7 +186,8 @@ install_gft_cli() {
 
 # Installs the SSoT compliance linter tool (gcd-ops-scripts) globally using pipx.
 install_gft_ops_scripts() {
-    local workspace_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local workspace_root
+    workspace_root=$(gft_workspace_root)
     local ops_scripts_path="${workspace_root}/gcd-ops-scripts"
 
     if [[ ! -d "$ops_scripts_path" ]]; then

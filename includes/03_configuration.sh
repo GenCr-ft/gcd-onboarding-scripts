@@ -75,7 +75,11 @@ setup_ssh_key() {
         mkdir -p "$HOME/.ssh"
         chmod 700 "$HOME/.ssh"
         local git_email
-        git_email=$(git config --global user.email)
+        git_email=$(git config --global user.email 2>/dev/null || true)
+        if [[ -z "$git_email" ]]; then
+            git_email="dev@gencraft.studio"
+            log_warn "Git user.email is not configured. Using fallback SSH key comment: $git_email"
+        fi
         ssh-keygen -t ed25519 -C "$git_email" -f "$ssh_key_path" -N ""
         chmod 600 "$ssh_key_path"
         chmod 644 "$ssh_key_path.pub"
@@ -154,7 +158,8 @@ clone_repositories_for_role() {
 
     log_info "Cloning required repositories for role: $role_name"
 
-    local gft_workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local gft_workspace
+    gft_workspace=$(gft_workspace_root)
     mkdir -p "$gft_workspace"
 
     local -a base_repos=(
@@ -258,8 +263,9 @@ configure_gft_cli() {
 
     log_info "Configuring gft CLI environment variables..."
 
-    local plt_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}/gcs-plt-tools"
-    local workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local workspace
+    workspace=$(gft_workspace_root)
+    local plt_root="${workspace}/gcs-plt-tools"
 
     local shell_profile_file=""
     if [ -n "${BASH_VERSION:-}" ]; then
@@ -313,7 +319,8 @@ final_validation() {
     fi
 
     local standards_dir
-    local projects_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local projects_root
+    projects_root=$(gft_workspace_root)
     standards_dir="${projects_root}/gcs-core-governance"
     local precommit_status=0
 

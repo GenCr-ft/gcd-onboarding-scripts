@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Very small YAML parser for onboarding helpers."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,15 +17,15 @@ def _strip_comments(line: str) -> str:
         if ch == "'" and not in_double:
             in_single = not in_single
         elif ch == '"' and not in_single:
-            if i > 0 and line[i - 1] == '\\':
+            if i > 0 and line[i - 1] == "\\":
                 pass
             else:
                 in_double = not in_double
-        if ch == '#' and not in_single and not in_double:
+        if ch == "#" and not in_single and not in_double:
             break
         result_chars.append(ch)
         i += 1
-    return ''.join(result_chars).rstrip()
+    return "".join(result_chars).rstrip()
 
 
 def _parse_scalar(token: str) -> Any:
@@ -43,9 +44,9 @@ def _parse_scalar(token: str) -> Any:
 
 
 def _split_key_value(line: str) -> Tuple[str, str]:
-    if ':' not in line:
-        return line.strip(), ''
-    key, value = line.split(':', 1)
+    if ":" not in line:
+        return line.strip(), ""
+    key, value = line.split(":", 1)
     return key.strip(), value.strip()
 
 
@@ -56,11 +57,11 @@ class SimpleYAMLParser:
     def __post_init__(self) -> None:
         processed: List[str] = []
         for raw_line in self.text.splitlines():
-            trimmed = _strip_comments(raw_line.rstrip('\n'))
+            trimmed = _strip_comments(raw_line.rstrip("\n"))
             if not trimmed:
                 continue
             stripped = trimmed.strip()
-            if stripped in {'---', '...'}:
+            if stripped in {"---", "..."}:
                 continue
             processed.append(trimmed)
         self.lines: List[str] = processed
@@ -71,7 +72,7 @@ class SimpleYAMLParser:
         return result if result is not None else {}
 
     def _indent(self, line: str) -> int:
-        return len(line) - len(line.lstrip(' '))
+        return len(line) - len(line.lstrip(" "))
 
     def _parse_value(self, indent: int) -> Any:
         while self.index < len(self.lines):
@@ -83,7 +84,7 @@ class SimpleYAMLParser:
             current_indent = self._indent(line)
             if current_indent < indent:
                 return None
-            if stripped.startswith('- '):
+            if stripped.startswith("- "):
                 return self._parse_list(indent)
             return self._parse_mapping(indent)
         return None
@@ -94,17 +95,17 @@ class SimpleYAMLParser:
             line = self.lines[self.index]
             stripped = line.strip()
             current_indent = self._indent(line)
-            if current_indent < indent or not stripped.startswith('- '):
+            if current_indent < indent or not stripped.startswith("- "):
                 break
             item_body = stripped[2:].strip()
             if not item_body:
                 self.index += 1
                 items.append(self._parse_value(indent + 2))
                 continue
-            if ':' in item_body:
+            if ":" in item_body:
                 item_dict = {}
                 key, value_part = _split_key_value(item_body)
-                if value_part == '':
+                if value_part == "":
                     self.index += 1
                     item_dict[key] = self._parse_value(indent + 2)
                 else:
@@ -116,10 +117,10 @@ class SimpleYAMLParser:
                     if next_indent < indent + 2:
                         break
                     next_stripped = next_line.strip()
-                    if next_stripped.startswith('- '):
+                    if next_stripped.startswith("- "):
                         break
                     key2, value_part2 = _split_key_value(next_stripped)
-                    if value_part2 == '':
+                    if value_part2 == "":
                         self.index += 1
                         item_dict[key2] = self._parse_value(next_indent + 2)
                     else:
@@ -139,13 +140,13 @@ class SimpleYAMLParser:
             current_indent = self._indent(line)
             if current_indent < indent:
                 break
-            if stripped.startswith('- '):
+            if stripped.startswith("- "):
                 break
-            if ':' not in stripped:
+            if ":" not in stripped:
                 self.index += 1
                 continue
             key, value_part = _split_key_value(stripped)
-            if value_part == '':
+            if value_part == "":
                 self.index += 1
                 mapping[key] = self._parse_value(current_indent + 2)
             else:

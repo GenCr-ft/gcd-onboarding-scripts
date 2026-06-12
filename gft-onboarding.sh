@@ -54,8 +54,11 @@ setup_log_stream() {
 }
 
 # --- SSoT Configuration ---
+# shellcheck disable=SC2034
 readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-core-governance.git"
+# shellcheck disable=SC2034
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-onboarding"
+
 
 # --- Hook Registration ---
 register_studio_hooks() {
@@ -152,6 +155,7 @@ main() {
     configure_environment_variables "$selected_role_name"
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
+    install_gft_ops_scripts
     deploy_workspace_files
     deploy_planning_metadata_hook
     configure_agent_environment "$selected_role_name"

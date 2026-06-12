@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Parse ENV_VARIABLES_STANDARD.md and print env assignments."""
+
 import os
 import re
 import sys
@@ -49,7 +50,12 @@ def load_sections(md_path: Path):
                     collecting = fence_lang in {"env", "bash"}
                 continue
 
-            if collecting and current_target and stripped and not stripped.startswith("#"):
+            if (
+                collecting
+                and current_target
+                and stripped
+                and not stripped.startswith("#")
+            ):
                 if current_target[0] == "common":
                     data["common"].append(stripped)
                 elif current_target[0] == "role":

@@ -18,6 +18,7 @@ import sys
 
 from simple_yaml import load_yaml_string
 
+
 def get_all_tools_for_role(matrix_data, role_name):
     """
     Recursively traverses the inheritance chain to aggregate all tools
@@ -25,9 +26,12 @@ def get_all_tools_for_role(matrix_data, role_name):
     """
     all_tools = set()
     try:
-        roles_map = {role['name']: role for role in matrix_data.get('roles', [])}
+        roles_map = {role["name"]: role for role in matrix_data.get("roles", [])}
     except (TypeError, KeyError) as e:
-        print(f"Error: Formatting error in the 'roles' section of the YAML: {e}", file=sys.stderr)
+        print(
+            f"Error: Formatting error in the 'roles' section of the YAML: {e}",
+            file=sys.stderr,
+        )
         return []
 
     # Use a queue for robust, level-by-level traversal of the inheritance tree
@@ -42,20 +46,24 @@ def get_all_tools_for_role(matrix_data, role_name):
         visited_roles.add(current_role_name)
 
         if current_role_name not in roles_map:
-            print(f"::warning:: Role '{current_role_name}' found in an 'inherits' key but is not defined in the roles list. Inheritance chain is broken.", file=sys.stderr)
+            print(
+                f"::warning:: Role '{current_role_name}' found in an 'inherits' key but is not defined in the roles list. Inheritance chain is broken.",
+                file=sys.stderr,
+            )
             continue
 
         current_role_data = roles_map[current_role_name]
 
-        if 'tools' in current_role_data and current_role_data['tools'] is not None:
-            for tool in current_role_data['tools']:
+        if "tools" in current_role_data and current_role_data["tools"] is not None:
+            for tool in current_role_data["tools"]:
                 all_tools.add(tool)
 
-        parent_role = current_role_data.get('inherits')
+        parent_role = current_role_data.get("inherits")
         if parent_role:
             roles_to_process.append(parent_role)
 
     return sorted(list(all_tools))
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

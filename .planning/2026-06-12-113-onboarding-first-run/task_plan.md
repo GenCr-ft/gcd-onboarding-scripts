@@ -3,7 +3,7 @@ docId: GOV-PLAN-113
 issue-id: GenCr-ft/gcd-onboarding-scripts#113
 github-issue: https://github.com/GenCr-ft/gcd-onboarding-scripts/issues/113
 workspace: workspace-ops
-status: in_progress
+status: complete
 ---
 # [CODE] Issue 113 Onboarding First-Run Repair
 
@@ -51,11 +51,11 @@ Phase 6
 - **Status:** complete
 
 ### Phase 6: Delivery
-- [ ] Commit changes with conventional commits.
-- [ ] Push branch.
-- [ ] Open PR linked to #113.
-- [ ] Report results and residual risks.
-- **Status:** pending
+- [x] Commit changes with conventional commits.
+- [x] Push branch.
+- [x] Open PR linked to #113: https://github.com/GenCr-ft/gcd-onboarding-scripts/pull/114
+- [x] Report results and residual risks.
+- **Status:** complete
 
 ## Decisions Made
 | Decision | Rationale |

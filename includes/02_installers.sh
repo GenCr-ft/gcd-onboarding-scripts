@@ -197,8 +197,19 @@ install_gft_ops_scripts() {
 
     # Ensure pipx is installed
     if ! command -v pipx &>/dev/null; then
-        log_info "pipx not found. Installing pipx..."
-        python3 -m pip install --user pipx
+        log_info "pipx not found. Attempting to install pipx..."
+        if command -v apt-get &>/dev/null; then
+            sudo apt-get update && sudo apt-get install -y pipx
+        elif command -v brew &>/dev/null; then
+            brew install pipx
+        elif command -v dnf &>/dev/null; then
+            sudo dnf install -y pipx
+        elif command -v pacman &>/dev/null; then
+            sudo pacman -S --noconfirm python-pipx
+        else
+            log_warn "No supported package manager found. Falling back to pip with --break-system-packages..."
+            python3 -m pip install --user pipx --break-system-packages || python3 -m pip install --user pipx
+        fi
         export PATH="${HOME}/.local/bin:${PATH}"
     fi
 
@@ -208,7 +219,7 @@ install_gft_ops_scripts() {
     fi
 
     log_info "Running pipx install for gft-ops-scripts..."
-    if pipx list | grep -q "gft-ops-scripts"; then
+    if pipx list | grep -E -q "gft-ops-scripts|gcd-ops-scripts"; then
         log_info "gft-ops-scripts is already installed in pipx. Reinstalling..."
         pipx install --force "$ops_scripts_path"
     else

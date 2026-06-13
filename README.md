@@ -39,9 +39,22 @@ This suite serves as the approved Single Source of Truth (SSoT) for onboarding d
 
 `AGENTS.md` is the repo-local authority and the first read for agents.
 
-`gft-onboarding.sh` is the primary first-run entry point. `validate-environment.sh`,
-`validate-devops-environment.sh`, and `setup-local-tofu-env.sh` are the main
-post-install validation surfaces.
+`gft-onboarding.sh` is the primary first-run entry point. New contributors
+should use the workspace quickstart path first, then read the repo-local
+`AGENTS.md` for the project they clone.
+
+```bash
+mkdir -p ~/gft && cd ~/gft
+curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
+cd gcd-onboarding-scripts-main
+bash gft-onboarding.sh --quickstart --workspace aethel
+```
+
+Replace `aethel` with `evai-platform`, `agent-factory`, `workspace-ops`, or
+`studio-gencraft` if that is your starting workspace.
+
+`validate-environment.sh`, `validate-devops-environment.sh`, and
+`setup-local-tofu-env.sh` are the main post-install validation surfaces.
 
 `gcs-core-governance` is the runtime SSoT source for role/tool matrices,
 version pins, and environment configuration. Treat copied output as derived, not
@@ -67,11 +80,22 @@ authoritative.
 
 | Task | Command | Result |
 | --- | --- | --- |
+| New contributor quickstart | `bash gft-onboarding.sh --quickstart --workspace <workspace>` | Non-interactive setup for one bounded workspace |
 | Run onboarding | `bash gft-onboarding.sh [--role <role-name>]` | Installs and configures the local environment |
 | Validate environment | `bash validate-environment.sh` | Checks installed tools against the selected role |
 | Validate DevOps baseline | `bash validate-devops-environment.sh` | Checks DevOps tooling prerequisites |
 | Configure local OpenTofu | `bash setup-local-tofu-env.sh` | Prepares local OpenTofu variables |
 | Run tests | `bash test.sh` | Executes the repo test suite |
+
+### Workspaces
+
+| Workspace | Start here when you want to contribute to |
+| --- | --- |
+| `aethel` | Game client, server, PCG, auth, persistence, and Aethel backlog work |
+| `evai-platform` | EvolvAI DevSphere CLI, platform services, and platform architecture |
+| `agent-factory` | Gem operations, agent blueprints, skills, prompts, and automation |
+| `workspace-ops` | CI, onboarding, governance linters, shared actions, and infrastructure |
+| `studio-gencraft` | Studio governance, handbook, legal, security, project management, and public website |
 
 ## Generated / No-Edit Surfaces
 
@@ -106,14 +130,14 @@ See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descr
 
 ### macOS & Linux
 
-Run the following to download, verify checksums, and execute:
+Run the following to download the full onboarding bundle and execute the
+orchestrator with its helper modules:
 
 ```bash
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
-sha256sum --check gft-onboarding.sh.sha256
-chmod +x gft-onboarding.sh
-./gft-onboarding.sh
+mkdir -p ~/gft && cd ~/gft
+curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
+cd gcd-onboarding-scripts-main
+bash gft-onboarding.sh --quickstart --workspace aethel
 ```
 
 ### Windows (via WSL2)
@@ -121,12 +145,10 @@ chmod +x gft-onboarding.sh
 Run via PowerShell as Administrator to verify checksums and bootstrap WSL2:
 
 ```powershell
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1 -o onboarding-win.ps1
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1.sha256 -o onboarding-win.ps1.sha256
-Get-FileHash onboarding-win.ps1 -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  onboarding-win.ps1" } | Select-String -Pattern (Get-Content onboarding-win.ps1.sha256)
-
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-.\onboarding-win.ps1
+New-Item -ItemType Directory -Force $env:USERPROFILE\gft | Out-Null; cd $env:USERPROFILE\gft
+Invoke-WebRequest https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.zip -OutFile onboarding.zip
+Expand-Archive .\onboarding.zip -DestinationPath . -Force; cd gcd-onboarding-scripts-main
+powershell -ExecutionPolicy Bypass -File .\onboarding-win.ps1 -Quickstart -Workspace aethel
 ```
 
 *Note: The Windows script enables WSL2, installs Ubuntu if missing, copies `.env`, and automatically launches the bash orchestrator.*
@@ -172,7 +194,7 @@ There is no `onboard.sh` in this repo — it *is* the onboarding system.
 | **Permission denied** | Ensure executable permissions (`chmod +x`) and run with appropriate user rights. |
 | **Package fails** | Check internet; update package manager (`apt update`/`brew update`). |
 | **Auth fails** | Run `gh auth login` or `docker info` manually. |
-| **Checksum mismatch** | Re-download script and `.sha256` file. |
+| **Download fails** | Confirm GitHub access and network connectivity, then re-run the download command. |
 
 ### Diagnostics
 

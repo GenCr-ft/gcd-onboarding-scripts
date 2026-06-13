@@ -177,13 +177,21 @@ main() {
 # --- Script Execution ---
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     setup_log_stream
-    trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
 
-    # Handle standalone synchronization execution
-    if [[ "${1:-}" == "--sync-hooks" ]]; then
+    if ! parse_cli_args "$@"; then
+        exit 2
+    fi
+
+    if [[ "${GFT_SHOW_HELP_ONLY:-}" == "true" ]]; then
+        exit 0
+    fi
+
+    if [[ "${GFT_SYNC_HOOKS_ONLY:-}" == "true" ]]; then
         deploy_planning_metadata_hook
         exit $?
     fi
+
+    trap 'log_error "Onboarding aborted unexpectedly. Review $LOG_FILE and share it with DevOps."; exit 1' ERR
 
     main
 fi

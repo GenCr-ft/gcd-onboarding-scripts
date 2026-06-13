@@ -3,10 +3,16 @@
 # Maintainer: Gem BB (Camille - Automation)
 # Target OS: Windows 10 (version 2004 and higher) / Windows 11
 
+param(
+    [switch]$Quickstart,
+    [ValidateSet("aethel", "evai-platform", "agent-factory", "workspace-ops", "studio-gencraft")]
+    [string]$Workspace = ""
+)
+
 # --- Script Configuration & Globals ---
 $ScriptVersion = "1.0.13"
 $DefaultWSLDistroBaseName = "Ubuntu"
-$BashOnboardingScriptName = "gft_onboarding.sh"
+$BashOnboardingScriptName = "gft-onboarding.sh"
 $EnvFileName = ".env" # Name of the environment file to look for
 
 # --- Helper Functions ---
@@ -225,7 +231,10 @@ function Launch-BashOnboardingScript {
 
     if (Ask-YesNo "Ready to launch Bash onboarding script in WSL2?") {
         Info "Launching WSL2... Follow instructions in the WSL2 terminal."
-        $wslExecCommand = "cd ~; if [ -f `"$BashScriptWSLPath`" ]; then bash `"$BashScriptWSLPath`"; else echo '[ERROR] Bash script not found at $BashScriptWSLPath inside WSL. Check path/permissions.'; fi; exec bash"
+        $bashArgs = ""
+        if ($Quickstart) { $bashArgs += " --quickstart" }
+        if (-not [string]::IsNullOrWhiteSpace($Workspace)) { $bashArgs += " --workspace $Workspace" }
+        $wslExecCommand = "cd ~; if [ -f `"$BashScriptWSLPath`" ]; then bash `"$BashScriptWSLPath`"$bashArgs; else echo '[ERROR] Bash script not found at $BashScriptWSLPath inside WSL. Check path/permissions.'; fi; exec bash"
         Info "WSL Command: wsl.exe -d $($WSLDistroToRunIn.Trim()) -e bash -ic `"$wslExecCommand`""
         try { Start-Process "wsl.exe" -ArgumentList "-d $($WSLDistroToRunIn.Trim()) -e bash -ic `"$wslExecCommand`"" ; Success "Bash script launch issued. Check WSL2 terminal." }
         catch { Error-Msg "Failed to launch Bash script in WSL2. Error: $($_.Exception.Message)"; Error-Msg "Open WSL2 ($($WSLDistroToRunIn.Trim())) manually, navigate to '$BashScriptWSLPath', 'chmod +x $BashOnboardingScriptName', then './$BashOnboardingScriptName'" }

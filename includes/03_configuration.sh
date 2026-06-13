@@ -165,10 +165,15 @@ clone_repositories_for_role() {
     fi
 
     mapfile -t required_repos < <(echo "$ROLE_MATRIX_YAML" | python3 "$python_helper_script" "$role_name")
+    local -a workspace_repos=()
+    if [[ -n "${GFT_WORKSPACE:-}" ]]; then
+        log_info "Adding repositories for workspace quickstart: $GFT_WORKSPACE"
+        mapfile -t workspace_repos < <(workspace_repositories "$GFT_WORKSPACE")
+    fi
 
     local -a merged_repos=()
     declare -A seen_repo
-    for repo_name in "${required_repos[@]}" "${base_repos[@]}"; do
+    for repo_name in "${required_repos[@]}" "${workspace_repos[@]}" "${base_repos[@]}"; do
         if [[ -z "$repo_name" || -n "${seen_repo[$repo_name]:-}" ]]; then
             continue
         fi

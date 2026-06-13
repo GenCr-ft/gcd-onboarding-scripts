@@ -81,6 +81,199 @@ confirm_action() {
     done
 }
 
+# --- CLI / Quickstart Helpers ---
+
+valid_workspaces() {
+    printf '%s\n' \
+        "aethel" \
+        "evai-platform" \
+        "agent-factory" \
+        "workspace-ops" \
+        "studio-gencraft"
+}
+
+format_valid_workspaces() {
+    printf '%s' "aethel, evai-platform, agent-factory, workspace-ops, studio-gencraft"
+}
+
+is_valid_workspace() {
+    local workspace="$1"
+    case "$workspace" in
+        aethel|evai-platform|agent-factory|workspace-ops|studio-gencraft) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+workspace_role() {
+    local workspace="$1"
+    case "$workspace" in
+        aethel) printf '%s\n' "rendering-engine-developer" ;;
+        evai-platform) printf '%s\n' "lead-developer-tech-lead" ;;
+        agent-factory) printf '%s\n' "game-designer" ;;
+        workspace-ops) printf '%s\n' "devops-specialist" ;;
+        studio-gencraft) printf '%s\n' "producer-project-manager" ;;
+        *) return 1 ;;
+    esac
+}
+
+workspace_repositories() {
+    local workspace="$1"
+    case "$workspace" in
+        aethel)
+            printf '%s\n' \
+                "gcp-aethel-server" \
+                "gcp-aethel-client" \
+                "gcp-aethel-pcg" \
+                "gcl-srv-authentication" \
+                "gcl-srv-persistence" \
+                "gcp-aethel-backlog"
+            ;;
+        evai-platform)
+            printf '%s\n' \
+                "gcs-plt-tools" \
+                "gcs-plt-docs-req" \
+                "gcs-plt-architecture"
+            ;;
+        agent-factory)
+            printf '%s\n' \
+                "gcs-plt-gemop" \
+                "gcs-plt-gembp" \
+                "gcs-plt-tools"
+            ;;
+        workspace-ops)
+            printf '%s\n' \
+                "gcd-onboarding-scripts" \
+                "gcd-ops-scripts" \
+                "gcd-shared-actions" \
+                "gencraft-iac"
+            ;;
+        studio-gencraft)
+            printf '%s\n' \
+                "gcs-core-governance" \
+                "gcs-engineering-handbook" \
+                "gcs-security-core" \
+                "gcs-studio-legal" \
+                "gcs-project-management" \
+                "gencr-ft.github.io"
+            ;;
+        *) return 1 ;;
+    esac
+}
+
+print_usage() {
+    cat <<'EOF'
+Usage:
+  bash gft-onboarding.sh --quickstart --workspace <workspace>
+  bash gft-onboarding.sh --role <role-name>
+  bash gft-onboarding.sh --sync-hooks
+
+Workspaces:
+  aethel
+  evai-platform
+  agent-factory
+  workspace-ops
+  studio-gencraft
+EOF
+}
+
+parse_cli_args() {
+    local quickstart="false"
+    local workspace=""
+    local role=""
+    local sync_hooks="false"
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --quickstart)
+                quickstart="true"
+                shift
+                ;;
+            --workspace)
+                if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
+                    log_error "--workspace requires a value. Valid workspaces: $(format_valid_workspaces)"
+                    return 1
+                fi
+                workspace="$2"
+                shift 2
+                ;;
+            --workspace=*)
+                workspace="${1#*=}"
+                if [[ -z "$workspace" ]]; then
+                    log_error "--workspace requires a value. Valid workspaces: $(format_valid_workspaces)"
+                    return 1
+                fi
+                shift
+                ;;
+            --role)
+                if [[ -z "${2:-}" || "${2:0:1}" == "-" ]]; then
+                    log_error "--role requires a value."
+                    return 1
+                fi
+                role="$2"
+                shift 2
+                ;;
+            --role=*)
+                role="${1#*=}"
+                if [[ -z "$role" ]]; then
+                    log_error "--role requires a value."
+                    return 1
+                fi
+                shift
+                ;;
+            --sync-hooks)
+                sync_hooks="true"
+                shift
+                ;;
+            -h|--help)
+                print_usage
+                GFT_SHOW_HELP_ONLY="true"
+                export GFT_SHOW_HELP_ONLY
+                return 0
+                ;;
+            *)
+                log_error "Unknown argument: $1"
+                print_usage >&2
+                return 1
+                ;;
+        esac
+    done
+
+    if [[ "$quickstart" == "true" ]]; then
+        if [[ -z "$workspace" ]]; then
+            log_error "--quickstart requires --workspace. Valid workspaces: $(format_valid_workspaces)"
+            return 1
+        fi
+        if ! is_valid_workspace "$workspace"; then
+            log_error "Unknown workspace '$workspace'. Valid workspaces: $(format_valid_workspaces)"
+            return 1
+        fi
+        GFT_QUICKSTART="true"
+        GFT_NON_INTERACTIVE="true"
+        GFT_WORKSPACE="$workspace"
+        if [[ -z "$role" ]]; then
+            role="$(workspace_role "$workspace")"
+        fi
+        export GFT_QUICKSTART GFT_NON_INTERACTIVE GFT_WORKSPACE
+    elif [[ -n "$workspace" ]]; then
+        if ! is_valid_workspace "$workspace"; then
+            log_error "Unknown workspace '$workspace'. Valid workspaces: $(format_valid_workspaces)"
+            return 1
+        fi
+        GFT_WORKSPACE="$workspace"
+        export GFT_WORKSPACE
+    fi
+
+    if [[ -n "$role" ]]; then
+        GFT_ROLE="$role"
+        export GFT_ROLE
+    fi
+
+    if [[ "$sync_hooks" == "true" ]]; then
+        GFT_SYNC_HOOKS_ONLY="true"
+        export GFT_SYNC_HOOKS_ONLY
+    fi
+}
+
 
 # Fetches the version for a specific tool from the SSoT .tool-versions-gft file.
 # $1: The name of the tool as it appears in the .tool-versions-gft file (e.g., "nodejs").

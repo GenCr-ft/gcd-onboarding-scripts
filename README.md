@@ -39,9 +39,22 @@ This suite serves as the approved Single Source of Truth (SSoT) for onboarding d
 
 `AGENTS.md` is the repo-local authority and the first read for agents.
 
-`gft-onboarding.sh` is the primary first-run entry point. `validate-environment.sh`,
-`validate-devops-environment.sh`, and `setup-local-tofu-env.sh` are the main
-post-install validation surfaces.
+`gft-onboarding.sh` is the primary first-run entry point. New contributors
+should use the workspace quickstart path first, then read the repo-local
+`AGENTS.md` for the project they clone.
+
+```bash
+mkdir -p ~/gft && cd ~/gft
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
+curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
+sha256sum --check gft-onboarding.sh.sha256 && bash gft-onboarding.sh --quickstart --workspace aethel
+```
+
+Replace `aethel` with `evai-platform`, `agent-factory`, `workspace-ops`, or
+`studio-gencraft` if that is your starting workspace.
+
+`validate-environment.sh`, `validate-devops-environment.sh`, and
+`setup-local-tofu-env.sh` are the main post-install validation surfaces.
 
 `gcs-core-governance` is the runtime SSoT source for role/tool matrices,
 version pins, and environment configuration. Treat copied output as derived, not
@@ -67,11 +80,22 @@ authoritative.
 
 | Task | Command | Result |
 | --- | --- | --- |
+| New contributor quickstart | `bash gft-onboarding.sh --quickstart --workspace <workspace>` | Non-interactive setup for one bounded workspace |
 | Run onboarding | `bash gft-onboarding.sh [--role <role-name>]` | Installs and configures the local environment |
 | Validate environment | `bash validate-environment.sh` | Checks installed tools against the selected role |
 | Validate DevOps baseline | `bash validate-devops-environment.sh` | Checks DevOps tooling prerequisites |
 | Configure local OpenTofu | `bash setup-local-tofu-env.sh` | Prepares local OpenTofu variables |
 | Run tests | `bash test.sh` | Executes the repo test suite |
+
+### Workspaces
+
+| Workspace | Start here when you want to contribute to |
+| --- | --- |
+| `aethel` | Game client, server, PCG, auth, persistence, and Aethel backlog work |
+| `evai-platform` | EvolvAI DevSphere CLI, platform services, and platform architecture |
+| `agent-factory` | Gem operations, agent blueprints, skills, prompts, and automation |
+| `workspace-ops` | CI, onboarding, governance linters, shared actions, and infrastructure |
+| `studio-gencraft` | Studio governance, handbook, legal, security, project management, and public website |
 
 ## Generated / No-Edit Surfaces
 
@@ -126,7 +150,7 @@ curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/o
 Get-FileHash onboarding-win.ps1 -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  onboarding-win.ps1" } | Select-String -Pattern (Get-Content onboarding-win.ps1.sha256)
 
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-.\onboarding-win.ps1
+.\onboarding-win.ps1 -Quickstart -Workspace aethel
 ```
 
 *Note: The Windows script enables WSL2, installs Ubuntu if missing, copies `.env`, and automatically launches the bash orchestrator.*

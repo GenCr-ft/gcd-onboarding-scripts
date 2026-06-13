@@ -45,9 +45,9 @@ should use the workspace quickstart path first, then read the repo-local
 
 ```bash
 mkdir -p ~/gft && cd ~/gft
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
-sha256sum --check gft-onboarding.sh.sha256 && bash gft-onboarding.sh --quickstart --workspace aethel
+curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
+cd gcd-onboarding-scripts-main
+bash gft-onboarding.sh --quickstart --workspace aethel
 ```
 
 Replace `aethel` with `evai-platform`, `agent-factory`, `workspace-ops`, or
@@ -130,14 +130,14 @@ See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descr
 
 ### macOS & Linux
 
-Run the following to download, verify checksums, and execute:
+Run the following to download the full onboarding bundle and execute the
+orchestrator with its helper modules:
 
 ```bash
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh -o gft-onboarding.sh
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh.sha256 -o gft-onboarding.sh.sha256
-sha256sum --check gft-onboarding.sh.sha256
-chmod +x gft-onboarding.sh
-./gft-onboarding.sh
+mkdir -p ~/gft && cd ~/gft
+curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
+cd gcd-onboarding-scripts-main
+bash gft-onboarding.sh --quickstart --workspace aethel
 ```
 
 ### Windows (via WSL2)
@@ -145,12 +145,10 @@ chmod +x gft-onboarding.sh
 Run via PowerShell as Administrator to verify checksums and bootstrap WSL2:
 
 ```powershell
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1 -o onboarding-win.ps1
-curl -L https://raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/onboarding-win.ps1.sha256 -o onboarding-win.ps1.sha256
-Get-FileHash onboarding-win.ps1 -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  onboarding-win.ps1" } | Select-String -Pattern (Get-Content onboarding-win.ps1.sha256)
-
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-.\onboarding-win.ps1 -Quickstart -Workspace aethel
+New-Item -ItemType Directory -Force $env:USERPROFILE\gft | Out-Null; cd $env:USERPROFILE\gft
+Invoke-WebRequest https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.zip -OutFile onboarding.zip
+Expand-Archive .\onboarding.zip -DestinationPath . -Force; cd gcd-onboarding-scripts-main
+powershell -ExecutionPolicy Bypass -File .\onboarding-win.ps1 -Quickstart -Workspace aethel
 ```
 
 *Note: The Windows script enables WSL2, installs Ubuntu if missing, copies `.env`, and automatically launches the bash orchestrator.*
@@ -196,7 +194,7 @@ There is no `onboard.sh` in this repo — it *is* the onboarding system.
 | **Permission denied** | Ensure executable permissions (`chmod +x`) and run with appropriate user rights. |
 | **Package fails** | Check internet; update package manager (`apt update`/`brew update`). |
 | **Auth fails** | Run `gh auth login` or `docker info` manually. |
-| **Checksum mismatch** | Re-download script and `.sha256` file. |
+| **Download fails** | Confirm GitHub access and network connectivity, then re-run the download command. |
 
 ### Diagnostics
 

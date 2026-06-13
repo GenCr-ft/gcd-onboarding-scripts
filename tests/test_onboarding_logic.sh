@@ -606,6 +606,35 @@ test_workspace_quickstart_contract() {
     log_success "Workspace Quickstart Contract: PASSED"
 }
 
+test_quickstart_documentation_contract() {
+    log_info "[TEST SUITE 12] Testing Quickstart Documentation Contract..."
+    local checks_failed=0
+    local readme_path="${TEST_SCRIPT_PATH}/../README.md"
+
+    if ! grep -q "gcd-onboarding-scripts/archive/refs/heads/main.tar.gz" "$readme_path"; then
+        log_error "FAIL: README quickstart does not download the full onboarding bundle."
+        ((checks_failed++))
+    fi
+
+    if grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$readme_path"; then
+        log_error "FAIL: README quickstart assumes git is already installed."
+        ((checks_failed++))
+    fi
+
+    if grep -q "raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh" "$readme_path"; then
+        log_error "FAIL: README still advertises the non-runnable standalone gft-onboarding.sh download."
+        ((checks_failed++))
+    fi
+
+    if grep -q "gft-onboarding.sh.sha256" "$readme_path"; then
+        log_error "FAIL: README references a checksum artifact that is not shipped in this repo."
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "Quickstart Documentation Contract: PASSED"
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -635,6 +664,7 @@ main() {
     test_validate_env_has_set_e || ((failed_suites++))
     test_headless_onboarding_non_interactive || ((failed_suites++))
     test_workspace_quickstart_contract || ((failed_suites++))
+    test_quickstart_documentation_contract || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

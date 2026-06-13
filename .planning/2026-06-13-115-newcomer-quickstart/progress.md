@@ -20,6 +20,11 @@
 - Merged workspace repository bundles into the role-based clone list.
 - Corrected the Windows wrapper to launch `gft-onboarding.sh` and forward quickstart parameters.
 - Updated README quickstart instructions and changelog entries.
+- Adversarial review found that standalone raw `gft-onboarding.sh` downloads
+  could not run because the orchestrator sources `includes/*`; replaced the
+  public quickstart with full source archive download commands.
+- Tightened documentation tests to reject standalone script downloads,
+  nonexistent checksum references, and pre-onboarding `git clone` assumptions.
 - Verification:
   - `bash tests/test_onboarding_logic.sh` passed.
   - `bash ./test.sh` passed.

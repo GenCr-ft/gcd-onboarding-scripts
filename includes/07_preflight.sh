@@ -181,6 +181,8 @@ _pf_resolve_issues() {
                 if confirm_action "Missing '${label}'. Install it?"; then
                     if install_with_package_manager "$pkg" "${pkg}"; then
                         PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
+                    else
+                        PREFLIGHT_RESULTS[$i]="${label}|SKIPPED|none|"
                     fi
                 else
                     PREFLIGHT_RESULTS[$i]="${label}|SKIPPED|none|"
@@ -191,6 +193,8 @@ _pf_resolve_issues() {
                     gh auth login
                     if _pf_check_gh_auth; then
                         PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
+                    else
+                        PREFLIGHT_RESULTS[$i]="${label}|SKIPPED|none|"
                     fi
                 else
                     PREFLIGHT_RESULTS[$i]="${label}|SKIPPED|none|"

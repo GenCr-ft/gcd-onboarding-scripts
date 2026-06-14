@@ -3,7 +3,7 @@ docId: GOV-PLAN-118
 issue-id: GenCr-ft/gcd-onboarding-scripts#118
 title: "[CODE] Workspace-aware preflight environment readiness check"
 created: 2026-06-14
-status: in-progress
+status: complete
 ---
 
 # Task Plan

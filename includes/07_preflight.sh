@@ -28,8 +28,7 @@ run_preflight() {
     log_info "Running environment preflight..."
 
     if ! _pf_check_connectivity; then
-        log_error "No internet connectivity. Cannot reach https://github.com"
-        log_error "Check your network connection and re-run."
+        log_error "No internet connectivity. Check your network connection and re-run."
         return 1
     fi
 }

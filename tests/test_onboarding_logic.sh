@@ -606,6 +606,332 @@ test_workspace_quickstart_contract() {
     log_success "Workspace Quickstart Contract: PASSED"
 }
 
+test_preflight_connectivity_hard_fail() {
+    log_info "[TEST SUITE] Preflight: connectivity hard fail exits 1..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity() { return 1; }
+
+    local output exit_code
+    output=$(run_preflight 2>&1) || exit_code=$?
+
+    if [[ "${exit_code:-0}" -ne 1 ]]; then
+        log_error "FAIL: run_preflight should exit 1 when offline. Got: ${exit_code:-0}"
+        return 1
+    fi
+    if [[ "$output" != *"No internet connectivity"* ]]; then
+        log_error "FAIL: expected 'No internet connectivity' message. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight connectivity hard fail: PASSED"
+}
+
+test_preflight_table_all_pass() {
+    log_info "[TEST SUITE] Preflight: table renders with all checks passing..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command()          { return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+
+    local output
+    output=$(run_preflight 2>&1)
+    local exit_code=$?
+
+    if [[ $exit_code -ne 0 ]]; then
+        log_error "FAIL: all-pass preflight should exit 0. Got: $exit_code. Output: $output"
+        return 1
+    fi
+    if [[ "$output" != *"All checks passed"* ]]; then
+        log_error "FAIL: expected 'All checks passed' in output. Got: $output"
+        return 1
+    fi
+    if [[ "$output" == *"MISSING"* ]]; then
+        log_error "FAIL: no MISSING rows expected when all tools present. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight table all-pass: PASSED"
+}
+
+test_preflight_table_mixed() {
+    log_info "[TEST SUITE] Preflight: table renders with missing gh row..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command() {
+        case "$1" in
+            gh) return 1 ;;
+            *)  return 0 ;;
+        esac
+    }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+    # Stub resolve so the test only exercises the render path
+    _pf_resolve_issues() { return 0; }
+
+    local output
+    output=$(run_preflight 2>&1)
+
+    if [[ "$output" != *"gh (GitHub CLI)"* ]]; then
+        log_error "FAIL: table should show 'gh (GitHub CLI)' row. Got: $output"
+        return 1
+    fi
+    if [[ "$output" != *"MISSING"* ]]; then
+        log_error "FAIL: expected MISSING status in output. Got: $output"
+        return 1
+    fi
+    if [[ "$output" != *"item(s) need attention"* ]]; then
+        log_error "FAIL: expected attention summary. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight table mixed: PASSED"
+}
+
+test_preflight_install_prompt_yes() {
+    log_info "[TEST SUITE] Preflight: install prompt Y triggers install..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    local _install_flag; _install_flag=$(mktemp)
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command() { [[ "$1" == "gh" ]] && return 1 || return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    export _PREFLIGHT_INSTALL_FLAG="$_install_flag"
+    install_with_package_manager() { echo "$1" > "${_PREFLIGHT_INSTALL_FLAG}"; return 0; }
+    GFT_WORKSPACE=""
+    GFT_NON_INTERACTIVE="true"
+
+    local output
+    output=$(run_preflight 2>&1)
+    local exit_code=$?
+
+    unset GFT_NON_INTERACTIVE
+    local _install_called
+    _install_called=$(cat "$_install_flag" 2>/dev/null || true)
+    rm -f "$_install_flag"
+    unset _PREFLIGHT_INSTALL_FLAG
+
+    if [[ $exit_code -ne 0 ]]; then
+        log_error "FAIL: exit code should be 0 after Y install. Got: $exit_code. Output: $output"
+        return 1
+    fi
+    if [[ "$_install_called" != "gh" ]]; then
+        log_error "FAIL: install_with_package_manager should be called with 'gh'. Got: '${_install_called}'"
+        return 1
+    fi
+
+    log_success "Preflight install prompt Y: PASSED"
+}
+
+test_preflight_install_prompt_no() {
+    log_info "[TEST SUITE] Preflight: install prompt N marks SKIPPED and exits 1..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command() { [[ "$1" == "gh" ]] && return 1 || return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+    confirm_action() { return 1; }
+
+    local output exit_code
+    output=$(run_preflight 2>&1) || exit_code=$?
+
+    if [[ "${exit_code:-0}" -ne 1 ]]; then
+        log_error "FAIL: should exit 1 after declining install. Got: ${exit_code:-0}"
+        return 1
+    fi
+    if [[ "$output" != *"SKIPPED"* ]]; then
+        log_error "FAIL: expected SKIPPED in output. Got: $output"
+        return 1
+    fi
+    if [[ "$output" != *"required checks failed"* ]]; then
+        log_error "FAIL: expected 'required checks failed' summary. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight install prompt N: PASSED"
+}
+
+test_preflight_gh_auth_prompts_login() {
+    log_info "[TEST SUITE] Preflight: unauth gh prompts gh auth login..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    local _flag_file; _flag_file=$(mktemp)
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command()          { return 0; }
+    _pf_check_gh_auth()        { return 1; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+    confirm_action()   { return 0; }
+    export _PREFLIGHT_AUTH_FLAG="$_flag_file"
+    gh() {
+        if [[ "$1 $2" == "auth login" ]]; then
+            touch "${_PREFLIGHT_AUTH_FLAG}"
+            _pf_check_gh_auth() { return 0; }
+            return 0
+        fi
+        command gh "$@" 2>/dev/null || true
+    }
+
+    local output
+    output=$(run_preflight 2>&1)
+    local exit_code=$?
+
+    unset _PREFLIGHT_AUTH_FLAG
+    local _gh_login_called=false
+    [[ -f "$_flag_file" ]] && _gh_login_called=true
+    rm -f "$_flag_file"
+
+    if [[ $exit_code -ne 0 ]]; then
+        log_error "FAIL: should exit 0 after successful auth. Got: $exit_code. $output"
+        return 1
+    fi
+    if [[ "$_gh_login_called" != "true" ]]; then
+        log_error "FAIL: gh auth login was not called."
+        return 1
+    fi
+
+    log_success "Preflight gh auth prompts login: PASSED"
+}
+
+test_preflight_workspace_aethel_checks_node_docker() {
+    log_info "[TEST SUITE] Preflight: aethel workspace adds node and docker rows..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command()          { return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    _pf_cmd_version()          { echo "22.1.0"; }
+    GFT_WORKSPACE="aethel"
+
+    local output
+    output=$(run_preflight 2>&1)
+
+    if [[ "$output" != *"node >= 20"* ]]; then
+        log_error "FAIL: expected 'node >= 20' row for aethel. Got: $output"
+        return 1
+    fi
+    if [[ "$output" != *"docker"* ]]; then
+        log_error "FAIL: expected 'docker' row for aethel. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight workspace aethel node+docker: PASSED"
+}
+
+test_preflight_no_workspace_no_extra_checks() {
+    log_info "[TEST SUITE] Preflight: no workspace omits workspace-specific rows..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command()          { return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+
+    local output
+    output=$(run_preflight 2>&1)
+
+    if [[ "$output" == *"node >= 20"* ]]; then
+        log_error "FAIL: 'node >= 20' should be absent when no workspace. Got: $output"
+        return 1
+    fi
+    if [[ "$output" == *"docker"* ]]; then
+        log_error "FAIL: 'docker' should be absent when no workspace. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight no workspace no extra checks: PASSED"
+}
+
+test_preflight_critical_fail_exits_one() {
+    log_info "[TEST SUITE] Preflight: unresolved critical failure exits 1 with summary..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command() { [[ "$1" == "gh" ]] && return 1 || return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+    confirm_action() { return 1; }
+
+    local output exit_code
+    output=$(run_preflight 2>&1) || exit_code=$?
+
+    if [[ "${exit_code:-0}" -ne 1 ]]; then
+        log_error "FAIL: should exit 1 with unresolved critical check. Got: ${exit_code:-0}"
+        return 1
+    fi
+    if [[ "$output" != *"required checks failed"* ]]; then
+        log_error "FAIL: expected 'required checks failed' summary. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight critical fail exits 1: PASSED"
+}
+
+test_preflight_disk_warn_non_blocking() {
+    log_info "[TEST SUITE] Preflight: low disk triggers warn, user can continue..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command()          { return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "1"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+    confirm_action() { return 0; }
+
+    local output
+    output=$(run_preflight 2>&1)
+    local exit_code=$?
+
+    if [[ $exit_code -ne 0 ]]; then
+        log_error "FAIL: low disk + Y should exit 0. Got: $exit_code. $output"
+        return 1
+    fi
+    if [[ "$output" != *"LOW MEM"* ]]; then
+        log_error "FAIL: expected LOW MEM in table. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight disk warn non-blocking: PASSED"
+}
+
 test_quickstart_documentation_contract() {
     log_info "[TEST SUITE 12] Testing Quickstart Documentation Contract..."
     local checks_failed=0
@@ -665,6 +991,16 @@ main() {
     test_headless_onboarding_non_interactive || ((failed_suites++))
     test_workspace_quickstart_contract || ((failed_suites++))
     test_quickstart_documentation_contract || ((failed_suites++))
+    test_preflight_connectivity_hard_fail              || ((failed_suites++))
+    test_preflight_table_all_pass                      || ((failed_suites++))
+    test_preflight_table_mixed                         || ((failed_suites++))
+    test_preflight_install_prompt_yes                  || ((failed_suites++))
+    test_preflight_install_prompt_no                   || ((failed_suites++))
+    test_preflight_gh_auth_prompts_login               || ((failed_suites++))
+    test_preflight_workspace_aethel_checks_node_docker || ((failed_suites++))
+    test_preflight_no_workspace_no_extra_checks        || ((failed_suites++))
+    test_preflight_critical_fail_exits_one             || ((failed_suites++))
+    test_preflight_disk_warn_non_blocking              || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

@@ -44,6 +44,8 @@ source "${INCLUDES_DIR}/04_pcg_setup.sh"
 source "${INCLUDES_DIR}/05_agent_bootstrap.sh"
 # shellcheck disable=SC1091
 source "${INCLUDES_DIR}/06_workspace_files.sh"
+# shellcheck disable=SC1091
+source "${INCLUDES_DIR}/07_preflight.sh"
 
 # --- Logging Setup ---
 setup_log_stream() {
@@ -135,7 +137,7 @@ main() {
     log_info "Welcome to the GenCr@ft Studio Onboarding Script V2!"
 
     # --- Prerequisite & SSoT Setup ---
-    check_prerequisites
+    run_preflight
     setup_ssot_repository
     detect_os
 

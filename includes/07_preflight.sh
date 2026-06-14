@@ -146,7 +146,7 @@ _pf_render_table() {
             UNAUTH)  _color="$_R"; _sdisp="UNAUTH";  _adisp="login?";   ((_fail_count++)) ;;
             UNSET)   _color="$_R"; _sdisp="UNSET";   _adisp="prompt";   ((_fail_count++)) ;;
             NOMEM)   _color="$_Y"; _sdisp="LOW MEM"; _adisp="warn" ;;
-            SKIPPED) _color="$_Y"; _sdisp="SKIPPED"; _adisp="skipped" ;;
+            SKIPPED) _color="$_Y"; _sdisp="SKIPPED"; _adisp="skipped";  ((_fail_count++)) ;;
             WARN*)   _color="$_Y"; _sdisp="WARN";    _adisp="upgrade?" ;;
             *)       _color="";   _sdisp="$_status"; _adisp="?" ;;
         esac
@@ -168,8 +168,77 @@ _pf_render_table() {
     return $_fail_count
 }
 
-# Stubbed resolve — replaced in Task 4
-_pf_resolve_issues() { return 0; }
+_pf_resolve_issues() {
+    local i entry label status action pkg
+    for i in "${!PREFLIGHT_RESULTS[@]}"; do
+        entry="${PREFLIGHT_RESULTS[$i]}"
+        label="${entry%%|*}";  entry="${entry#*|}"
+        status="${entry%%|*}"; entry="${entry#*|}"
+        action="${entry%%|*}"; pkg="${entry##*|}"
+
+        case "$action" in
+            install)
+                if confirm_action "Missing '${label}'. Install it?"; then
+                    if install_with_package_manager "$pkg" "${pkg}"; then
+                        PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
+                    fi
+                else
+                    PREFLIGHT_RESULTS[$i]="${label}|SKIPPED|none|"
+                fi
+                ;;
+            auth)
+                if confirm_action "GitHub CLI is not authenticated. Run 'gh auth login' now?"; then
+                    gh auth login
+                    if _pf_check_gh_auth; then
+                        PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
+                    fi
+                else
+                    PREFLIGHT_RESULTS[$i]="${label}|SKIPPED|none|"
+                fi
+                ;;
+            identity_name)
+                printf "git user.name is not set. Enter your name: "
+                local _name; read -r _name
+                git config --global user.name "$_name"
+                PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
+                ;;
+            identity_email)
+                printf "git user.email is not set. Enter your email: "
+                local _email; read -r _email
+                git config --global user.email "$_email"
+                PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
+                ;;
+            org)
+                log_warn "You must be a GenCr-ft org member."
+                log_warn "Request access: https://github.com/orgs/GenCr-ft/discussions"
+                printf "Press Enter once you have been added, or Ctrl-C to abort: "
+                read -r
+                if _pf_check_org_membership; then
+                    PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
+                else
+                    PREFLIGHT_RESULTS[$i]="${label}|SKIPPED|none|"
+                fi
+                ;;
+            disk)
+                if ! confirm_action "Disk space is low (< 2 GB free). Continue anyway?"; then
+                    log_error "Onboarding aborted: insufficient disk space."
+                    return 1
+                fi
+                ;;
+        esac
+    done
+
+    local _fail_count
+    _pf_render_table || _fail_count=$?
+
+    if (( ${_fail_count:-0} > 0 )); then
+        log_error "${_fail_count} required checks failed. Please resolve them and re-run."
+        return 1
+    fi
+
+    log_success "Environment ready. Starting onboarding..."
+    return 0
+}
 
 # Public entry point
 run_preflight() {

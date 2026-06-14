@@ -627,6 +627,78 @@ test_preflight_connectivity_hard_fail() {
     log_success "Preflight connectivity hard fail: PASSED"
 }
 
+test_preflight_table_all_pass() {
+    log_info "[TEST SUITE] Preflight: table renders with all checks passing..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command()          { return 0; }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+
+    local output
+    output=$(run_preflight 2>&1)
+    local exit_code=$?
+
+    if [[ $exit_code -ne 0 ]]; then
+        log_error "FAIL: all-pass preflight should exit 0. Got: $exit_code. Output: $output"
+        return 1
+    fi
+    if [[ "$output" != *"All checks passed"* ]]; then
+        log_error "FAIL: expected 'All checks passed' in output. Got: $output"
+        return 1
+    fi
+    if [[ "$output" == *"MISSING"* ]]; then
+        log_error "FAIL: no MISSING rows expected when all tools present. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight table all-pass: PASSED"
+}
+
+test_preflight_table_mixed() {
+    log_info "[TEST SUITE] Preflight: table renders with missing gh row..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity()   { return 0; }
+    _pf_has_command() {
+        case "$1" in
+            gh) return 1 ;;
+            *)  return 0 ;;
+        esac
+    }
+    _pf_check_gh_auth()        { return 0; }
+    _pf_check_org_membership() { return 0; }
+    _pf_free_disk_gb()         { echo "50"; }
+    _pf_git_user_name()        { echo "Dev"; }
+    _pf_git_user_email()       { echo "dev@example.com"; }
+    GFT_WORKSPACE=""
+    # Stub resolve so the test only exercises the render path
+    _pf_resolve_issues() { return 0; }
+
+    local output
+    output=$(run_preflight 2>&1)
+
+    if [[ "$output" != *"gh (GitHub CLI)"* ]]; then
+        log_error "FAIL: table should show 'gh (GitHub CLI)' row. Got: $output"
+        return 1
+    fi
+    if [[ "$output" != *"MISSING"* ]]; then
+        log_error "FAIL: expected MISSING status in output. Got: $output"
+        return 1
+    fi
+    if [[ "$output" != *"item(s) need attention"* ]]; then
+        log_error "FAIL: expected attention summary. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight table mixed: PASSED"
+}
+
 test_quickstart_documentation_contract() {
     log_info "[TEST SUITE 12] Testing Quickstart Documentation Contract..."
     local checks_failed=0
@@ -687,6 +759,8 @@ main() {
     test_workspace_quickstart_contract || ((failed_suites++))
     test_quickstart_documentation_contract || ((failed_suites++))
     test_preflight_connectivity_hard_fail || ((failed_suites++))
+    test_preflight_table_all_pass || ((failed_suites++))
+    test_preflight_table_mixed    || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

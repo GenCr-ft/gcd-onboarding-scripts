@@ -23,5 +23,13 @@ _pf_cmd_version()          { "$1" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+(\.[0
 # Populated by _pf_build_checks. Each element: "label|status|action|pkg"
 PREFLIGHT_RESULTS=()
 
-# Public entry point — stub; real logic added in subsequent tasks
-run_preflight() { :; }
+# Public entry point
+run_preflight() {
+    log_info "Running environment preflight..."
+
+    if ! _pf_check_connectivity; then
+        log_error "No internet connectivity. Cannot reach https://github.com"
+        log_error "Check your network connection and re-run."
+        return 1
+    fi
+}

@@ -606,6 +606,27 @@ test_workspace_quickstart_contract() {
     log_success "Workspace Quickstart Contract: PASSED"
 }
 
+test_preflight_connectivity_hard_fail() {
+    log_info "[TEST SUITE] Preflight: connectivity hard fail exits 1..."
+    source "${PROJECT_ROOT}/includes/07_preflight.sh"
+
+    _pf_check_connectivity() { return 1; }
+
+    local output exit_code
+    output=$(run_preflight 2>&1) || exit_code=$?
+
+    if [[ "${exit_code:-0}" -ne 1 ]]; then
+        log_error "FAIL: run_preflight should exit 1 when offline. Got: ${exit_code:-0}"
+        return 1
+    fi
+    if [[ "$output" != *"No internet connectivity"* ]]; then
+        log_error "FAIL: expected 'No internet connectivity' message. Got: $output"
+        return 1
+    fi
+
+    log_success "Preflight connectivity hard fail: PASSED"
+}
+
 test_quickstart_documentation_contract() {
     log_info "[TEST SUITE 12] Testing Quickstart Documentation Contract..."
     local checks_failed=0
@@ -665,6 +686,7 @@ main() {
     test_headless_onboarding_non_interactive || ((failed_suites++))
     test_workspace_quickstart_contract || ((failed_suites++))
     test_quickstart_documentation_contract || ((failed_suites++))
+    test_preflight_connectivity_hard_fail || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

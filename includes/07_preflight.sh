@@ -18,7 +18,11 @@ _pf_free_disk_gb() {
 }
 _pf_git_user_name()        { git config --global user.name 2>/dev/null; }
 _pf_git_user_email()       { git config --global user.email 2>/dev/null; }
-_pf_cmd_version()          { "$1" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1; }
+_pf_cmd_version() {
+    local _v
+    _v=$("$1" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+    echo "${_v:-0}"
+}
 
 # Populated by _pf_build_checks. Each element: "label|status|action|pkg"
 PREFLIGHT_RESULTS=()
@@ -107,7 +111,7 @@ _pf_build_checks() {
             if _pf_has_command "$_ws_cmd"; then
                 if [[ -n "$_ws_min" ]]; then
                     local _ver _major
-                    _ver=$(_pf_cmd_version "$_ws_cmd" 2>/dev/null || echo "0")
+                    _ver=$(_pf_cmd_version "$_ws_cmd" 2>/dev/null)
                     _major="${_ver%%.*}"
                     if (( _major < _ws_min )); then
                         PREFLIGHT_RESULTS+=("${_ws_label}|WARN (v${_ver} < ${_ws_min})|install|${_ws_pkg}")
@@ -145,9 +149,9 @@ _pf_render_table() {
             MISSING) _color="$_R"; _sdisp="MISSING"; _adisp="install?"; ((_fail_count++)) ;;
             UNAUTH)  _color="$_R"; _sdisp="UNAUTH";  _adisp="login?";   ((_fail_count++)) ;;
             UNSET)   _color="$_R"; _sdisp="UNSET";   _adisp="prompt";   ((_fail_count++)) ;;
-            NOMEM)   _color="$_Y"; _sdisp="LOW MEM"; _adisp="warn" ;;
+            NOMEM)   _color="$_Y"; _sdisp="LOW MEM"; _adisp="warn";     ((_fail_count++)) ;;
             SKIPPED) _color="$_Y"; _sdisp="SKIPPED"; _adisp="skipped";  ((_fail_count++)) ;;
-            WARN*)   _color="$_Y"; _sdisp="WARN";    _adisp="upgrade?" ;;
+            WARN*)   _color="$_Y"; _sdisp="WARN";    _adisp="upgrade?";  ((_fail_count++)) ;;
             *)       _color="";   _sdisp="$_status"; _adisp="?" ;;
         esac
 
@@ -228,6 +232,7 @@ _pf_resolve_issues() {
                     log_error "Onboarding aborted: insufficient disk space."
                     return 1
                 fi
+                PREFLIGHT_RESULTS[$i]="${label}|OK|none|"
                 ;;
         esac
     done

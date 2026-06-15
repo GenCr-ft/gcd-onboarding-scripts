@@ -148,7 +148,7 @@ be present alongside it. Downloading the script file alone is not supported.
 
 ### Windows (via WSL2)
 
-Run via PowerShell as Administrator to verify checksums and bootstrap WSL2:
+Run via PowerShell as Administrator to bootstrap WSL2:
 
 ```powershell
 New-Item -ItemType Directory -Force $env:USERPROFILE\gft | Out-Null; cd $env:USERPROFILE\gft

@@ -114,9 +114,9 @@ provision_agent_files() {
 
 generate_workspace_agent_md() {
     local role_name="${1:-generic-contributor}"
-    log_info "Generating role-specific AGENT.md for: $role_name"
+    log_info "Generating role-specific AGENTS.md for: $role_name"
 
-    local target_dir="${GFT_PROJECTS_HOME:-$(pwd)}"
+    local target_dir="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
     local target_file="${target_dir}/AGENTS.md"
 
     # Role-specific content
@@ -139,7 +139,7 @@ generate_workspace_agent_md() {
     esac
 
     cat << EOF > "$target_file"
-# AGENT.md — GenCr@ft Studio Workspace ($role_name)
+# AGENTS.md — GenCr@ft Studio Workspace ($role_name)
 
 ## Orientation
 You are an agent (AI or Human) in the **$role_name** role.
@@ -175,7 +175,7 @@ Ensure these skills are available for your tasks. They are deployed to \`~/.clau
 - **SSoT Driven:** Respect docIds and YAML frontmatter.
 EOF
 
-    log_success "AGENT.md generated for role '$role_name'."
+    log_success "AGENTS.md generated for role '$role_name'."
 }
 
 configure_agent_environment() {

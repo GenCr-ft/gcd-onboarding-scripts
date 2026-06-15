@@ -73,7 +73,7 @@ setup_ssh_key() {
     if [ ! -f "$ssh_key_path" ]; then
         log_warn "No SSH key found. Let's create one."
         local git_email
-        git_email=$(git config --global user.email)
+        git_email=$(git config --global user.email 2>/dev/null || echo "")
         mkdir -p "$(dirname "$ssh_key_path")"
         ssh-keygen -t ed25519 -C "$git_email" -f "$ssh_key_path" -N ""
         log_success "New SSH key created at $ssh_key_path"

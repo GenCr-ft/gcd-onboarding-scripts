@@ -7,7 +7,7 @@ authors:
 - AI Compliance Agent
 reviewers: []
 creation_date: '2025-06-26'
-last_updated_date: '2026-05-20'
+last_updated_date: '2026-06-15'
 knowledgeGuardian:
 - Béatrice (GCT-MGT-SPM-001)
 language: en
@@ -142,7 +142,7 @@ bash gft-onboarding.sh --quickstart --workspace aethel
 
 ### Windows (via WSL2)
 
-Run via PowerShell as Administrator to verify checksums and bootstrap WSL2:
+Run via PowerShell as Administrator to bootstrap WSL2:
 
 ```powershell
 New-Item -ItemType Directory -Force $env:USERPROFILE\gft | Out-Null; cd $env:USERPROFILE\gft

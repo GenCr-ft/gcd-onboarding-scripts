@@ -1017,6 +1017,36 @@ test_env_var_warns_when_ssot_empty() {
     log_success "Env var WARN when SSoT empty: PASSED"
 }
 
+test_win_bootstrap_filename_consistency() {
+    log_info "[TEST SUITE] Win Bootstrap: PS1 filename matches bash entry point..."
+    local checks_failed=0
+
+    local ps1_file="${PROJECT_ROOT}/onboarding-win.ps1"
+    local bash_entry="${PROJECT_ROOT}/gft-onboarding.sh"
+
+    # The bash entry point must exist on disk
+    if [[ ! -f "$bash_entry" ]]; then
+        log_error "FAIL: bash entry point not found at $bash_entry"
+        ((checks_failed++))
+    fi
+
+    # Extract the value assigned to $BashOnboardingScriptName in the PS1
+    local assigned_name
+    assigned_name=$(grep -m1 'BashOnboardingScriptName\s*=' "$ps1_file" \
+        | sed 's/.*=\s*"\(.*\)".*/\1/')
+
+    if [[ -z "$assigned_name" ]]; then
+        log_error "FAIL: could not extract BashOnboardingScriptName from $ps1_file"
+        ((checks_failed++))
+    elif [[ "$assigned_name" != "gft-onboarding.sh" ]]; then
+        log_error "FAIL: BashOnboardingScriptName='$assigned_name' — expected 'gft-onboarding.sh'"
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "Win Bootstrap Filename Consistency: PASSED"
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -1059,6 +1089,7 @@ main() {
     test_preflight_no_workspace_no_extra_checks        || ((failed_suites++))
     test_preflight_critical_fail_exits_one             || ((failed_suites++))
     test_preflight_disk_warn_non_blocking              || ((failed_suites++))
+    test_win_bootstrap_filename_consistency            || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

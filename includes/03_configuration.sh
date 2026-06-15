@@ -381,12 +381,14 @@ configure_environment_variables() {
         return 1
     fi
 
-    if [ ! -f "${GFT_SSOT_PATH}/tooling/ENV_VARIABLES_STANDARD.md" ]; then
-        log_error "Missing ENV_VARIABLES_STANDARD.md in ${GFT_SSOT_PATH}/tooling"
-        return 1
+    local env_vars_spec
+    env_vars_spec=$(find "${GFT_SSOT_PATH}" -type f \( -name "ENV_VARIABLES_STANDARD.md" -o -name "*environment-variables-standard.md" \) 2>/dev/null | head -1)
+    if [[ -z "$env_vars_spec" ]]; then
+        log_warn "ENV_VARIABLES_STANDARD.md not found in SSoT. Skipping environment variable configuration."
+        return 0
     fi
 
-    mapfile -t required_vars < <(python3 "$python_helper_script" "$role_name")
+    mapfile -t required_vars < <(python3 "$python_helper_script" "$role_name" "$env_vars_spec")
 
     if [[ ${#required_vars[@]} -eq 0 ]]; then
         log_info "No specific environment variables to configure for this role."

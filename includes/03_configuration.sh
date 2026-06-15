@@ -391,8 +391,8 @@ configure_environment_variables() {
     mapfile -t required_vars < <(python3 "$python_helper_script" "$role_name" "$env_vars_spec")
 
     if [[ ${#required_vars[@]} -eq 0 ]]; then
-        log_info "No specific environment variables to configure for this role."
-        return
+        log_warn "No environment variables found in SSoT for role '${role_name}'. Shell profile will not be updated. Check that '${env_vars_spec}' contains role-specific variable blocks (see gcs-core-governance#51)."
+        return 0
     fi
 
     # 3. Ensure the Gencraft configuration block exists

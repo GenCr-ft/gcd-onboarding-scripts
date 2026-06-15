@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, List, Tuple
 
@@ -40,6 +41,11 @@ def _parse_scalar(token: str) -> Any:
         return token[1:-1]
     if token.startswith("'") and token.endswith("'") and len(token) >= 2:
         return token[1:-1]
+    if token.startswith("[") and token.endswith("]"):
+        try:
+            return json.loads(token)
+        except (json.JSONDecodeError, ValueError):
+            pass
     return token
 
 

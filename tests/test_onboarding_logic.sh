@@ -1047,6 +1047,49 @@ test_win_bootstrap_filename_consistency() {
     log_success "Win Bootstrap Filename Consistency: PASSED"
 }
 
+test_main_orchestration_smoke() {
+    log_info "[TEST SUITE] Main Orchestration Smoke: isolated HOME, all network stubbed..."
+    local smoke_home; smoke_home=$(mktemp -d)
+    local smoke_ws; smoke_ws=$(mktemp -d)
+    local smoke_out; smoke_out=$(mktemp)
+    local exit_code=0
+    (
+        export HOME="$smoke_home"
+        export GFT_PROJECTS_HOME="$smoke_ws"
+        export GFT_ROLE="devops-specialist"
+        export GFT_NON_INTERACTIVE="true"
+        source "${PROJECT_ROOT}/gft-onboarding.sh"
+        run_preflight()                      { :; }
+        setup_ssot_repository()              { mkdir -p "/tmp/gft-ssot-onboarding"; }
+        load_ssot_configuration()            { :; }
+        install_tools_for_role()             { :; }
+        configure_git()                      { :; }
+        setup_ssh_key()                      { :; }
+        configure_environment_variables()    { :; }
+        install_vscode_extensions_for_role() { :; }
+        clone_repositories_for_role()        { :; }
+        install_gft_ops_scripts()            { :; }
+        deploy_workspace_files()             { :; }
+        deploy_planning_metadata_hook()      { :; }
+        configure_agent_environment()        { :; }
+        register_studio_hooks()              { :; }
+        setup_pcg_python_venv()              { :; }
+        configure_gft_cli()                  { :; }
+        performance_and_caching()            { :; }
+        final_validation()                   { :; }
+        main
+    ) > "$smoke_out" 2>&1 || exit_code=$?
+    rm -rf "$smoke_home" "$smoke_ws"
+    if [[ $exit_code -ne 0 ]]; then
+        log_error "FAIL: main() smoke test exited $exit_code (expected 0)"
+        cat "$smoke_out" >&2
+        rm -f "$smoke_out"
+        return 1
+    fi
+    rm -f "$smoke_out"
+    log_success "Main Orchestration Smoke: PASSED"
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -1090,6 +1133,7 @@ main() {
     test_preflight_critical_fail_exits_one             || ((failed_suites++))
     test_preflight_disk_warn_non_blocking              || ((failed_suites++))
     test_win_bootstrap_filename_consistency            || ((failed_suites++))
+    test_main_orchestration_smoke                      || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

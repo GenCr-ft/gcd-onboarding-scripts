@@ -117,7 +117,7 @@ generate_workspace_agent_md() {
     log_info "Generating role-specific AGENT.md for: $role_name"
 
     local target_dir="${GFT_PROJECTS_HOME:-$(pwd)}"
-    local target_file="${target_dir}/AGENT.md"
+    local target_file="${target_dir}/AGENTS.md"
 
     # Role-specific content
     local role_instructions=""

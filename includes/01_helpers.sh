@@ -383,12 +383,12 @@ select_user_role() {
     fi
 
     if [[ -n "${GFT_ROLE:-}" ]]; then
-        log_info "Auto-selecting role from GFT_ROLE: $GFT_ROLE"
+        log_info "Auto-selecting role from GFT_ROLE: $GFT_ROLE" >&2
         echo "$GFT_ROLE"
         return 0
     fi
 
-    log_info "Please select your primary role in the studio:"
+    log_info "Please select your primary role in the studio:" >&2
     # Use yq to parse roles from the global variable and format them for the `select` prompt.
     mapfile -t role_options < <(echo "$ROLE_MATRIX_YAML" | yq -r '.roles[] | select(.name != "common-base") | .name + ": " + .description')
 
@@ -396,11 +396,11 @@ select_user_role() {
     select role_choice in "${role_options[@]}"; do
         if [[ -n "$role_choice" ]]; then
             selected_role_name=$(echo "$role_choice" | cut -d':' -f1)
-            log_info "You have selected the role: $selected_role_name"
+            log_info "You have selected the role: $selected_role_name" >&2
             echo "$selected_role_name" # Return the value
             return 0
         else
-            log_warn "Invalid selection. Please try again."
+            log_warn "Invalid selection. Please try again." >&2
         fi
     done
 }

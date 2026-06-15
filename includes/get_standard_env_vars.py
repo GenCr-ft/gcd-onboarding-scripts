@@ -65,17 +65,21 @@ def load_sections(md_path: Path):
 
 
 def main():
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         print(ROLE_ARG_ERROR, file=sys.stderr)
         sys.exit(1)
 
     role_name = normalize_role(sys.argv[1])
-    ssot_path = os.environ.get("GFT_SSOT_PATH")
-    if not ssot_path:
-        print("GFT_SSOT_PATH is not defined.", file=sys.stderr)
-        sys.exit(1)
 
-    md_path = Path(ssot_path) / "tooling" / "ENV_VARIABLES_STANDARD.md"
+    if len(sys.argv) >= 3:
+        md_path = Path(sys.argv[2])
+    else:
+        ssot_path = os.environ.get("GFT_SSOT_PATH")
+        if not ssot_path:
+            print("GFT_SSOT_PATH is not defined.", file=sys.stderr)
+            sys.exit(1)
+        md_path = Path(ssot_path) / "tooling" / "ENV_VARIABLES_STANDARD.md"
+
     sections = load_sections(md_path)
 
     for line in sections["common"]:

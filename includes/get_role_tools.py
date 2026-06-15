@@ -55,8 +55,20 @@ def get_all_tools_for_role(matrix_data, role_name):
         current_role_data = roles_map[current_role_name]
 
         if "tools" in current_role_data and current_role_data["tools"] is not None:
-            for tool in current_role_data["tools"]:
-                all_tools.add(tool)
+            tools_value = current_role_data["tools"]
+            if isinstance(tools_value, str):
+                import json as _json
+                try:
+                    tools_value = _json.loads(tools_value)
+                except (ValueError, TypeError):
+                    tools_value = [tools_value]
+            for tool in tools_value:
+                if isinstance(tool, dict):
+                    tool_name = tool.get("name") or tool.get("id") or ""
+                    if tool_name:
+                        all_tools.add(str(tool_name))
+                elif tool is not None:
+                    all_tools.add(str(tool))
 
         parent_role = current_role_data.get("inherits")
         if parent_role:

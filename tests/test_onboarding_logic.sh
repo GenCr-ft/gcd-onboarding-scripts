@@ -961,6 +961,62 @@ test_quickstart_documentation_contract() {
     log_success "Quickstart Documentation Contract: PASSED"
 }
 
+test_role_tools_mixed_yaml_format() {
+    log_info "[TEST SUITE 1e] Testing get_role_tools.py with mixed dict/string tool format..."
+    local mixed_yaml
+    mixed_yaml=$(cat <<'YAML'
+roles:
+  - name: common-base
+    tools:
+      - name: git
+      - name: github-cli
+  - name: child-role
+    inherits: common-base
+    tools: ["opentofu", "kubectl"]
+YAML
+)
+    local output exit_code
+    output=$(printf '%s' "$mixed_yaml" | command python3 "${PROJECT_ROOT}/includes/get_role_tools.py" "child-role" 2>&1)
+    exit_code=$?
+
+    local checks_failed=0
+    [[ $exit_code -ne 0 ]] && log_error "FAIL: get_role_tools.py exited $exit_code. Output: $output" && ((checks_failed++))
+    [[ "$output" != *"git"* ]] && log_error "FAIL: 'git' (dict-format parent) missing from output" && ((checks_failed++))
+    [[ "$output" != *"github-cli"* ]] && log_error "FAIL: 'github-cli' (dict-format parent) missing from output" && ((checks_failed++))
+    [[ "$output" != *"opentofu"* ]] && log_error "FAIL: 'opentofu' (string-format child) missing from output" && ((checks_failed++))
+    [[ "$output" != *"kubectl"* ]] && log_error "FAIL: 'kubectl' (string-format child) missing from output" && ((checks_failed++))
+
+    if [[ $checks_failed -ne 0 ]]; then echo "--- Output ---" && echo "$output"; return 1; fi
+    log_success "Role tools mixed YAML format: PASSED"
+}
+
+test_env_var_warns_when_ssot_empty() {
+    log_info "[TEST SUITE 3c] Testing env-var WARN when SSoT file has no role blocks..."
+    local mock_ssot mock_home mock_profile
+    mock_ssot=$(mktemp -d)
+    mock_home=$(mktemp -d)
+    mock_profile=$(mktemp)
+    trap "rm -rf '$mock_ssot' '$mock_home'; rm -f '$mock_profile'; trap - RETURN" RETURN
+
+    echo "# Policy document only — no role sections" > "${mock_ssot}/ENV_VARIABLES_STANDARD.md"
+
+    local orig_ssot="$GFT_SSOT_PATH" orig_home="$HOME"
+    export GFT_SSOT_PATH="$mock_ssot"
+    export HOME="$mock_home"
+
+    local output
+    output=$(configure_environment_variables "devops-specialist" "$mock_profile" 2>&1)
+
+    export GFT_SSOT_PATH="$orig_ssot"
+    export HOME="$orig_home"
+
+    if [[ "$output" != *"WARN"* ]]; then
+        log_error "FAIL: Expected WARN when SSoT env vars file has no role blocks. Got: $output"
+        return 1
+    fi
+    log_success "Env var WARN when SSoT empty: PASSED"
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -976,10 +1032,12 @@ main() {
     test_tool_installation_logic || ((failed_suites++))
     test_gft_install_deferred_until_clone || ((failed_suites++))
     test_gft_install_delegates_to_gcs_plt_tools_onboard || ((failed_suites++))
+    test_role_tools_mixed_yaml_format || ((failed_suites++))
     test_repository_cloning_logic || ((failed_suites++))
     test_base_repository_injection_when_missing || ((failed_suites++))
     test_environment_variable_logic || ((failed_suites++))
     test_environment_variable_idempotency || ((failed_suites++))
+    test_env_var_warns_when_ssot_empty || ((failed_suites++))
     test_vscode_extension_logic || ((failed_suites++))
     test_performance_and_caching_logic || ((failed_suites++))
     test_final_validation_logic || ((failed_suites++))

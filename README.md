@@ -7,7 +7,7 @@ authors:
 - AI Compliance Agent
 reviewers: []
 creation_date: '2025-06-26'
-last_updated_date: '2026-05-20'
+last_updated_date: '2026-06-15'
 knowledgeGuardian:
 - Béatrice (GCT-MGT-SPM-001)
 language: en
@@ -49,6 +49,9 @@ curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/ma
 cd gcd-onboarding-scripts-main
 bash gft-onboarding.sh --quickstart --workspace aethel
 ```
+
+`gft-onboarding.sh` requires the full archive — the `includes/` directory must
+be present alongside it. Downloading the script file alone is not supported.
 
 Replace `aethel` with `evai-platform`, `agent-factory`, `workspace-ops`, or
 `studio-gencraft` if that is your starting workspace.
@@ -139,6 +142,9 @@ curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/ma
 cd gcd-onboarding-scripts-main
 bash gft-onboarding.sh --quickstart --workspace aethel
 ```
+
+`gft-onboarding.sh` requires the full archive — the `includes/` directory must
+be present alongside it. Downloading the script file alone is not supported.
 
 ### Windows (via WSL2)
 

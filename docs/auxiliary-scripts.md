@@ -42,12 +42,12 @@ This document supplements the main README by detailing helper scripts that suppo
   4. Prints pass/fail counts; success is zero failures.
 - **Automation tips**: Run nightly on CI by seeding `ROLE_MATRIX_YAML` via the script or piping a predetermined selection into the `select` prompt.
 
-## validate-gft-devops-environment.sh (PROJ-103 baseline)
+## validate-devops-environment.sh (PROJ-103 baseline)
 - **Purpose**: Deep-dive check for DevOps/SRE contributors focusing on Git, gh, OpenTofu, jq, mdl, tflint, Docker, and hooks, referencing relevant ADRs.
 - **Execution**:
   ```bash
-  chmod +x validate-gft-devops-environment.sh
-  ./validate-gft-devops-environment.sh
+  chmod +x validate-devops-environment.sh
+  ./validate-devops-environment.sh
   ```
 - **Highlights**:
   - Defines minimum major/minor versions (Git ≥2.x, gh ≥2.x, OpenTofu ≥1.6, etc.).

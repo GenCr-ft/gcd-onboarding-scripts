@@ -73,7 +73,8 @@ setup_ssh_key() {
     if [ ! -f "$ssh_key_path" ]; then
         log_warn "No SSH key found. Let's create one."
         local git_email
-        git_email=$(git config --global user.email)
+        git_email=$(git config --global user.email 2>/dev/null || echo "")
+        mkdir -p "$(dirname "$ssh_key_path")"
         ssh-keygen -t ed25519 -C "$git_email" -f "$ssh_key_path" -N ""
         log_success "New SSH key created at $ssh_key_path"
     else
@@ -150,7 +151,7 @@ clone_repositories_for_role() {
 
     log_info "Cloning required repositories for role: $role_name"
 
-    local gft_workspace="$HOME/gft_studio"
+    local gft_workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
     mkdir -p "$gft_workspace"
 
     local -a base_repos=(
@@ -345,7 +346,7 @@ final_validation() {
 # $2: shell_profile_for_test (optional, used only for testing)
 configure_environment_variables() {
     local role_name="$1"
-    local shell_profile_for_test="$2" # Optional: override profile path for testing
+    local shell_profile_for_test="${2:-}" # Optional: override profile path for testing
     log_info "Configuring environment variables for role: $role_name"
 
     # 1. Detect the shell profile file

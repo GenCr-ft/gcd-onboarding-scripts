@@ -139,7 +139,7 @@ main() {
     # --- Prerequisite & SSoT Setup ---
     run_preflight
     setup_ssot_repository
-    detect_os
+    detect_os_arch
 
     # --- Load Configuration from SSoT ---
     load_ssot_configuration

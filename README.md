@@ -167,7 +167,7 @@ powershell -ExecutionPolicy Bypass -File .\onboarding-win.ps1 -Quickstart -Works
 1. **Restart:** Close/reopen terminals and restart VS Code.
 2. **Validation Scripts:**
    - Run `./validate-environment.sh` to verify role-specific tools/repos.
-   - Run `./validate-gft-devops-environment.sh` for DevOps tooling baselines.
+   - Run `./validate-devops-environment.sh` for DevOps tooling baselines.
    - Run `gft doctor` for a CLI-native health report.
 3. **Manual Check:** Verify pre-commit hooks:
 

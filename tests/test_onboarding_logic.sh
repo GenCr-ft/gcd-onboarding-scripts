@@ -534,6 +534,11 @@ test_headless_onboarding_non_interactive() {
 test_workspace_quickstart_contract() {
     log_info "[TEST SUITE 11] Testing Workspace Quickstart Contract..."
     local checks_failed=0
+    local ws_parse_out; ws_parse_out=$(mktemp)
+    local ws_parse_err; ws_parse_err=$(mktemp)
+    local help_out;     help_out=$(mktemp)
+    local help_err;     help_err=$(mktemp)
+    trap "rm -f '$ws_parse_out' '$ws_parse_err' '$help_out' '$help_err'; trap - RETURN" RETURN
 
     for workspace in aethel evai-platform agent-factory workspace-ops studio-gencraft; do
         if ! parse_cli_args --quickstart --workspace "$workspace"; then
@@ -558,14 +563,13 @@ test_workspace_quickstart_contract() {
         unset GFT_QUICKSTART GFT_WORKSPACE GFT_ROLE GFT_NON_INTERACTIVE
     done
 
-    if parse_cli_args --quickstart --workspace unknown >/tmp/gft-workspace-parse.out 2>/tmp/gft-workspace-parse.err; then
+    if parse_cli_args --quickstart --workspace unknown >"$ws_parse_out" 2>"$ws_parse_err"; then
         log_error "FAIL: invalid workspace was accepted."
         ((checks_failed++))
-    elif ! grep -q "Valid workspaces" /tmp/gft-workspace-parse.err; then
+    elif ! grep -q "Valid workspaces" "$ws_parse_err"; then
         log_error "FAIL: invalid workspace error did not list valid workspaces."
         ((checks_failed++))
     fi
-    rm -f /tmp/gft-workspace-parse.out /tmp/gft-workspace-parse.err
 
     if ! parse_cli_args --quickstart --workspace=workspace-ops; then
         log_error "FAIL: --workspace=<id> form was rejected."
@@ -577,7 +581,7 @@ test_workspace_quickstart_contract() {
     fi
     unset GFT_QUICKSTART GFT_WORKSPACE GFT_ROLE GFT_NON_INTERACTIVE
 
-    if ! parse_cli_args --help >/tmp/gft-help.out 2>/tmp/gft-help.err; then
+    if ! parse_cli_args --help >"$help_out" 2>"$help_err"; then
         log_error "FAIL: --help was rejected."
         ((checks_failed++))
     fi
@@ -585,11 +589,10 @@ test_workspace_quickstart_contract() {
         log_error "FAIL: --help did not set GFT_SHOW_HELP_ONLY=true."
         ((checks_failed++))
     fi
-    if ! grep -q "Usage:" /tmp/gft-help.out; then
+    if ! grep -q "Usage:" "$help_out"; then
         log_error "FAIL: --help did not print usage."
         ((checks_failed++))
     fi
-    rm -f /tmp/gft-help.out /tmp/gft-help.err
     unset GFT_SHOW_HELP_ONLY
 
     if ! parse_cli_args --role devops-specialist; then

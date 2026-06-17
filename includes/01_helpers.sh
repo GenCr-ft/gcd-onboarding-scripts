@@ -277,7 +277,7 @@ parse_cli_args() {
 
 # Fetches the version for a specific tool from the SSoT .tool-versions-gft file.
 # $1: The name of the tool as it appears in the .tool-versions-gft file (e.g., "nodejs").
-# Returns (echoes) the version string (e.g., "lts-gallium").
+# Returns (echoes) the version string (e.g., "20.18.0").
 get_ssot_tool_version() {
     local tool_name_in_ssot="$1"
     # GFT_SSOT_PATH is defined in 01_helpers.sh in the setup_ssot_repository function

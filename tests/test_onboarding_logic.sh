@@ -44,7 +44,7 @@ docker() {
 }
 # Generic mocks
 confirm_action() { return 0; }
-get_ssot_tool_version() { case "$1" in nodejs) echo "20.18.0" ;; python) echo "3.11.5" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
+get_ssot_tool_version() { case "$1" in nodejs) echo "20.18.0" ;; python) echo "3.11.5" ;; pnpm) echo "8.6.0" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
 
 python3() {
     local script_path="$1"

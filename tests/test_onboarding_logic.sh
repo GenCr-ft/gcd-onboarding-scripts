@@ -1052,6 +1052,7 @@ test_main_orchestration_smoke() {
     local smoke_home; smoke_home=$(mktemp -d)
     local smoke_ws; smoke_ws=$(mktemp -d)
     local smoke_out; smoke_out=$(mktemp)
+    rm -rf /tmp/gft-ssot-onboarding  # ensure clean state for isolation assertion below
     local exit_code=0
     (
         export HOME="$smoke_home"
@@ -1079,6 +1080,12 @@ test_main_orchestration_smoke() {
         final_validation()                   { :; }
         main
     ) > "$smoke_out" 2>&1 || exit_code=$?
+    # Regression guard: stub must not create /tmp/gft-ssot-onboarding (parallel CI runners race on this path)
+    if [[ -d /tmp/gft-ssot-onboarding ]]; then
+        log_error "FAIL: setup_ssot_repository stub created /tmp/gft-ssot-onboarding — CI race risk"
+        rm -rf "$smoke_home" "$smoke_ws" "$smoke_out" /tmp/gft-ssot-onboarding
+        return 1
+    fi
     rm -rf "$smoke_home" "$smoke_ws"
     if [[ $exit_code -ne 0 ]]; then
         log_error "FAIL: main() smoke test exited $exit_code (expected 0)"

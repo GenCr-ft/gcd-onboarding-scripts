@@ -111,7 +111,7 @@ install_vscode_extensions_for_role() {
         return 1
     fi
 
-    if [ ! -f "${GFT_SSOT_PATH}/tooling/VSCODE_RECOMMENDATIONS.md" ]; then
+    if [ ! -f "${GFT_SSOT_PATH}/tooling/ENG-STAN-003.vs-code-extension-recommendations.md" ]; then
         log_warn "VS Code recommendations file not found in SSoT."
         return
     fi
@@ -382,9 +382,9 @@ configure_environment_variables() {
     fi
 
     local env_vars_spec
-    env_vars_spec=$(find "${GFT_SSOT_PATH}" -type f \( -name "ENV_VARIABLES_STANDARD.md" -o -name "*environment-variables-standard.md" \) 2>/dev/null | head -1)
+    env_vars_spec=$(find "${GFT_SSOT_PATH}" -type f -name "ENG-STAN-002.environment-variable-standard.md" 2>/dev/null | head -1)
     if [[ -z "$env_vars_spec" ]]; then
-        log_warn "ENV_VARIABLES_STANDARD.md not found in SSoT. Skipping environment variable configuration."
+        log_warn "ENG-STAN-002.environment-variable-standard.md not found in SSoT. Skipping environment variable configuration."
         return 0
     fi
 

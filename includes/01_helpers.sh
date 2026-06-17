@@ -290,7 +290,8 @@ get_ssot_tool_version() {
 
     # Find the line starting with the tool name, and print the second column.
     # The grep ensures we match the exact tool name at the beginning of the line.
-    grep "^${tool_name_in_ssot} " "$ssot_versions_file" | awk '{print $2}'
+    # || true prevents pipefail from propagating grep's exit-1 (no-match) as a function error.
+    grep "^${tool_name_in_ssot} " "$ssot_versions_file" | awk '{print $2}' || true
 }
 
 

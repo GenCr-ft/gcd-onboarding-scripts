@@ -26,5 +26,8 @@ fixture tree complete. Update stale `lts-gallium` mock stub to `20.18.0`.
 
 ## Changes
 
-1. `tests/fixtures/mock_ssot/tooling/ssot/.tool-versions-gft` — NEW FILE
-2. `tests/test_onboarding_logic.sh` — update mock stub and assertion (lts-gallium → 20.18.0)
+1. `tests/fixtures/mock_ssot/tooling/ssot/.tool-versions-gft` — NEW FILE (fixture, mirrors production SSoT)
+2. `tests/test_onboarding_logic.sh` — mock stub: lts-gallium → 20.18.0; add pnpm 8.6.0; assertion updated
+3. `tests/test_ssot_reader.sh` — NEW FILE (6 assertions against real function, no mock override)
+4. `includes/01_helpers.sh` — docstring example updated; `|| true` on grep pipeline (pipefail safety)
+5. `spec/gft-developer-onboarding-specification.md` — update §1.4 example versions; fix §2.3.6 gft-cli SSoT claim

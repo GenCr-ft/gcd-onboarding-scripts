@@ -114,9 +114,7 @@ Use `pyenv` to install target Python. Install target Poetry.
 
 #### 2.3.6. `gft-cli` (Studio Tool)
 
-* Read target version from SSoT.
-* **Checksum Verification:** Download the binary and its checksum file from GitHub Releases, then verify integrity using `sha256sum -c`.
-* Install the verified binary to the user's PATH.
+* Version is managed by `gcs-plt-tools/onboard.sh`; it is **not** pinned in `.tool-versions-gft`. The `install_gft_cli()` function delegates entirely to that script.
 * Verify installation with `gft-cli --version`.
 
 #### 2.3.7. Core Pre-Commit Dependencies (NEW)

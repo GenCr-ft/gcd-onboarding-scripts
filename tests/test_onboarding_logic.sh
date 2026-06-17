@@ -534,15 +534,11 @@ test_headless_onboarding_non_interactive() {
 test_workspace_quickstart_contract() {
     log_info "[TEST SUITE 11] Testing Workspace Quickstart Contract..."
     local checks_failed=0
-    local ws_parse_out="/tmp/gft-workspace-parse.out"
-    local ws_parse_err="/tmp/gft-workspace-parse.err"
-    local help_out="/tmp/gft-help.out"
-    local help_err="/tmp/gft-help.err"
-
-    [[ "$ws_parse_out" != "/tmp/gft-workspace-parse.out" ]] || {
-        log_error "FAIL: paths are not runner-isolated (hardcoded /tmp detected)"
-        ((checks_failed++))
-    }
+    local ws_parse_out; ws_parse_out=$(mktemp)
+    local ws_parse_err; ws_parse_err=$(mktemp)
+    local help_out;     help_out=$(mktemp)
+    local help_err;     help_err=$(mktemp)
+    trap "rm -f '$ws_parse_out' '$ws_parse_err' '$help_out' '$help_err'; trap - RETURN" RETURN
 
     for workspace in aethel evai-platform agent-factory workspace-ops studio-gencraft; do
         if ! parse_cli_args --quickstart --workspace "$workspace"; then
@@ -574,7 +570,6 @@ test_workspace_quickstart_contract() {
         log_error "FAIL: invalid workspace error did not list valid workspaces."
         ((checks_failed++))
     fi
-    rm -f "$ws_parse_out" "$ws_parse_err"
 
     if ! parse_cli_args --quickstart --workspace=workspace-ops; then
         log_error "FAIL: --workspace=<id> form was rejected."
@@ -598,7 +593,6 @@ test_workspace_quickstart_contract() {
         log_error "FAIL: --help did not print usage."
         ((checks_failed++))
     fi
-    rm -f "$help_out" "$help_err"
     unset GFT_SHOW_HELP_ONLY
 
     if ! parse_cli_args --role devops-specialist; then

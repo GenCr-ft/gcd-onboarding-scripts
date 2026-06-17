@@ -1,9 +1,9 @@
 ---
 docId: GOV-PLAN-OB-147
 title: "[CODE] #147 — test_workspace_quickstart_contract path isolation and trap RETURN"
-status: in-progress
+status: complete
 issue-id: GenCr-ft/gcd-onboarding-scripts#147
-version: 1.0.0
+version: 1.1.0
 authors:
   - AI Compliance Agent
 creation_date: '2026-06-17'
@@ -32,5 +32,13 @@ Replace four hardcoded `/tmp/gft-*` paths in `test_workspace_quickstart_contract
 
 | Cycle | Status |
 |-------|--------|
-| WI-147.0 red | planned |
-| WI-147.1 green | planned |
+| WI-147.0 red  | complete — 7656156 |
+| WI-147.1 green | complete — 1053aea |
+| WI-147.2 blue  | complete — (this commit) |
+
+## Adversarial Review Dispositions
+
+- F1 HIGH: AC-1 wording corrected on issue — RETURN trap fires on `return`/fall-through, not set-e exits
+- F2 HIGH: Blue commit added (this file update)
+- F3 LOW: task_plan.md updated to complete
+- F4 LOW: No trap-fire assertion — architectural restructuring out of scope for this WI

@@ -44,7 +44,7 @@ docker() {
 }
 # Generic mocks
 confirm_action() { return 0; }
-get_ssot_tool_version() { case "$1" in nodejs) echo "lts-gallium" ;; python) echo "3.11.5" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
+get_ssot_tool_version() { case "$1" in nodejs) echo "20.18.0" ;; python) echo "3.11.5" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
 
 python3() {
     local script_path="$1"
@@ -86,7 +86,7 @@ test_tool_installation_logic() {
     # Assertions for ALL expected tools for devops-specialist
     [[ "$output" != *"MOCK_install_commitlint_CALLED"* ]] && log_error "FAIL: commitlint not processed." && ((checks_failed++))
     [[ "$output" != *"MOCK_verify_docker_CALLED"* ]] && log_error "FAIL: docker not processed." && ((checks_failed++))
-    [[ "$output" != *"MOCK_install_node_CALLED_WITH:lts-gallium"* ]] && log_error "FAIL: node-lts not processed correctly." && ((checks_failed++))
+    [[ "$output" != *"MOCK_install_node_CALLED_WITH:20.18.0"* ]] && log_error "FAIL: node-lts not processed correctly." && ((checks_failed++))
     [[ "$output" != *"MOCK_install_binary_CALLED_WITH:opentofu 1.6.0"* ]] && log_error "FAIL: opentofu not processed correctly." && ((checks_failed++))
     [[ "$output" != *"MOCK_install_python_CALLED_WITH:3.11.5"* ]] && log_error "FAIL: python not processed correctly." && ((checks_failed++))
     [[ "$output" != *"MOCK_install_with_pkg_mgr_CALLED_FOR:shellcheck"* ]] && log_error "FAIL: shellcheck not processed." && ((checks_failed++))

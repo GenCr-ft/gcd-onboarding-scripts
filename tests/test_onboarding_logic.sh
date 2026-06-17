@@ -1052,6 +1052,7 @@ test_main_orchestration_smoke() {
     local smoke_home; smoke_home=$(mktemp -d)
     local smoke_ws; smoke_ws=$(mktemp -d)
     local smoke_out; smoke_out=$(mktemp)
+    trap "rm -rf '$smoke_home' '$smoke_ws'; rm -f '$smoke_out'; trap - RETURN" RETURN
     local exit_code=0
     (
         export HOME="$smoke_home"
@@ -1060,7 +1061,7 @@ test_main_orchestration_smoke() {
         export GFT_NON_INTERACTIVE="true"
         source "${PROJECT_ROOT}/gft-onboarding.sh"
         run_preflight()                      { :; }
-        setup_ssot_repository()              { mkdir -p "/tmp/gft-ssot-onboarding"; }
+        setup_ssot_repository()              { :; }
         load_ssot_configuration()            { :; }
         install_tools_for_role()             { :; }
         configure_git()                      { :; }
@@ -1079,14 +1080,11 @@ test_main_orchestration_smoke() {
         final_validation()                   { :; }
         main
     ) > "$smoke_out" 2>&1 || exit_code=$?
-    rm -rf "$smoke_home" "$smoke_ws"
     if [[ $exit_code -ne 0 ]]; then
         log_error "FAIL: main() smoke test exited $exit_code (expected 0)"
         cat "$smoke_out" >&2
-        rm -f "$smoke_out"
         return 1
     fi
-    rm -f "$smoke_out"
     log_success "Main Orchestration Smoke: PASSED"
 }
 

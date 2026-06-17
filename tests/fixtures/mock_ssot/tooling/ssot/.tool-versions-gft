@@ -1,0 +1,8 @@
+# GenCr@ft Studio — canonical tool version pins
+# Format: <tool-name> <version>  (asdf/mise .tool-versions convention)
+# Read at runtime by gcd-onboarding-scripts get_ssot_tool_version()
+# KEEP IN SYNC with gcs-core-governance/tooling/ssot/.tool-versions-gft
+nodejs 20.18.0
+python 3.11.5
+pnpm 8.6.0
+opentofu 1.6.0

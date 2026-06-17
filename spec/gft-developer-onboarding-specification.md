@@ -45,7 +45,7 @@ All configurations, scripts, template contents, and tool versions generated **MU
 
 **Key SSoT Files to be Used by the Script:**
 
-* `tooling/ssot/.tool-versions-gft`: A central file defining target versions for all key tools (e.g., `nodejs lts-gallium`, `python 3.11.5`, `pnpm 8.6.0`, `gft-cli v1.1.0`, `opentofu v1.6.0`).
+* `tooling/ssot/.tool-versions-gft`: A central file defining target versions for all key tools (e.g., `nodejs 20.18.0`, `python 3.11.5`, `pnpm 8.6.0`, `opentofu 1.6.0`).
 * `tooling/ssot/.docker-images-gft`: A text file listing common Docker images to pre-pull.
 * `documentation/governance/GOV-POLI-001.role-tooling--resource-matrix.md`: (NEW) A document mapping studio roles to the tools they require. The onboarding script should use this to determine which dependencies to install for a given user.
 * `tooling/templates/.editorconfig_standard`: The studio's base `.editorconfig` file.
@@ -102,7 +102,7 @@ Install and configure shell profile.
 
 #### 2.3.3. Node.js & PNPM
 
-Use `nvm` to install target Node.js. Use `npm` to install target `pnpm`.
+Use `nvm` to install target Node.js. Use `npm` to install target `pnpm` (version pin in `.tool-versions-gft`; dispatcher case tracked in gcs-core-governance#56).
 
 #### 2.3.4. Pyenv
 
@@ -114,10 +114,8 @@ Use `pyenv` to install target Python. Install target Poetry.
 
 #### 2.3.6. `gft-cli` (Studio Tool)
 
-* Read target version from SSoT.
-* **Checksum Verification:** Download the binary and its checksum file from GitHub Releases, then verify integrity using `sha256sum -c`.
-* Install the verified binary to the user's PATH.
-* Verify installation with `gft-cli --version`.
+* Version is managed by `gcs-plt-tools/onboard.sh`; it is **not** pinned in `.tool-versions-gft`. The `install_gft_cli()` function delegates entirely to that script.
+* Verify installation with `gft version`.
 
 #### 2.3.7. Core Pre-Commit Dependencies (NEW)
 

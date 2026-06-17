@@ -102,7 +102,7 @@ Install and configure shell profile.
 
 #### 2.3.3. Node.js & PNPM
 
-Use `nvm` to install target Node.js. Use `npm` to install target `pnpm`.
+Use `nvm` to install target Node.js. Use `npm` to install target `pnpm` (version pin in `.tool-versions-gft`; dispatcher case tracked in gcs-core-governance#56).
 
 #### 2.3.4. Pyenv
 
@@ -115,7 +115,7 @@ Use `pyenv` to install target Python. Install target Poetry.
 #### 2.3.6. `gft-cli` (Studio Tool)
 
 * Version is managed by `gcs-plt-tools/onboard.sh`; it is **not** pinned in `.tool-versions-gft`. The `install_gft_cli()` function delegates entirely to that script.
-* Verify installation with `gft-cli --version`.
+* Verify installation with `gft version`.
 
 #### 2.3.7. Core Pre-Commit Dependencies (NEW)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse ENV_VARIABLES_STANDARD.md and print env assignments."""
+"""Parse ENG-STAN-002.environment-variable-standard.md and print env assignments."""
 
 import os
 import re
@@ -78,7 +78,7 @@ def main():
         if not ssot_path:
             print("GFT_SSOT_PATH is not defined.", file=sys.stderr)
             sys.exit(1)
-        md_path = Path(ssot_path) / "tooling" / "ENV_VARIABLES_STANDARD.md"
+        md_path = Path(ssot_path) / "tooling" / "ENG-STAN-002.environment-variable-standard.md"
 
     sections = load_sections(md_path)
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse VSCODE_RECOMMENDATIONS.md and print extension identifiers."""
+"""Parse ENG-STAN-003.vs-code-extension-recommendations.md and print extension identifiers."""
 
 import os
 import re
@@ -60,7 +60,7 @@ def main():
         print("GFT_SSOT_PATH is not defined.", file=sys.stderr)
         sys.exit(1)
 
-    md_path = Path(ssot_path) / "tooling" / "VSCODE_RECOMMENDATIONS.md"
+    md_path = Path(ssot_path) / "tooling" / "ENG-STAN-003.vs-code-extension-recommendations.md"
     global_exts, role_exts = load_lists(md_path)
 
     for ext in global_exts:

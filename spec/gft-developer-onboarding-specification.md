@@ -50,8 +50,8 @@ All configurations, scripts, template contents, and tool versions generated **MU
 * `documentation/governance/GOV-POLI-001.role-tooling--resource-matrix.md`: (NEW) A document mapping studio roles to the tools they require. The onboarding script should use this to determine which dependencies to install for a given user.
 * `tooling/templates/.editorconfig_standard`: The studio's base `.editorconfig` file.
 * `tooling/git-hooks/commitlint.config.js`: The standard configuration for `commitlint`.
-* `tooling/ENV_VARIABLES_STANDARD.md`: The definition of common environment variables.
-* `tooling/VSCODE_RECOMMENDATIONS.md`: The list of recommended VS Code extensions and base `settings.json`.
+* `tooling/ENG-STAN-002.environment-variable-standard.md`: The definition of common environment variables.
+* `tooling/ENG-STAN-003.vs-code-extension-recommendations.md`: The list of recommended VS Code extensions and base `settings.json`.
 
 ### 1.5. Key Characteristics of `gft-cli` (Contextual Specification)
 
@@ -156,13 +156,13 @@ Check for `~/.ssh/id_ed25519`. If missing, guide user through generation, adding
 
 ### 2.7. Environment Variables Module
 
-* Reference `GenCr-ft/gcs-core-governance/tooling/ENV_VARIABLES_STANDARD.md`.
+* Reference `GenCr-ft/gcs-core-governance/tooling/ENG-STAN-002.environment-variable-standard.md`.
 * For each variable, check and append to the correct shell profile file if not already present.
 * Create the `$GFT_PROJECTS_HOME` directory.
 
 ### 2.8. VS Code Configuration Module
 
-* Reference `GenCr-ft/gcs-core-governance/tooling/VSCODE_RECOMMENDATIONS.md`.
+* Reference `GenCr-ft/gcs-core-governance/tooling/ENG-STAN-003.vs-code-extension-recommendations.md`.
 * Install recommended extensions and prompt user to merge `settings.json`.
 
 ### 2.9. Repository Cloning Module

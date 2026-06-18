@@ -69,7 +69,7 @@ pre-commit run --all-files   # shellcheck (shell scripts), markdownlint, yamllin
 | Dependency | Repo | How used |
 |-----------|------|---------|
 | Role/tool matrix | `gcs-core-governance` | GOV-GUIDE-010 pulled at runtime for role → tool mapping |
-| Version pinning | `gcs-core-governance` | Tool version specs and ENV_VARIABLES_STANDARD |
+| Version pinning | `gcs-core-governance` | Tool version specs and ENG-STAN-002.environment-variable-standard |
 | VS Code recommendations | `gcs-core-governance` | Workspace config pulled during setup |
 
 ## SSoT Configuration Paths
@@ -81,8 +81,8 @@ All role/tool data is read at runtime from `gcs-core-governance` (cloned to `/tm
 | **Role/Tool Data** | `foundations/governance/GOV-GUIDE-010.role-tooling--resource-matrix.md` | Matrix for tools, repos, VS Code extensions, and env vars. |
 | **Version Pinning** | `tooling/ssot/.tool-versions-gft` | Canonical versions for `get_ssot_tool_version`. |
 | **Tool Specs** | `domains/tooling/standards/tool-002-technical-tooling-specifications.md` | Validation of packages/versions. |
-| **Env Vars** | `tooling/ENV_VARIABLES_STANDARD.md` | Common and role-specific exports. |
-| **VS Code** | `tooling/VSCODE_RECOMMENDATIONS.md` | Global and role-targeted extension IDs. |
+| **Env Vars** | `tooling/ENG-STAN-002.environment-variable-standard.md` | Common and role-specific exports. |
+| **VS Code** | `tooling/ENG-STAN-003.vs-code-extension-recommendations.md` | Global and role-targeted extension IDs. |
 | **Docker** | `tooling/ssot/.docker-images-gft` | Manifest of container images to pre-pull. |
 
 ## Script Modules

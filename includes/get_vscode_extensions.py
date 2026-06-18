@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse VSCODE_RECOMMENDATIONS.md and print extension identifiers."""
+"""Parse ENG-STAN-003.vs-code-extension-recommendations.md and print extension identifiers."""
 
 import os
 import re

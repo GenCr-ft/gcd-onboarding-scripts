@@ -1001,7 +1001,8 @@ test_env_var_warns_when_ssot_empty() {
     mock_profile=$(mktemp)
     trap "rm -rf '$mock_ssot' '$mock_home'; rm -f '$mock_profile'; trap - RETURN" RETURN
 
-    echo "# Policy document only — no role sections" > "${mock_ssot}/ENV_VARIABLES_STANDARD.md"
+    mkdir -p "${mock_ssot}/tooling"
+    echo "# Policy document only — no role sections" > "${mock_ssot}/tooling/ENG-STAN-002.environment-variable-standard.md"
 
     local orig_ssot="$GFT_SSOT_PATH" orig_home="$HOME"
     export GFT_SSOT_PATH="$mock_ssot"

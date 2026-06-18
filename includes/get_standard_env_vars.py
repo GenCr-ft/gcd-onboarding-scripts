@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parse ENV_VARIABLES_STANDARD.md and print env assignments."""
+"""Parse ENG-STAN-002.environment-variable-standard.md and print env assignments."""
 
 import os
 import re

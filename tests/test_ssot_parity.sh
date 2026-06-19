@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-FIXTURE="tests/fixtures/mock_ssot/tooling/ssot/.tool-versions-gft"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+FIXTURE="${PROJECT_ROOT}/tests/fixtures/mock_ssot/tooling/ssot/.tool-versions-gft"
 REMOTE_URL="${SSOT_PARITY_REMOTE_URL:-https://raw.githubusercontent.com/GenCr-ft/gcs-core-governance/main/tooling/ssot/.tool-versions-gft}"
 
 if [[ -z "${CROSS_REPO_PAT:-}" ]]; then
@@ -33,7 +35,7 @@ normalize() { grep -v '^\s*#' | grep -v '^\s*$' | awk '{print $1, $2}' | LC_ALL=
 
 diff_output=$(diff \
   <(printf '%s\n' "$production_content" | normalize) \
-  <(normalize < "$FIXTURE") || true)
+  <(normalize < "$FIXTURE") 2>&1 || true)
 
 if [[ -n "$diff_output" ]]; then
   echo "[FAIL] Fixture drift detected:" >&2

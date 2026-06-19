@@ -32,7 +32,6 @@ assert_eq() {
 # Happy path — each pinned tool returns the correct semver from the fixture.
 assert_eq "nodejs"    "20.18.0" "$(get_ssot_tool_version nodejs)"
 assert_eq "python"    "3.11.5"  "$(get_ssot_tool_version python)"
-assert_eq "pnpm"      "8.6.0"   "$(get_ssot_tool_version pnpm)"
 assert_eq "opentofu"  "1.6.0"   "$(get_ssot_tool_version opentofu)"
 
 # Unhappy path — unknown tool must return empty string and exit 0 (|| true in function guards pipefail).

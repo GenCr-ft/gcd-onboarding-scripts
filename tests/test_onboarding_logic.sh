@@ -44,7 +44,7 @@ docker() {
 }
 # Generic mocks
 confirm_action() { return 0; }
-get_ssot_tool_version() { case "$1" in nodejs) echo "lts-gallium" ;; python) echo "3.11.5" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
+get_ssot_tool_version() { case "$1" in nodejs) echo "20.18.0" ;; python) echo "3.11.5" ;; opentofu) echo "1.6.0" ;; *) echo "" ;; esac; }
 
 python3() {
     local script_path="$1"
@@ -86,7 +86,7 @@ test_tool_installation_logic() {
     # Assertions for ALL expected tools for devops-specialist
     [[ "$output" != *"MOCK_install_commitlint_CALLED"* ]] && log_error "FAIL: commitlint not processed." && ((checks_failed++))
     [[ "$output" != *"MOCK_verify_docker_CALLED"* ]] && log_error "FAIL: docker not processed." && ((checks_failed++))
-    [[ "$output" != *"MOCK_install_node_CALLED_WITH:lts-gallium"* ]] && log_error "FAIL: node-lts not processed correctly." && ((checks_failed++))
+    [[ "$output" != *"MOCK_install_node_CALLED_WITH:20.18.0"* ]] && log_error "FAIL: node-lts not processed correctly." && ((checks_failed++))
     [[ "$output" != *"MOCK_install_binary_CALLED_WITH:opentofu 1.6.0"* ]] && log_error "FAIL: opentofu not processed correctly." && ((checks_failed++))
     [[ "$output" != *"MOCK_install_python_CALLED_WITH:3.11.5"* ]] && log_error "FAIL: python not processed correctly." && ((checks_failed++))
     [[ "$output" != *"MOCK_install_with_pkg_mgr_CALLED_FOR:shellcheck"* ]] && log_error "FAIL: shellcheck not processed." && ((checks_failed++))
@@ -534,6 +534,11 @@ test_headless_onboarding_non_interactive() {
 test_workspace_quickstart_contract() {
     log_info "[TEST SUITE 11] Testing Workspace Quickstart Contract..."
     local checks_failed=0
+    local ws_parse_out; ws_parse_out=$(mktemp)
+    local ws_parse_err; ws_parse_err=$(mktemp)
+    local help_out;     help_out=$(mktemp)
+    local help_err;     help_err=$(mktemp)
+    trap "rm -f '$ws_parse_out' '$ws_parse_err' '$help_out' '$help_err'; trap - RETURN" RETURN
 
     for workspace in aethel evai-platform agent-factory workspace-ops studio-gencraft; do
         if ! parse_cli_args --quickstart --workspace "$workspace"; then
@@ -558,14 +563,13 @@ test_workspace_quickstart_contract() {
         unset GFT_QUICKSTART GFT_WORKSPACE GFT_ROLE GFT_NON_INTERACTIVE
     done
 
-    if parse_cli_args --quickstart --workspace unknown >/tmp/gft-workspace-parse.out 2>/tmp/gft-workspace-parse.err; then
+    if parse_cli_args --quickstart --workspace unknown >"$ws_parse_out" 2>"$ws_parse_err"; then
         log_error "FAIL: invalid workspace was accepted."
         ((checks_failed++))
-    elif ! grep -q "Valid workspaces" /tmp/gft-workspace-parse.err; then
+    elif ! grep -q "Valid workspaces" "$ws_parse_err"; then
         log_error "FAIL: invalid workspace error did not list valid workspaces."
         ((checks_failed++))
     fi
-    rm -f /tmp/gft-workspace-parse.out /tmp/gft-workspace-parse.err
 
     if ! parse_cli_args --quickstart --workspace=workspace-ops; then
         log_error "FAIL: --workspace=<id> form was rejected."
@@ -577,7 +581,7 @@ test_workspace_quickstart_contract() {
     fi
     unset GFT_QUICKSTART GFT_WORKSPACE GFT_ROLE GFT_NON_INTERACTIVE
 
-    if ! parse_cli_args --help >/tmp/gft-help.out 2>/tmp/gft-help.err; then
+    if ! parse_cli_args --help >"$help_out" 2>"$help_err"; then
         log_error "FAIL: --help was rejected."
         ((checks_failed++))
     fi
@@ -585,11 +589,10 @@ test_workspace_quickstart_contract() {
         log_error "FAIL: --help did not set GFT_SHOW_HELP_ONLY=true."
         ((checks_failed++))
     fi
-    if ! grep -q "Usage:" /tmp/gft-help.out; then
+    if ! grep -q "Usage:" "$help_out"; then
         log_error "FAIL: --help did not print usage."
         ((checks_failed++))
     fi
-    rm -f /tmp/gft-help.out /tmp/gft-help.err
     unset GFT_SHOW_HELP_ONLY
 
     if ! parse_cli_args --role devops-specialist; then
@@ -1053,7 +1056,7 @@ test_main_orchestration_smoke() {
     local smoke_ws; smoke_ws=$(mktemp -d)
     local smoke_out; smoke_out=$(mktemp)
     local exit_code=0
-    trap 'rm -rf "$smoke_home" "$smoke_ws" "$smoke_out"' RETURN
+    trap "rm -rf '$smoke_home' '$smoke_ws'; rm -f '$smoke_out'; trap - RETURN" RETURN
     (
         export HOME="$smoke_home"
         export GFT_PROJECTS_HOME="$smoke_ws"

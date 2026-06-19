@@ -86,6 +86,10 @@ validate_tool() {
 # Checks all tools for a given role
 validate_tools_for_role() {
     local role_name="$1"
+    if [[ -z "${TOOLING_SPECS_YAML:-}" ]]; then
+        log_info "Tool catalog unavailable at '$TOOLING_SPECS_FILE' — skipping tool validation (gcs-core-governance#87)."
+        return 0
+    fi
     local python_helper_script="${SCRIPT_DIR}/includes/get_role_tools.py"
     if [ ! -f "$python_helper_script" ]; then
         log_error "FATAL: Python helper for tools not found at $python_helper_script"

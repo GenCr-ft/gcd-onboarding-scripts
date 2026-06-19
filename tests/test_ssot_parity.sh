@@ -6,6 +6,11 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 FIXTURE="${PROJECT_ROOT}/tests/fixtures/mock_ssot/tooling/ssot/.tool-versions-gft"
 REMOTE_URL="${SSOT_PARITY_REMOTE_URL:-https://raw.githubusercontent.com/GenCr-ft/gcs-core-governance/main/tooling/ssot/.tool-versions-gft}"
 
+if [[ -n "${SSOT_PARITY_REMOTE_URL:-}" && ! "${SSOT_PARITY_REMOTE_URL}" =~ ^https://raw\.githubusercontent\.com/ ]]; then
+  echo "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" >&2
+  exit 1
+fi
+
 if [[ -z "${CROSS_REPO_PAT:-}" ]]; then
   if [[ -n "${CI:-}" ]]; then
     echo "[ERROR] CROSS_REPO_PAT is empty in CI — secret not configured" >&2

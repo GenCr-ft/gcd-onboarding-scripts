@@ -6,6 +6,8 @@ This document supplements the main README by detailing helper scripts that suppo
 - **Purpose**: Enables WSL2, validates VS Code/Docker Desktop, copies `.env`, and launches the Bash orchestrator for Windows engineers.
 - **Invocation**:
   ```powershell
+  git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git
+  cd gcd-onboarding-scripts
   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
   ./onboarding-win.ps1
   ```

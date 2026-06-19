@@ -40,9 +40,9 @@ jobs:
   ssot-compliance:
     name: SSoT Compliance Check
     uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.2
+    continue-on-error: true
     secrets:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
     with:
-      continue-on-error: true
       governance-version: "v1.4.0"
       tooling-version: "v4.1.2"

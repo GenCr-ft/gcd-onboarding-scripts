@@ -45,7 +45,7 @@ All configurations, scripts, template contents, and tool versions generated **MU
 
 **Key SSoT Files to be Used by the Script:**
 
-* `tooling/ssot/.tool-versions-gft`: A central file defining target versions for all key tools (e.g., `nodejs 20.18.0`, `python 3.11.5`, `pnpm 8.6.0`, `opentofu 1.6.0`).
+* `tooling/ssot/.tool-versions-gft`: A central file defining target versions for all key tools (e.g., `nodejs 20.18.0`, `python 3.11.5`, `opentofu 1.6.0`).
 * `tooling/ssot/.docker-images-gft`: A text file listing common Docker images to pre-pull.
 * `documentation/governance/GOV-POLI-001.role-tooling--resource-matrix.md`: (NEW) A document mapping studio roles to the tools they require. The onboarding script should use this to determine which dependencies to install for a given user.
 * `tooling/templates/.editorconfig_standard`: The studio's base `.editorconfig` file.

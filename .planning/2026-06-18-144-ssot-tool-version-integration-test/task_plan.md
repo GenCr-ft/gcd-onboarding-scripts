@@ -7,7 +7,7 @@ version: 1.0.0
 authors:
   - AI Compliance Agent
 creation_date: '2026-06-18'
-last_updated_date: '2026-06-18'
+last_updated_date: '2026-06-19'
 metadata:
   scope: project-platform
   domain: engineering
@@ -29,3 +29,5 @@ remove the pnpm assertion that had no production backing.
 
 1. `tests/fixtures/mock_ssot/tooling/ssot/.tool-versions-gft` — remove pnpm 8.6.0 (mirrors production after WI-56)
 2. `tests/test_ssot_reader.sh` — remove assert_eq "pnpm" line (no AC coverage for pnpm)
+3. `tests/test_onboarding_logic.sh` — remove pnpm arm from wholesale mock of get_ssot_tool_version (mirrors production)
+4. `spec/gft-developer-onboarding-specification.md` — remove pnpm 8.6.0 from tool versions example (line 48)

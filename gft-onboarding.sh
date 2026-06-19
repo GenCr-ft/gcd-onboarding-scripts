@@ -184,7 +184,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     # Handle workspace execution
     if [[ "${1:-}" == "--workspace" ]]; then
         shift
-        local workspace_name="${1:-}"
+        workspace_name="${1:-}"
         if [[ -z "$workspace_name" ]]; then
             log_error "--workspace requires a workspace name"
             exit 1

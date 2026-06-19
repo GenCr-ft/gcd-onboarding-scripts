@@ -940,13 +940,18 @@ test_quickstart_documentation_contract() {
     local checks_failed=0
     local readme_path="${TEST_SCRIPT_PATH}/../README.md"
 
-    if ! grep -q "gcd-onboarding-scripts/archive/refs/heads/main.tar.gz" "$readme_path"; then
-        log_error "FAIL: README quickstart does not download the full onboarding bundle."
+    if grep -q "gcd-onboarding-scripts/archive/refs/heads/main.tar.gz" "$readme_path"; then
+        log_error "FAIL: README quickstart still references archive download — must use git clone."
         ((checks_failed++))
     fi
 
-    if grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$readme_path"; then
-        log_error "FAIL: README quickstart assumes git is already installed."
+    if ! grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$readme_path"; then
+        log_error "FAIL: README quickstart does not show git clone installation path."
+        ((checks_failed++))
+    fi
+
+    if grep -q "Invoke-WebRequest" "$readme_path"; then
+        log_error "FAIL: README Windows section still references Invoke-WebRequest — must use git clone."
         ((checks_failed++))
     fi
 

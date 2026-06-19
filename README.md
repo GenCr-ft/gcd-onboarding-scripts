@@ -142,6 +142,7 @@ Run via PowerShell as Administrator to bootstrap WSL2:
 ```powershell
 git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git
 cd gcd-onboarding-scripts
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 .\onboarding-win.ps1 -Quickstart -Workspace aethel
 ```
 

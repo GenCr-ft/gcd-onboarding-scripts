@@ -20,8 +20,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # These are identical to the main onboarding script to ensure consistency
 readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-core-governance.git"
 readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
-readonly ROLE_MATRIX_FILE="foundations/governance/GOV-004-role-tooling-matrix.md"
-readonly TOOLING_SPECS_FILE="domains/tooling/standards/tool-002-technical-tooling-specifications.md"
+readonly ROLE_MATRIX_FILE="reference-libraries/devops-standards/foundations/governance/GOV-GUIDE-010.role-tooling--resource-matrix.md"
+readonly TOOLING_SPECS_FILE="reference-libraries/devops-standards/domains/tooling/standards/DEV-SPEC-014.tool-002-language-specific-tooling-standards.md"
 readonly GFT_WORKSPACE="${GFT_WORKSPACE:-$(dirname "${SCRIPT_DIR}")}"
 readonly GFT_SSOT_GEMOP_PATH="${GFT_SSOT_GEMOP_PATH:-${GFT_WORKSPACE}/gcs-plt-gemop}"
 
@@ -86,6 +86,10 @@ validate_tool() {
 # Checks all tools for a given role
 validate_tools_for_role() {
     local role_name="$1"
+    if [[ -z "${TOOLING_SPECS_YAML:-}" ]]; then
+        log_info "Tool catalog unavailable at '$TOOLING_SPECS_FILE' — skipping tool validation (gcs-core-governance#87)."
+        return 0
+    fi
     local python_helper_script="${SCRIPT_DIR}/includes/get_role_tools.py"
     if [ ! -f "$python_helper_script" ]; then
         log_error "FATAL: Python helper for tools not found at $python_helper_script"

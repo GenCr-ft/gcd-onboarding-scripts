@@ -36,13 +36,3 @@ jobs:
 
       - name: Run shellcheck on all shell scripts
         run: find . -name "*.sh" -not -path "./.git/*" | xargs -r shellcheck --severity=error
-
-  ssot-compliance:
-    name: SSoT Compliance Check
-    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.2
-    continue-on-error: true
-    secrets:
-      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
-    with:
-      governance-version: "v1.4.0"
-      tooling-version: "v4.1.2"

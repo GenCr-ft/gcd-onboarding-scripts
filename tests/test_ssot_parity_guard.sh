@@ -63,6 +63,26 @@ assert_exit "valid-override-exit-code" "0" "$actual_exit"
 assert_stderr_not_contains "valid-override-no-scheme-error" \
   "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" "$output"
 
+# --- Adversary-suggested negative cases (confirmed blocked by regex) ---
+
+output=$(SSOT_PARITY_REMOTE_URL="http://raw.githubusercontent.com/GenCr-ft/repo/main/file" CROSS_REPO_PAT="dummy" \
+  bash "$PARITY_SCRIPT" 2>&1) && actual_exit=$? || actual_exit=$?
+assert_exit "http-downgrade-exit-code" "1" "$actual_exit"
+assert_stderr_contains "http-downgrade-error-msg" \
+  "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" "$output"
+
+output=$(SSOT_PARITY_REMOTE_URL="https://raw.githubusercontent.com.evil.tld/path" CROSS_REPO_PAT="dummy" \
+  bash "$PARITY_SCRIPT" 2>&1) && actual_exit=$? || actual_exit=$?
+assert_exit "suffix-bypass-exit-code" "1" "$actual_exit"
+assert_stderr_contains "suffix-bypass-error-msg" \
+  "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" "$output"
+
+output=$(SSOT_PARITY_REMOTE_URL="https://evil.example.com/raw.githubusercontent.com/path" CROSS_REPO_PAT="dummy" \
+  bash "$PARITY_SCRIPT" 2>&1) && actual_exit=$? || actual_exit=$?
+assert_exit "path-confusion-exit-code" "1" "$actual_exit"
+assert_stderr_contains "path-confusion-error-msg" \
+  "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" "$output"
+
 echo ""
 echo "  ssot_parity_guard: Passed: $checks_passed  Failed: $checks_failed"
 [[ $checks_failed -eq 0 ]] && echo "✓ tests/test_ssot_parity_guard.sh passed" && exit 0

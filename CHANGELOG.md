@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Align workspace onboarding bundle with bounded workspaces, adding workspace-aware test-all.sh selectors and poetry-independent workspace.sh fallbacks. (#77, @Antigravity)
 
 ### Fixed
+- Replace archive download install blocks with `git clone` in README and `docs/auxiliary-scripts.md`; remove dangling `.sha256` references; add `Set-ExecutionPolicy` bypass to Windows install block (#172, PR #178, @loigallain)
 - Correct the Windows onboarding wrapper to launch `gft-onboarding.sh`. (#115, @loigallain)
 - Correct workspace planning init path and add deployment regression coverage. (#71, @loigallain)
 - Aligned `install_gft_cli()` with the workspace-managed `gcs-plt-tools` wrapper contract by deferring pre-clone installs and delegating post-clone installation to `gcs-plt-tools/onboard.sh`. (#95, @loigallain)

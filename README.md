@@ -7,7 +7,7 @@ authors:
 - AI Compliance Agent
 reviewers: []
 creation_date: '2025-06-26'
-last_updated_date: '2026-06-15'
+last_updated_date: '2026-06-19'
 knowledgeGuardian:
 - Béatrice (GCT-MGT-SPM-001)
 language: en
@@ -44,14 +44,10 @@ should use the workspace quickstart path first, then read the repo-local
 `AGENTS.md` for the project they clone.
 
 ```bash
-mkdir -p ~/gft && cd ~/gft
-curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
-cd gcd-onboarding-scripts-main
+git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git
+cd gcd-onboarding-scripts
 bash gft-onboarding.sh --quickstart --workspace aethel
 ```
-
-`gft-onboarding.sh` requires the full archive — the `includes/` directory must
-be present alongside it. Downloading the script file alone is not supported.
 
 Replace `aethel` with `evai-platform`, `agent-factory`, `workspace-ops`, or
 `studio-gencraft` if that is your starting workspace.
@@ -133,28 +129,21 @@ See [AGENTS.md](./AGENTS.md) for the full SSoT configuration paths, module descr
 
 ### macOS & Linux
 
-Run the following to download the full onboarding bundle and execute the
-orchestrator with its helper modules:
-
 ```bash
-mkdir -p ~/gft && cd ~/gft
-curl -L https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.tar.gz | tar -xz
-cd gcd-onboarding-scripts-main
+git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git
+cd gcd-onboarding-scripts
 bash gft-onboarding.sh --quickstart --workspace aethel
 ```
-
-`gft-onboarding.sh` requires the full archive — the `includes/` directory must
-be present alongside it. Downloading the script file alone is not supported.
 
 ### Windows (via WSL2)
 
 Run via PowerShell as Administrator to bootstrap WSL2:
 
 ```powershell
-New-Item -ItemType Directory -Force $env:USERPROFILE\gft | Out-Null; cd $env:USERPROFILE\gft
-Invoke-WebRequest https://github.com/GenCr-ft/gcd-onboarding-scripts/archive/refs/heads/main.zip -OutFile onboarding.zip
-Expand-Archive .\onboarding.zip -DestinationPath . -Force; cd gcd-onboarding-scripts-main
-powershell -ExecutionPolicy Bypass -File .\onboarding-win.ps1 -Quickstart -Workspace aethel
+git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git
+cd gcd-onboarding-scripts
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\onboarding-win.ps1 -Quickstart -Workspace aethel
 ```
 
 *Note: The Windows script enables WSL2, installs Ubuntu if missing, copies `.env`, and automatically launches the bash orchestrator.*

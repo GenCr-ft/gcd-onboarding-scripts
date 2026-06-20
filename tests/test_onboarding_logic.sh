@@ -940,13 +940,23 @@ test_quickstart_documentation_contract() {
     local checks_failed=0
     local readme_path="${TEST_SCRIPT_PATH}/../README.md"
 
-    if ! grep -q "gcd-onboarding-scripts/archive/refs/heads/main.tar.gz" "$readme_path"; then
-        log_error "FAIL: README quickstart does not download the full onboarding bundle."
+    if grep -q "gcd-onboarding-scripts/archive/refs/heads/main.tar.gz" "$readme_path"; then
+        log_error "FAIL: README quickstart still references archive download — must use git clone."
         ((checks_failed++))
     fi
 
-    if grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$readme_path"; then
-        log_error "FAIL: README quickstart assumes git is already installed."
+    if ! grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$readme_path"; then
+        log_error "FAIL: README quickstart does not show git clone installation path."
+        ((checks_failed++))
+    fi
+
+    if grep -q "Invoke-WebRequest" "$readme_path"; then
+        log_error "FAIL: README Windows section still references Invoke-WebRequest — must use git clone."
+        ((checks_failed++))
+    fi
+
+    if ! grep -q "Set-ExecutionPolicy" "$readme_path"; then
+        log_error "FAIL: README Windows section is missing Set-ExecutionPolicy bypass — required for PS5.1 compatibility."
         ((checks_failed++))
     fi
 
@@ -1092,6 +1102,30 @@ test_main_orchestration_smoke() {
     log_success "Main Orchestration Smoke: PASSED"
 }
 
+test_auxiliary_scripts_windows_invocation_uses_clone() {
+    log_info "[TEST SUITE 13] Testing auxiliary-scripts.md Windows invocation uses clone..."
+    local aux_path="${TEST_SCRIPT_PATH}/../docs/auxiliary-scripts.md"
+    local checks_failed=0
+
+    if ! grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$aux_path"; then
+        log_error "FAIL: docs/auxiliary-scripts.md does not show git clone installation path."
+        ((checks_failed++))
+    fi
+
+    if grep -q "Invoke-WebRequest" "$aux_path"; then
+        log_error "FAIL: docs/auxiliary-scripts.md still references Invoke-WebRequest — must use git clone."
+        ((checks_failed++))
+    fi
+
+    if grep -q "\.sha256" "$aux_path"; then
+        log_error "FAIL: docs/auxiliary-scripts.md references .sha256 checksum artifacts that are not shipped."
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "Auxiliary Scripts Windows Invocation Clone: PASSED"
+}
+
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
@@ -1135,6 +1169,7 @@ main() {
     test_preflight_critical_fail_exits_one             || ((failed_suites++))
     test_preflight_disk_warn_non_blocking              || ((failed_suites++))
     test_win_bootstrap_filename_consistency            || ((failed_suites++))
+    test_auxiliary_scripts_windows_invocation_uses_clone || ((failed_suites++))
     test_main_orchestration_smoke                      || ((failed_suites++))
 
     echo "-------------------------------------------"

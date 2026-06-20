@@ -955,6 +955,11 @@ test_quickstart_documentation_contract() {
         ((checks_failed++))
     fi
 
+    if ! grep -q "Set-ExecutionPolicy" "$readme_path"; then
+        log_error "FAIL: README Windows section is missing Set-ExecutionPolicy bypass — required for PS5.1 compatibility."
+        ((checks_failed++))
+    fi
+
     if grep -q "raw.githubusercontent.com/GenCr-ft/gcd-onboarding-scripts/main/gft-onboarding.sh" "$readme_path"; then
         log_error "FAIL: README still advertises the non-runnable standalone gft-onboarding.sh download."
         ((checks_failed++))
@@ -1100,10 +1105,24 @@ test_main_orchestration_smoke() {
 test_auxiliary_scripts_windows_invocation_uses_clone() {
     log_info "[TEST SUITE 13] Testing auxiliary-scripts.md Windows invocation uses clone..."
     local aux_path="${TEST_SCRIPT_PATH}/../docs/auxiliary-scripts.md"
+    local checks_failed=0
+
     if ! grep -q "git clone https://github.com/GenCr-ft/gcd-onboarding-scripts.git" "$aux_path"; then
         log_error "FAIL: docs/auxiliary-scripts.md does not show git clone installation path."
-        return 1
+        ((checks_failed++))
     fi
+
+    if grep -q "Invoke-WebRequest" "$aux_path"; then
+        log_error "FAIL: docs/auxiliary-scripts.md still references Invoke-WebRequest — must use git clone."
+        ((checks_failed++))
+    fi
+
+    if grep -q "\.sha256" "$aux_path"; then
+        log_error "FAIL: docs/auxiliary-scripts.md references .sha256 checksum artifacts that are not shipped."
+        ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
     log_success "Auxiliary Scripts Windows Invocation Clone: PASSED"
 }
 

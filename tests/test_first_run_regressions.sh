@@ -16,8 +16,8 @@ fail() { echo "[FAIL] $*" >&2; return 1; }
 ensure_runtime_mock_ssot() {
     [[ "$GFT_SSOT_PATH" != "$PROJECT_ROOT"* ]] || fail "runtime mock SSoT must not write into the checked-in repo"
     mkdir -p "$GFT_SSOT_PATH/tooling" "$GFT_SSOT_PATH/tooling/ssot" "$GFT_SSOT_PATH/foundations/governance"
-    cp "${TEST_SCRIPT_PATH}/fixtures/mock_ssot/tooling/ENV_VARIABLES_STANDARD.md" "$GFT_SSOT_PATH/tooling/ENV_VARIABLES_STANDARD.md"
-    cp "${TEST_SCRIPT_PATH}/fixtures/mock_ssot/tooling/VSCODE_RECOMMENDATIONS.md" "$GFT_SSOT_PATH/tooling/VSCODE_RECOMMENDATIONS.md"
+    cp "${TEST_SCRIPT_PATH}/fixtures/mock_ssot/tooling/ENG-STAN-002.environment-variable-standard.md" "$GFT_SSOT_PATH/tooling/ENG-STAN-002.environment-variable-standard.md"
+    cp "${TEST_SCRIPT_PATH}/fixtures/mock_ssot/tooling/ENG-STAN-003.vs-code-extension-recommendations.md" "$GFT_SSOT_PATH/tooling/ENG-STAN-003.vs-code-extension-recommendations.md"
     cp "${TEST_SCRIPT_PATH}/fixtures/mock_ssot/mock-role-tooling-matrix.md" \
         "$GFT_SSOT_PATH/foundations/governance/GOV-GUIDE-010.role-tooling--resource-matrix.md"
     printf 'nodejs lts-gallium\npython 3.11.5\nopentofu 1.6.0\n' > "$GFT_SSOT_PATH/tooling/ssot/.tool-versions-gft"

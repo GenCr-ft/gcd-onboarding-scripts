@@ -6,10 +6,11 @@
 # Creation Date: 2026-05-24
 # Version:      1.3.0
 
+import os
 import re
 from pathlib import Path
 
-WORKSPACE_DIR = Path("/home/lgan/hxgn/dev/claude/exp").resolve()
+WORKSPACE_DIR = Path(os.environ.get("GFT_WORKSPACE_DIR", str(Path.home() / "gft_studio"))).resolve()
 
 # Directories to skip entirely
 SKIP_DIRS = {

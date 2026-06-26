@@ -26,7 +26,11 @@ to main, applying 3 adaptations required by fixture/API drift.
 - GREEN: update `test_detect_os_is_available_to_main` to assert `declare -f detect_os_arch`
   (gft-onboarding.sh renamed function; old assertion fails after Cycle 1 GREEN)
 
-### Cycle 3 — Replace workspace-root test with subshell-isolated configure-env test
+### Cycle 3 — Replace workspace-root test with configure-env test
 - GREEN: replace `test_workspace_root_expands_home_syntax` (tests removed function
-  `gft_workspace_root`) with `test_configure_env_expands_projects_home` using
-  subshell isolation for HOME mutation under set -e
+  `gft_workspace_root`) with `test_configure_env_expands_projects_home`
+
+### Cycle 4 — Extend to test both tilde and $HOME expansion paths
+- GREEN: rewrite `test_configure_env_expands_projects_home` to cover both expansion
+  branches (~/tilde_studio AND $HOME/dollar_studio) via in-place SSoT fixture mutation
+  on $GFT_SSOT_PATH with save/restore, avoiding readonly variable constraint

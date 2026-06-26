@@ -31,7 +31,7 @@ load_mock_role_matrix() {
 }
 
 test_detect_os_is_available_to_main() {
-    log_test "detect_os_arch is defined for main orchestration"
+    log_test "detect_os is defined for main orchestration"
     declare -f detect_os_arch >/dev/null || fail "detect_os_arch is not defined"
 }
 
@@ -228,16 +228,60 @@ test_clone_repositories_uses_gft_projects_home() {
 }
 
 test_configure_env_expands_projects_home() {
-    log_test "configure_environment_variables creates GFT_PROJECTS_HOME under isolated HOME"
-    local tmp_home
+    log_test "configure_environment_variables expands ~ and literal \$HOME in GFT_PROJECTS_HOME"
+    local tmp_home original_home tmp_profile eng_stan_path original_eng_stan
     tmp_home=$(mktemp -d)
-    trap "rm -rf '$tmp_home'; trap - RETURN" RETURN
-    (
-        export HOME="$tmp_home"
-        ensure_runtime_mock_ssot
-        configure_environment_variables "devops-specialist"
-    )
-    [[ -d "$tmp_home/gft_studio" ]] || fail "configure_environment_variables did not create GFT_PROJECTS_HOME under HOME"
+    tmp_profile=$(mktemp)
+    original_home="$HOME"
+
+    ensure_runtime_mock_ssot
+    eng_stan_path=$(find "$GFT_SSOT_PATH" -type f -name "ENG-STAN-002.environment-variable-standard.md" | head -1)
+    original_eng_stan=$(<"$eng_stan_path")
+
+    _cleanup_expand_test() {
+        export HOME="$original_home"
+        echo "$original_eng_stan" > "$eng_stan_path"
+        rm -rf "$tmp_home" "$tmp_profile"
+    }
+
+    export HOME="$tmp_home"
+
+    # --- Tilde expansion: ~/tilde_studio → $tmp_home/tilde_studio ---
+    cat > "$eng_stan_path" <<'SSOT_EOF'
+# Environment Variable Standard
+
+## Common Variables
+```env
+GFT_PROJECTS_HOME="~/tilde_studio"
+```
+SSOT_EOF
+    configure_environment_variables "devops-specialist" "$tmp_profile" >/dev/null 2>&1 || true
+    if [[ ! -d "$tmp_home/tilde_studio" ]]; then
+        _cleanup_expand_test
+        fail "tilde GFT_PROJECTS_HOME did not expand: $tmp_home/tilde_studio was not created"
+        return 1
+    fi
+
+    # Truncate profile so the idempotency guard doesn't skip the second assertion
+    : > "$tmp_profile"
+
+    # --- Literal $HOME expansion: $HOME/dollar_studio → $tmp_home/dollar_studio ---
+    cat > "$eng_stan_path" <<'SSOT_EOF'
+# Environment Variable Standard
+
+## Common Variables
+```env
+GFT_PROJECTS_HOME="$HOME/dollar_studio"
+```
+SSOT_EOF
+    configure_environment_variables "devops-specialist" "$tmp_profile" >/dev/null 2>&1 || true
+    if [[ ! -d "$tmp_home/dollar_studio" ]]; then
+        _cleanup_expand_test
+        fail "literal \$HOME GFT_PROJECTS_HOME did not expand: $tmp_home/dollar_studio was not created"
+        return 1
+    fi
+
+    _cleanup_expand_test
 }
 
 test_documented_filenames_match_repo_files() {

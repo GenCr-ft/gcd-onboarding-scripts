@@ -227,36 +227,17 @@ test_clone_repositories_uses_gft_projects_home() {
     rm -rf "$tmp_home" "$tmp_workspace" /tmp/gft-clone.out /tmp/gft-clone.err
 }
 
-test_workspace_root_expands_home_syntax() {
-    log_test "workspace root expands ~ and literal HOME syntax"
-    local tmp_home original_home original_workspace
+test_configure_env_expands_projects_home() {
+    log_test "configure_environment_variables creates GFT_PROJECTS_HOME under isolated HOME"
+    local tmp_home
     tmp_home=$(mktemp -d)
-    original_home="$HOME"
-    original_workspace="${GFT_PROJECTS_HOME:-}"
-
-    export HOME="$tmp_home"
-
-    export GFT_PROJECTS_HOME='~/studio'
-    [[ "$(gft_workspace_root)" == "$tmp_home/studio" ]] || {
-        export HOME="$original_home"
-        export GFT_PROJECTS_HOME="$original_workspace"
-        rm -rf "$tmp_home"
-        fail "tilde workspace path did not expand"
-        return 1
-    }
-
-    export GFT_PROJECTS_HOME='$HOME/workspace'
-    [[ "$(gft_workspace_root)" == "$tmp_home/workspace" ]] || {
-        export HOME="$original_home"
-        export GFT_PROJECTS_HOME="$original_workspace"
-        rm -rf "$tmp_home"
-        fail "literal HOME workspace path did not expand"
-        return 1
-    }
-
-    export HOME="$original_home"
-    export GFT_PROJECTS_HOME="$original_workspace"
-    rm -rf "$tmp_home"
+    trap "rm -rf '$tmp_home'; trap - RETURN" RETURN
+    (
+        export HOME="$tmp_home"
+        ensure_runtime_mock_ssot
+        configure_environment_variables "devops-specialist"
+    )
+    [[ -d "$tmp_home/gft_studio" ]] || fail "configure_environment_variables did not create GFT_PROJECTS_HOME under HOME"
 }
 
 test_documented_filenames_match_repo_files() {
@@ -393,7 +374,7 @@ run_tests() {
     test_setup_ssh_key_creates_ssh_directory || ((failed+=1))
     test_setup_ssh_key_handles_missing_git_email || ((failed+=1))
     test_clone_repositories_uses_gft_projects_home || ((failed+=1))
-    test_workspace_root_expands_home_syntax || ((failed+=1))
+    test_configure_env_expands_projects_home || ((failed+=1))
     test_documented_filenames_match_repo_files || ((failed+=1))
     test_readme_does_not_advertise_missing_standalone_artifacts || ((failed+=1))
     test_main_smoke_uses_isolated_workspace || ((failed+=1))

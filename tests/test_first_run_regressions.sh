@@ -31,8 +31,8 @@ load_mock_role_matrix() {
 }
 
 test_detect_os_is_available_to_main() {
-    log_test "detect_os is defined for main orchestration"
-    declare -f detect_os >/dev/null || fail "detect_os is not defined"
+    log_test "detect_os_arch is defined for main orchestration"
+    declare -f detect_os_arch >/dev/null || fail "detect_os_arch is not defined"
 }
 
 test_role_selection_stdout_is_role_only() {

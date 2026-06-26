@@ -3,7 +3,7 @@ docId: GOV-PLAN-186
 title: "[CODE] fix(tests): restore CI green — parity test guard env isolation + auth-optional curl"
 github-issue: GenCr-ft/gcd-onboarding-scripts#186
 issue-id: GenCr-ft/gcd-onboarding-scripts#186
-status: active
+status: complete
 created: '2026-06-25'
 scope: parity-ci-fix
 ---

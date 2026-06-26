@@ -12,17 +12,21 @@ if [[ -n "${SSOT_PARITY_REMOTE_URL:-}" && ! "${SSOT_PARITY_REMOTE_URL}" =~ ^http
 fi
 
 if [[ -z "${CROSS_REPO_PAT:-}" ]]; then
-  if [[ -n "${CI:-}" ]]; then
-    echo "[ERROR] CROSS_REPO_PAT is empty in CI — secret not configured" >&2
-    exit 1
+  if [[ -z "${CI:-}" ]]; then
+    echo "[WARN] CROSS_REPO_PAT not set — skipping parity check" >&2
+    exit 0
   fi
-  echo "[WARN] CROSS_REPO_PAT not set — skipping parity check" >&2
-  exit 0
+  # CI with no PAT: fall through to unauthenticated fetch (public URL)
 fi
 
-response=$(curl -s -w "\n%{http_code}" \
-  -H "Authorization: token ${CROSS_REPO_PAT}" \
-  "${REMOTE_URL}" || true)
+if [[ -n "${CROSS_REPO_PAT:-}" ]]; then
+  response=$(curl -s -w "\n%{http_code}" \
+    -H "Authorization: token ${CROSS_REPO_PAT}" \
+    "${REMOTE_URL}" || true)
+else
+  response=$(curl -s -w "\n%{http_code}" \
+    "${REMOTE_URL}" || true)
+fi
 http_code=$(printf '%s' "$response" | tail -n1)
 production_content=$(printf '%s' "$response" | awk 'NR>1{print prev} {prev=$0}')
 

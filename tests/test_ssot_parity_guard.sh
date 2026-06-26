@@ -47,18 +47,18 @@ assert_exit "invalid-scheme-exit-code" "1" "$actual_exit"
 assert_stderr_contains "invalid-scheme-error-msg" \
   "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" "$output"
 
-# --- Cycle 2a: unset URL (default) → guard does not fire (exits 0 with [WARN]) ---
+# --- Cycle 2a: unset URL (default) → scheme guard does not fire; exits 0 with [WARN] (local non-CI env) ---
 
-output=$(unset SSOT_PARITY_REMOTE_URL 2>/dev/null; CROSS_REPO_PAT="" \
+output=$(unset SSOT_PARITY_REMOTE_URL 2>/dev/null; CI="" CROSS_REPO_PAT="" \
   bash "$PARITY_SCRIPT" 2>&1) && actual_exit=$? || actual_exit=$?
 assert_exit "default-url-exit-code" "0" "$actual_exit"
 assert_stderr_not_contains "default-url-no-scheme-error" \
   "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" "$output"
 
-# --- Cycle 2b: valid https override → guard passes, exits 0 with [WARN] ---
+# --- Cycle 2b: valid https override → scheme guard passes, exits 0 with [WARN] (local non-CI env) ---
 
 output=$(SSOT_PARITY_REMOTE_URL="https://raw.githubusercontent.com/GenCr-ft/gcs-core-governance/feat/branch/tooling/ssot/.tool-versions-gft" \
-  CROSS_REPO_PAT="" bash "$PARITY_SCRIPT" 2>&1) && actual_exit=$? || actual_exit=$?
+  CI="" CROSS_REPO_PAT="" bash "$PARITY_SCRIPT" 2>&1) && actual_exit=$? || actual_exit=$?
 assert_exit "valid-override-exit-code" "0" "$actual_exit"
 assert_stderr_not_contains "valid-override-no-scheme-error" \
   "[ERROR] REMOTE_URL must use https://raw.githubusercontent.com/ scheme" "$output"

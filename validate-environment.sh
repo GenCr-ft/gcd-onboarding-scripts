@@ -19,7 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # --- Global Variables ---
 # These are identical to the main onboarding script to ensure consistency
 readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-core-governance.git"
-readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
+GFT_SSOT_PATH="${GFT_SSOT_PATH:-/tmp/gft-ssot-validation}" # env-var override for test injection
 readonly ROLE_MATRIX_FILE="reference-libraries/devops-standards/foundations/governance/GOV-GUIDE-010.role-tooling--resource-matrix.md"
 readonly TOOLING_SPECS_FILE="reference-libraries/devops-standards/domains/tooling/standards/DEV-SPEC-014.tool-002-language-specific-tooling-standards.md"
 readonly GFT_WORKSPACE="${GFT_WORKSPACE:-$(dirname "${SCRIPT_DIR}")}"

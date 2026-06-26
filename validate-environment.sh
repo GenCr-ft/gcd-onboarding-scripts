@@ -39,9 +39,16 @@ check_fail() { echo -e "  \033[1;31m[FAIL]\033[0m $1"; FAIL_COUNT=$((FAIL_COUNT 
 
 # Extracts the YAML data block from a given SSoT markdown file.
 # $1: Path to the markdown file
+# $2: (optional) --optional — return empty + exit 0 if file absent instead of exit 1
 get_yaml_from_ssot() {
     local file_path="$1"
+    local optional=false
+    [[ "${2:-}" == "--optional" ]] && optional=true
     if [[ ! -f "$file_path" ]]; then
+        if $optional; then
+            echo ""
+            return 0
+        fi
         log_error "SSoT file not found: $file_path"
         exit 1
     fi

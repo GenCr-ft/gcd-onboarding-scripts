@@ -19,7 +19,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # --- Global Variables ---
 # These are identical to the main onboarding script to ensure consistency
 readonly GFT_SSOT_REPO="https://github.com/GenCr-ft/gcs-core-governance.git"
-readonly GFT_SSOT_PATH="/tmp/gft-ssot-validation" # Use a separate cache path
+GFT_SSOT_PATH="${GFT_SSOT_PATH:-/tmp/gft-ssot-validation}"
+readonly GFT_SSOT_PATH # env-var override allowed before this line; immutable after
 readonly ROLE_MATRIX_FILE="reference-libraries/devops-standards/foundations/governance/GOV-GUIDE-010.role-tooling--resource-matrix.md"
 readonly TOOLING_SPECS_FILE="reference-libraries/devops-standards/domains/tooling/standards/DEV-SPEC-014.tool-002-language-specific-tooling-standards.md"
 readonly GFT_WORKSPACE="${GFT_WORKSPACE:-$(dirname "${SCRIPT_DIR}")}"
@@ -28,6 +29,10 @@ readonly GFT_SSOT_GEMOP_PATH="${GFT_SSOT_GEMOP_PATH:-${GFT_WORKSPACE}/gcs-plt-ge
 # Counters for the final report
 declare -i PASS_COUNT=0
 declare -i FAIL_COUNT=0
+
+# File-scope globals so sourcing the script never triggers set -u on unbound variables
+declare ROLE_MATRIX_YAML=""
+declare TOOLING_SPECS_YAML=""
 
 # --- Helper Functions ---
 # (A minimal set of helpers for this script)
@@ -39,9 +44,16 @@ check_fail() { echo -e "  \033[1;31m[FAIL]\033[0m $1"; FAIL_COUNT=$((FAIL_COUNT 
 
 # Extracts the YAML data block from a given SSoT markdown file.
 # $1: Path to the markdown file
+# $2: (optional) --optional — return empty + exit 0 if file absent instead of exit 1
 get_yaml_from_ssot() {
     local file_path="$1"
+    local optional=false
+    [[ "${2:-}" == "--optional" ]] && optional=true
     if [[ ! -f "$file_path" ]]; then
+        if $optional; then
+            echo ""
+            return 0
+        fi
         log_error "SSoT file not found: $file_path"
         exit 1
     fi
@@ -107,6 +119,10 @@ validate_tools_for_role() {
 # Checks for required repositories
 validate_repos_for_role() {
     local role_name="$1"
+    if [[ -z "${ROLE_MATRIX_YAML:-}" ]]; then
+        log_info "ROLE_MATRIX_YAML not loaded (non-interactive mode) — skipping repository validation."
+        return 0
+    fi
     local python_helper_script="${SCRIPT_DIR}/includes/get_role_repos.py"
     if [ ! -f "$python_helper_script" ]; then
         log_error "FATAL: Python helper for repos not found at $python_helper_script"
@@ -247,20 +263,30 @@ main() {
 
     log_info "Starting GenCr@ft Environment Validator..."
 
-    # Clone/update SSoT
-    if [ -d "$GFT_SSOT_PATH" ]; then (cd "$GFT_SSOT_PATH" && git pull); else git clone --depth 1 "$GFT_SSOT_REPO" "$GFT_SSOT_PATH"; fi
+    local selected_role_name=""
+    if [[ "${GFT_NON_INTERACTIVE:-}" != "true" ]]; then
+        # Clone/update SSoT
+        if [ -d "$GFT_SSOT_PATH" ]; then (cd "$GFT_SSOT_PATH" && git pull); else git clone --depth 1 "$GFT_SSOT_REPO" "$GFT_SSOT_PATH"; fi
 
-    # Load SSoT data
-    ROLE_MATRIX_YAML=$(get_yaml_from_ssot "$GFT_SSOT_PATH/$ROLE_MATRIX_FILE")
-    TOOLING_SPECS_YAML=$(get_yaml_from_ssot "$GFT_SSOT_PATH/$TOOLING_SPECS_FILE")
+        # Load SSoT data
+        ROLE_MATRIX_YAML=$(get_yaml_from_ssot "$GFT_SSOT_PATH/$ROLE_MATRIX_FILE")
+        TOOLING_SPECS_YAML=$(get_yaml_from_ssot "$GFT_SSOT_PATH/$TOOLING_SPECS_FILE" --optional)
 
-    # Select role
-    mapfile -t role_options < <(echo "$ROLE_MATRIX_YAML" | yq -r '.roles[] | select(.name != "common-base") | .name + ": " + .description')
-    log_info "Please select the role to validate your environment against:"
-    local selected_role_name
-    select role_choice in "${role_options[@]}"; do
-        if [[ -n "$role_choice" ]]; then selected_role_name=$(echo "$role_choice" | cut -d':' -f1); break; fi
-    done
+        # Select role
+        mapfile -t role_options < <(echo "$ROLE_MATRIX_YAML" | yq -r '.roles[] | select(.name != "common-base") | .name + ": " + .description')
+        log_info "Please select the role to validate your environment against:"
+        select role_choice in "${role_options[@]}"; do
+            if [[ -n "$role_choice" ]]; then selected_role_name=$(echo "$role_choice" | cut -d':' -f1); break; fi
+        done
+    else
+        ROLE_MATRIX_YAML=""
+        TOOLING_SPECS_YAML=""
+        selected_role_name="${GFT_ROLE:-}"
+        if [[ -z "$selected_role_name" ]]; then
+            log_info "GFT_NON_INTERACTIVE=true but GFT_ROLE not set — skipping role-specific validation."
+            selected_role_name="unknown"
+        fi
+    fi
 
     echo # Newline for readability
     log_info "--- Starting Validation for role: $selected_role_name ---"
@@ -287,4 +313,6 @@ main() {
 }
 
 # --- Script Execution ---
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

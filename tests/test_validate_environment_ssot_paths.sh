@@ -8,9 +8,10 @@ if [[ -z "${GFT_SSOT_PATH:-}" ]] || [[ ! -d "${GFT_SSOT_PATH}" ]]; then
 fi
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PASS_COUNT=0; FAIL_COUNT=0
+PASS_COUNT=0; FAIL_COUNT=0; SKIP_COUNT=0
 pass() { echo "  [OK] $1"; PASS_COUNT=$((PASS_COUNT+1)); }
 fail() { echo "  [FAIL] $1"; FAIL_COUNT=$((FAIL_COUNT+1)); }
+skip() { echo "  [SKIP] $1"; SKIP_COUNT=$((SKIP_COUNT+1)); }
 
 # AC-1: ROLE_MATRIX_FILE resolves to an existing file and returns parseable YAML
 test_role_matrix_file_resolves() {
@@ -45,7 +46,7 @@ test_tooling_specs_file_resolves_when_present() {
     fi
 
     if [[ ! -f "${GFT_SSOT_PATH}/${tooling_specs_file}" ]]; then
-        echo "  [SKIP] TOOLING_SPECS_FILE absent in this clone — AC-2 skipped"
+        skip "TOOLING_SPECS_FILE absent in this clone — AC-2 skipped"
         return 0
     fi
 
@@ -116,5 +117,5 @@ test_tooling_specs_file_resolves_when_present
 test_tooling_specs_absent_guard_logs_info
 
 echo ""
-echo "--- SSoT path integration: ${PASS_COUNT} passed, ${FAIL_COUNT} failed ---"
+echo "--- SSoT path integration: ${PASS_COUNT} passed, ${FAIL_COUNT} failed, ${SKIP_COUNT} skipped ---"
 [[ ${FAIL_COUNT} -eq 0 ]] && exit 0 || exit 1

@@ -123,12 +123,39 @@ test_cargo_install_failure() {
     log_success "[TEST SUITE] cargo install failure: PASSED"
 }
 
+# ==============================================================================
+# Cycle 4 — AC-5: npm/commitlint/hook_managers failure → no misleading message
+# ==============================================================================
+test_commitlint_and_hook_managers_failure() {
+    local checks_failed=0
+
+    npm() { return 1; }
+    export -f npm
+
+    local output_cl output_hm
+    output_cl=$(install_commitlint 2>&1) || true
+    output_hm=$(install_hook_managers 2>&1) || true
+
+    unset -f npm
+
+    [[ "$output_cl" != *"commitlint dependencies installed"* ]] || \
+        { log_error "FAIL: AC-5 commitlint: success message must not appear; got: $output_cl"; ((checks_failed++)); }
+    [[ "$output_cl" == *"commitlint installation via npm failed"* ]] || \
+        { log_error "FAIL: AC-5 commitlint: error message must appear; got: $output_cl"; ((checks_failed++)); }
+    [[ "$output_hm" != *"Global hook managers installation attempted"* ]] || \
+        { log_error "FAIL: AC-5 hook_managers: misleading 'attempted' message must not appear; got: $output_hm"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] commitlint and hook_managers npm failure: PASSED"
+}
+
 main() {
     local failed_suites=0
 
     test_install_rustup_curl_failure               || ((failed_suites++))
     test_install_rustup_chains_failure             || ((failed_suites++))
     test_cargo_install_failure                     || ((failed_suites++))
+    test_commitlint_and_hook_managers_failure      || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

@@ -170,8 +170,12 @@ install_wasm_pack() {
     if ! command -v cargo &>/dev/null; then
         log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
-    cargo install wasm-pack --locked
-    log_success "wasm-pack installed."
+    if cargo install wasm-pack --locked; then
+        log_success "wasm-pack installed."
+    else
+        log_error "wasm-pack installation via cargo failed. Check cargo output above."
+        return 1
+    fi
 }
 
 install_wasm_bindgen_cli() {
@@ -180,8 +184,12 @@ install_wasm_bindgen_cli() {
     if ! command -v cargo &>/dev/null; then
         log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
-    cargo install wasm-bindgen-cli --locked
-    log_success "wasm-bindgen-cli installed."
+    if cargo install wasm-bindgen-cli --locked; then
+        log_success "wasm-bindgen-cli installed."
+    else
+        log_error "wasm-bindgen-cli installation via cargo failed. Check cargo output above."
+        return 1
+    fi
 }
 
 

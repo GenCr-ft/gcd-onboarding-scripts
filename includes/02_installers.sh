@@ -112,9 +112,32 @@ install_aws_cli() {
 
 install_hook_managers() {
     log_info "Installing global hook managers (pre-commit, lint-staged)..."
-    if command -v npm &>/dev/null; then npm install -g lint-staged; else log_warn "npm not found, skipping lint-staged."; fi
-    if command -v pip3 &>/dev/null; then pip3 install --user pre-commit; else log_warn "pip3 not found, skipping pre-commit."; fi
-    log_success "Global hook managers installation attempted."
+    local any_failed=false
+    if command -v npm &>/dev/null; then
+        if npm install -g lint-staged; then
+            log_success "lint-staged installed."
+        else
+            log_warn "lint-staged installation via npm failed. Pre-commit hooks may not work."
+            any_failed=true
+        fi
+    else
+        log_warn "npm not found, skipping lint-staged."
+    fi
+    if command -v pip3 &>/dev/null; then
+        if pip3 install --user pre-commit; then
+            log_success "pre-commit installed."
+        else
+            log_warn "pre-commit installation via pip3 failed. Git hooks may not work."
+            any_failed=true
+        fi
+    else
+        log_warn "pip3 not found, skipping pre-commit."
+    fi
+    if $any_failed; then
+        log_warn "One or more hook managers failed to install (see above). Git hooks may not function correctly."
+    else
+        log_info "Hook manager installation complete."
+    fi
 }
 
 verify_docker() {
@@ -129,8 +152,12 @@ verify_docker() {
 install_commitlint() {
     log_info "Installing global npm packages for commitlint..."
     if ! command -v npm &>/dev/null; then log_error "npm is required to install commitlint." && return 1; fi
-    npm install -g @commitlint/cli @commitlint/config-conventional
-    log_success "commitlint dependencies installed."
+    if npm install -g @commitlint/cli @commitlint/config-conventional; then
+        log_success "commitlint dependencies installed."
+    else
+        log_error "commitlint installation via npm failed. Check npm output above."
+        return 1
+    fi
 }
 
 install_rustup() {

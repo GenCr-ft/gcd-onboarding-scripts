@@ -94,11 +94,41 @@ test_install_rustup_chains_failure() {
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
+# ==============================================================================
+# Cycle 3 — AC-4: cargo install fails → no success, [ERROR] present
+# ==============================================================================
+test_cargo_install_failure() {
+    local checks_failed=0
+
+    cargo() { return 1; }
+    export -f cargo
+
+    # Restrict PATH to exclude ~/.cargo/bin so already-installed checks do not short-circuit
+    local output_wp output_wbc
+    output_wp=$(PATH="/usr/bin:/bin" install_wasm_pack 2>&1) || true
+    output_wbc=$(PATH="/usr/bin:/bin" install_wasm_bindgen_cli 2>&1) || true
+
+    unset -f cargo
+
+    [[ "$output_wp" != *"wasm-pack installed"* ]] || \
+        { log_error "FAIL: AC-4 wasm-pack: success message must not appear; got: $output_wp"; ((checks_failed++)); }
+    [[ "$output_wp" == *"cargo failed"* ]] || \
+        { log_error "FAIL: AC-4 wasm-pack: error message must appear; got: $output_wp"; ((checks_failed++)); }
+    [[ "$output_wbc" != *"wasm-bindgen-cli installed"* ]] || \
+        { log_error "FAIL: AC-4 wasm-bindgen-cli: success message must not appear; got: $output_wbc"; ((checks_failed++)); }
+    [[ "$output_wbc" == *"cargo failed"* ]] || \
+        { log_error "FAIL: AC-4 wasm-bindgen-cli: error message must appear; got: $output_wbc"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] cargo install failure: PASSED"
+}
+
 main() {
     local failed_suites=0
 
     test_install_rustup_curl_failure               || ((failed_suites++))
     test_install_rustup_chains_failure             || ((failed_suites++))
+    test_cargo_install_failure                     || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

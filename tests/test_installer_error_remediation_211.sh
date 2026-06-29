@@ -43,12 +43,36 @@ test_install_node_empty_version_guard() {
 }
 
 # ==============================================================================
+# Cycle 2 — AC-2: nvm chain failure → no [SUCCESS], [ERROR] present
+# ==============================================================================
+test_install_node_nvm_chain_failure() {
+    local checks_failed=0
+    local tmp_home; tmp_home=$(mktemp -d)
+    trap 'rm -rf "$tmp_home"' RETURN
+    mkdir -p "$tmp_home/.nvm"
+    # File-based stub: '. "$HOME/.nvm/nvm.sh"' overrides any bash-function stub set before call.
+    printf '#!/usr/bin/env bash\nnvm() { return 1; }\n' > "$tmp_home/.nvm/nvm.sh"
+
+    local output
+    output=$(HOME="$tmp_home" install_node "20.0.0" 2>&1) || true
+
+    [[ "$output" != *"installed and set as default"* ]] || \
+        { log_error "FAIL: AC-2: success message must not appear when nvm fails; got: $output"; ((checks_failed++)); }
+    [[ "$output" == *"installation via nvm failed"* ]] || \
+        { log_error "FAIL: AC-2: error message must appear when nvm fails; got: $output"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] install_node nvm chain failure: PASSED"
+}
+
+# ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
 main() {
     local failed_suites=0
 
     test_install_node_empty_version_guard          || ((failed_suites++))
+    test_install_node_nvm_chain_failure            || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

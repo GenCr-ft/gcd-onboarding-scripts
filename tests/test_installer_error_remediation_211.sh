@@ -68,11 +68,50 @@ test_install_node_nvm_chain_failure() {
 # ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
+# ==============================================================================
+# Cycle 3 — AC-3: pyenv missing → [ERROR] + install URL; dispatcher || trap fixed
+# ==============================================================================
+test_install_python_pyenv_missing() {
+    local checks_failed=0
+
+    local output
+    output=$(PATH="/usr/bin:/bin" install_python "3.11.5" 2>&1) || true
+
+    [[ "$output" == *"https://pyenv.run"* ]] || \
+        { log_error "FAIL: AC-3: expected pyenv install URL; got: $output"; ((checks_failed++)); }
+    [[ "$output" != *"installed and set as global default"* ]] || \
+        { log_error "FAIL: AC-3: success message must not appear; got: $output"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] install_python pyenv missing: PASSED"
+}
+
+# Dispatcher: failing install_python must NOT emit the "No version" warning
+test_dispatcher_python_failure_no_false_warn() {
+    local checks_failed=0
+
+    # Override install_python to simulate failure; version IS available from SSoT stub
+    install_python() { return 1; }
+
+    local output
+    output=$(install_tool "python" 2>&1) || true
+
+    unset -f install_python
+
+    [[ "$output" != *"No version for 'python' in SSoT"* ]] || \
+        { log_error "FAIL: AC-3b: dispatcher emitted false [WARN] on installer failure; got: $output"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] dispatcher python failure no false warn: PASSED"
+}
+
 main() {
     local failed_suites=0
 
     test_install_node_empty_version_guard          || ((failed_suites++))
     test_install_node_nvm_chain_failure            || ((failed_suites++))
+    test_install_python_pyenv_missing              || ((failed_suites++))
+    test_dispatcher_python_failure_no_false_warn   || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

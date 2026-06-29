@@ -169,6 +169,48 @@ test_dispatcher_opentofu_failure_no_false_warn() {
     log_success "[TEST SUITE] dispatcher opentofu failure no false warn: PASSED"
 }
 
+# ==============================================================================
+# Cycle 6 — AC-7 + AC-8: configure_gft_cli PATH/source guidance
+# ==============================================================================
+test_configure_gft_cli_path_guidance() {
+    local checks_failed=0
+    local tmp_home; tmp_home=$(mktemp -d)
+    local tmp_workspace; tmp_workspace=$(mktemp -d)
+    local plt_root="$tmp_workspace/gcs-plt-tools"
+    local orig_home="$HOME" orig_ws="${GFT_PROJECTS_HOME:-}" orig_path="$PATH"
+    local output_file; output_file=$(mktemp)
+    trap 'export HOME="$orig_home" GFT_PROJECTS_HOME="$orig_ws" PATH="$orig_path"; rm -rf "$tmp_home" "$tmp_workspace" "$output_file"' RETURN
+
+    mkdir -p "$plt_root"
+    cat > "$plt_root/onboard.sh" <<'MOCK'
+#!/usr/bin/env bash
+mkdir -p "$HOME/.local/bin"
+printf '#!/usr/bin/env bash\n[[ "${1:-}" == "version" ]] && echo "2.0.0" && exit 0\n' \
+    > "$HOME/.local/bin/gft"
+chmod +x "$HOME/.local/bin/gft"
+MOCK
+    chmod +x "$plt_root/onboard.sh"
+
+    export HOME="$tmp_home"
+    export GFT_PROJECTS_HOME="$tmp_workspace"
+    export PATH="/usr/bin:/bin"
+
+    # AC-7: bash shell — BASH_VERSION is naturally set in this bash process
+    configure_gft_cli >"$output_file" 2>&1 || true
+    local output_7; output_7=$(<"$output_file")
+    [[ "$output_7" == *"source"*".bashrc"* ]] || \
+        { log_error "FAIL: AC-7: source .bashrc guidance not found; got: $output_7"; ((checks_failed++)); }
+
+    # AC-8: no known shell — GFT_SHELL_PROFILE="" forces the empty-profile branch
+    GFT_SHELL_PROFILE="" configure_gft_cli >"$output_file" 2>&1 || true
+    local output_8; output_8=$(<"$output_file")
+    [[ "$output_8" == *"export PATH"* ]] || \
+        { log_error "FAIL: AC-8: export PATH guidance not found; got: $output_8"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] configure_gft_cli PATH guidance: PASSED"
+}
+
 main() {
     local failed_suites=0
 
@@ -177,6 +219,7 @@ main() {
     test_cargo_install_failure                     || ((failed_suites++))
     test_commitlint_and_hook_managers_failure      || ((failed_suites++))
     test_dispatcher_opentofu_failure_no_false_warn || ((failed_suites++))
+    test_configure_gft_cli_path_guidance           || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

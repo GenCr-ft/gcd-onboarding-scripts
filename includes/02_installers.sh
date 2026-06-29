@@ -334,7 +334,14 @@ install_tool() {
                 install_python "$version"
             fi
             ;;
-        opentofu) version=$(get_ssot_tool_version "opentofu"); [ -n "$version" ] && install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu" || log_warn "No version for 'opentofu' in SSoT.";;
+        opentofu)
+            version=$(get_ssot_tool_version "opentofu")
+            if [[ -z "$version" ]]; then
+                log_warn "No version for 'opentofu' in SSoT — skipping opentofu installation."
+            else
+                install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu"
+            fi
+            ;;
         gft-cli) install_gft_cli ;;
         aws-cli) install_aws_cli ;;
         git-hooks-managers) install_hook_managers ;;

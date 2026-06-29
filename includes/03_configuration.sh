@@ -87,8 +87,15 @@ setup_ssh_key() {
             return 1
         fi
         log_info "Adding SSH key to GitHub..."
-        gh ssh-key add "$ssh_key_path.pub" --title "Onboarding-$(hostname)"
-        log_success "SSH key added to GitHub account."
+        local gh_output gh_exit=0
+        gh_output=$(gh ssh-key add "$ssh_key_path.pub" --title "Onboarding-$(hostname)" 2>&1) || gh_exit=$?
+        if [[ $gh_exit -eq 0 ]]; then
+            log_success "SSH key added to GitHub account."
+        else
+            log_error "Failed to add SSH key to GitHub (exit $gh_exit): $gh_output"
+            log_info "  If this is a scope error, refresh your token:"
+            log_info "    gh auth refresh -h github.com -s admin:public_key"
+        fi
     fi
 }
 

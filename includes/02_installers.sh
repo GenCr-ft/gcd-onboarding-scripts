@@ -112,9 +112,32 @@ install_aws_cli() {
 
 install_hook_managers() {
     log_info "Installing global hook managers (pre-commit, lint-staged)..."
-    if command -v npm &>/dev/null; then npm install -g lint-staged; else log_warn "npm not found, skipping lint-staged."; fi
-    if command -v pip3 &>/dev/null; then pip3 install --user pre-commit; else log_warn "pip3 not found, skipping pre-commit."; fi
-    log_success "Global hook managers installation attempted."
+    local any_failed=false
+    if command -v npm &>/dev/null; then
+        if npm install -g lint-staged; then
+            log_success "lint-staged installed."
+        else
+            log_warn "lint-staged installation via npm failed. Pre-commit hooks may not work."
+            any_failed=true
+        fi
+    else
+        log_warn "npm not found, skipping lint-staged."
+    fi
+    if command -v pip3 &>/dev/null; then
+        if pip3 install --user pre-commit; then
+            log_success "pre-commit installed."
+        else
+            log_warn "pre-commit installation via pip3 failed. Git hooks may not work."
+            any_failed=true
+        fi
+    else
+        log_warn "pip3 not found, skipping pre-commit."
+    fi
+    if $any_failed; then
+        log_warn "One or more hook managers failed to install (see above). Git hooks may not function correctly."
+    else
+        log_info "Hook manager installation complete."
+    fi
 }
 
 verify_docker() {
@@ -129,23 +152,43 @@ verify_docker() {
 install_commitlint() {
     log_info "Installing global npm packages for commitlint..."
     if ! command -v npm &>/dev/null; then log_error "npm is required to install commitlint." && return 1; fi
-    npm install -g @commitlint/cli @commitlint/config-conventional
-    log_success "commitlint dependencies installed."
+    if npm install -g @commitlint/cli @commitlint/config-conventional; then
+        log_success "commitlint dependencies installed."
+    else
+        log_error "commitlint installation via npm failed. Check npm output above."
+        return 1
+    fi
 }
 
 install_rustup() {
     log_info "Installing Rust toolchain via rustup..."
     if command -v rustup &>/dev/null; then
         log_info "rustup is already installed. Running rustup update..."
-        rustup update stable && rustup target add wasm32-unknown-unknown
-        log_success "Rust toolchain updated."
+        if rustup update stable && rustup target add wasm32-unknown-unknown; then
+            log_success "Rust toolchain updated."
+        else
+            log_error "Rust toolchain update failed. Check rustup output above."
+            return 1
+        fi
         return 0
     fi
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    if ! curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable; then
+        log_error "rustup installer failed. Install manually: https://rustup.rs"
+        log_info "  After installation, restart your shell and re-run this script."
+        return 1
+    fi
     # shellcheck source=/dev/null
-    [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-    rustup target add wasm32-unknown-unknown
-    log_success "Rust stable toolchain installed with wasm32-unknown-unknown target."
+    if [ ! -f "$HOME/.cargo/env" ]; then
+        log_warn "~/.cargo/env not found after rustup install — PATH may not include ~/.cargo/bin."
+    else
+        . "$HOME/.cargo/env"
+    fi
+    if rustup target add wasm32-unknown-unknown; then
+        log_success "Rust stable toolchain installed with wasm32-unknown-unknown target."
+    else
+        log_error "rustup installed but 'rustup target add wasm32-unknown-unknown' failed. Check rustup output above."
+        return 1
+    fi
 }
 
 install_wasm_pack() {
@@ -154,8 +197,12 @@ install_wasm_pack() {
     if ! command -v cargo &>/dev/null; then
         log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
-    cargo install wasm-pack --locked
-    log_success "wasm-pack installed."
+    if cargo install wasm-pack --locked; then
+        log_success "wasm-pack installed."
+    else
+        log_error "wasm-pack installation via cargo failed. Check cargo output above."
+        return 1
+    fi
 }
 
 install_wasm_bindgen_cli() {
@@ -164,8 +211,12 @@ install_wasm_bindgen_cli() {
     if ! command -v cargo &>/dev/null; then
         log_error "cargo not found. Please ensure the Rust toolchain is installed via 'install_rustup'." && return 1
     fi
-    cargo install wasm-bindgen-cli --locked
-    log_success "wasm-bindgen-cli installed."
+    if cargo install wasm-bindgen-cli --locked; then
+        log_success "wasm-bindgen-cli installed."
+    else
+        log_error "wasm-bindgen-cli installation via cargo failed. Check cargo output above."
+        return 1
+    fi
 }
 
 
@@ -283,7 +334,14 @@ install_tool() {
                 install_python "$version"
             fi
             ;;
-        opentofu) version=$(get_ssot_tool_version "opentofu"); [ -n "$version" ] && install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu" || log_warn "No version for 'opentofu' in SSoT.";;
+        opentofu)
+            version=$(get_ssot_tool_version "opentofu")
+            if [[ -z "$version" ]]; then
+                log_warn "No version for 'opentofu' in SSoT — skipping opentofu installation."
+            else
+                install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu"
+            fi
+            ;;
         gft-cli) install_gft_cli ;;
         aws-cli) install_aws_cli ;;
         git-hooks-managers) install_hook_managers ;;

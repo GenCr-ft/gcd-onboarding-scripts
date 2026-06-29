@@ -48,12 +48,57 @@ test_install_rustup_curl_failure() {
 }
 
 # ==============================================================================
+# Cycle 2 — AC-2+AC-3: rustup chains fail → no success message, error emitted
+# ==============================================================================
+test_install_rustup_chains_failure() {
+    local checks_failed=0
+
+    # AC-2: new-install path — rustup absent from PATH; curl succeeds; .cargo/env
+    # defines a rustup() that fails on 'target add'.
+    local tmp_home; tmp_home=$(mktemp -d)
+    trap 'rm -rf "$tmp_home"' RETURN
+    curl() { return 0; }
+    export -f curl
+    mkdir -p "$tmp_home/.cargo"
+    printf 'rustup() { [[ "${1:-}" == "target" ]] && return 1; return 0; }\nexport -f rustup\n' \
+        > "$tmp_home/.cargo/env"
+
+    local output
+    output=$(set -o pipefail; HOME="$tmp_home" PATH="/usr/bin:/bin" install_rustup 2>&1) || true
+
+    unset -f curl rustup
+
+    [[ "$output" != *"Rust stable toolchain installed"* ]] || \
+        { log_error "FAIL: AC-2: success message must not appear when target add fails; got: $output"; ((checks_failed++)); }
+    [[ "$output" == *"target add wasm32-unknown-unknown"*"failed"* ]] || \
+        { log_error "FAIL: AC-2: error message must appear when target add fails; got: $output"; ((checks_failed++)); }
+
+    # AC-3: existing-rustup path — rustup update fails
+    rustup() { return 1; }
+    export -f rustup
+
+    local output3
+    output3=$(install_rustup 2>&1) || true
+
+    unset -f rustup
+
+    [[ "$output3" != *"Rust toolchain updated"* ]] || \
+        { log_error "FAIL: AC-3: success message must not appear when rustup update fails; got: $output3"; ((checks_failed++)); }
+    [[ "$output3" == *"update failed"* ]] || \
+        { log_error "FAIL: AC-3: error message must appear when rustup update fails; got: $output3"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] install_rustup chains failure: PASSED"
+}
+
+# ==============================================================================
 # --- Test Runner ---
 # ==============================================================================
 main() {
     local failed_suites=0
 
     test_install_rustup_curl_failure               || ((failed_suites++))
+    test_install_rustup_chains_failure             || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

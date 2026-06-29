@@ -271,7 +271,9 @@ configure_gft_cli() {
     local workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
 
     local shell_profile_file=""
-    if [ -n "${BASH_VERSION:-}" ]; then
+    if [[ "${GFT_SHELL_PROFILE+x}" == "x" ]]; then
+        shell_profile_file="${GFT_SHELL_PROFILE}"
+    elif [ -n "${BASH_VERSION:-}" ]; then
         shell_profile_file="$HOME/.bashrc"
     elif [ -n "${ZSH_VERSION:-}" ]; then
         shell_profile_file="$HOME/.zshrc"
@@ -302,7 +304,19 @@ configure_gft_cli() {
     export GFT_PLT_ROOT="$plt_root"
     export GFT_WORKSPACE="$workspace"
 
-    log_success "gft CLI configured. GFT_PLT_ROOT=$plt_root"
+    if [[ -n "$shell_profile_file" ]]; then
+        log_success "gft CLI configured. Run the following to activate gft in new terminals:"
+        log_info ""
+        log_info "  source ${shell_profile_file}"
+        log_info ""
+    else
+        log_success "gft CLI configured."
+        log_warn "Shell profile not detected (not bash or zsh)."
+        log_info "Add this line to your shell's startup file to make gft permanent:"
+        log_info ""
+        log_info "  export PATH=\"\$HOME/.local/bin:\$PATH\""
+        log_info ""
+    fi
 }
 
 final_validation() {

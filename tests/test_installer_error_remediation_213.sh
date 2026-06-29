@@ -33,7 +33,8 @@ test_install_rustup_curl_failure() {
     export -f curl
 
     local output
-    output=$(HOME="$tmp_home" PATH="/usr/bin:/bin" install_rustup 2>&1) || true
+    # pipefail: make the curl|sh pipeline honour curl's exit code
+    output=$(set -o pipefail; HOME="$tmp_home" PATH="/usr/bin:/bin" install_rustup 2>&1) || true
 
     unset -f curl
 

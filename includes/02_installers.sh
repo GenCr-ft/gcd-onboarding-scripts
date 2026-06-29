@@ -137,15 +137,31 @@ install_rustup() {
     log_info "Installing Rust toolchain via rustup..."
     if command -v rustup &>/dev/null; then
         log_info "rustup is already installed. Running rustup update..."
-        rustup update stable && rustup target add wasm32-unknown-unknown
-        log_success "Rust toolchain updated."
+        if rustup update stable && rustup target add wasm32-unknown-unknown; then
+            log_success "Rust toolchain updated."
+        else
+            log_error "Rust toolchain update failed. Check rustup output above."
+            return 1
+        fi
         return 0
     fi
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    if ! curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable; then
+        log_error "rustup installer failed. Install manually: https://rustup.rs"
+        log_info "  After installation, restart your shell and re-run this script."
+        return 1
+    fi
     # shellcheck source=/dev/null
-    [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
-    rustup target add wasm32-unknown-unknown
-    log_success "Rust stable toolchain installed with wasm32-unknown-unknown target."
+    if [ ! -f "$HOME/.cargo/env" ]; then
+        log_warn "~/.cargo/env not found after rustup install — PATH may not include ~/.cargo/bin."
+    else
+        . "$HOME/.cargo/env"
+    fi
+    if rustup target add wasm32-unknown-unknown; then
+        log_success "Rust stable toolchain installed with wasm32-unknown-unknown target."
+    else
+        log_error "rustup installed but 'rustup target add wasm32-unknown-unknown' failed. Check rustup output above."
+        return 1
+    fi
 }
 
 install_wasm_pack() {

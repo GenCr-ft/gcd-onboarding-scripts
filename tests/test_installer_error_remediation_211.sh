@@ -105,6 +105,35 @@ test_dispatcher_python_failure_no_false_warn() {
     log_success "[TEST SUITE] dispatcher python failure no false warn: PASSED"
 }
 
+# ==============================================================================
+# Cycle 4 — AC-4: gh ssh-key add fails → guidance includes gh auth refresh
+# ==============================================================================
+test_setup_ssh_key_gh_failure_guidance() {
+    local checks_failed=0
+    local tmp_home; tmp_home=$(mktemp -d)
+    trap 'rm -rf "$tmp_home"' RETURN
+
+    # Create fake SSH key so the keygen path is skipped
+    mkdir -p "$tmp_home/.ssh"
+    touch "$tmp_home/.ssh/id_ed25519"
+    touch "$tmp_home/.ssh/id_ed25519.pub"
+
+    # Stub gh to fail
+    gh() { echo "HTTP 401: Bad credentials" >&2; return 1; }
+    export -f gh
+
+    local output
+    output=$(HOME="$tmp_home" setup_ssh_key 2>&1) || true
+
+    unset -f gh
+
+    [[ "$output" == *"gh auth refresh"*"-s admin:public_key"* ]] || \
+        { log_error "FAIL: AC-4: expected 'gh auth refresh -s admin:public_key' guidance; got: $output"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] setup_ssh_key gh failure guidance: PASSED"
+}
+
 main() {
     local failed_suites=0
 
@@ -112,6 +141,7 @@ main() {
     test_install_node_nvm_chain_failure            || ((failed_suites++))
     test_install_python_pyenv_missing              || ((failed_suites++))
     test_dispatcher_python_failure_no_false_warn   || ((failed_suites++))
+    test_setup_ssh_key_gh_failure_guidance         || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

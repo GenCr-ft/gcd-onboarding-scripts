@@ -60,9 +60,17 @@ install_node() {
 install_python() {
     local version="$1"
     log_info "Installing Python version '$version' via pyenv..."
-    if ! command -v pyenv &>/dev/null; then log_error "pyenv not found." && return 1; fi
-    pyenv install -s "$version" && pyenv global "$version"
-    log_success "Python $version installed and set as global default."
+    if ! command -v pyenv &>/dev/null; then
+        log_error "pyenv not found. Install: curl https://pyenv.run | bash"
+        log_info "  After installation, restart your shell and re-run this script."
+        return 1
+    fi
+    if pyenv install -s "$version" && pyenv global "$version"; then
+        log_success "Python $version installed and set as global default."
+    else
+        log_error "Python '$version' installation via pyenv failed. Check pyenv output above."
+        return 1
+    fi
 }
 
 install_binary_from_github() {
@@ -259,8 +267,22 @@ install_tool() {
         shellcheck) install_with_package_manager "shellcheck" ;;
         docker) verify_docker ;;
         commitlint) install_commitlint ;;
-        node-lts) version=$(get_ssot_tool_version "nodejs"); [ -n "$version" ] && install_node "$version" || log_warn "No version for 'nodejs' in SSoT.";;
-        python) version=$(get_ssot_tool_version "python"); [ -n "$version" ] && install_python "$version" || log_warn "No version for 'python' in SSoT.";;
+        node-lts)
+            version=$(get_ssot_tool_version "nodejs")
+            if [[ -z "$version" ]]; then
+                log_warn "No version for 'nodejs' in SSoT — skipping node-lts installation."
+            else
+                install_node "$version"
+            fi
+            ;;
+        python)
+            version=$(get_ssot_tool_version "python")
+            if [[ -z "$version" ]]; then
+                log_warn "No version for 'python' in SSoT — skipping python installation."
+            else
+                install_python "$version"
+            fi
+            ;;
         opentofu) version=$(get_ssot_tool_version "opentofu"); [ -n "$version" ] && install_binary_from_github "opentofu" "$version" "opentofu/opentofu" "tofu" || log_warn "No version for 'opentofu' in SSoT.";;
         gft-cli) install_gft_cli ;;
         aws-cli) install_aws_cli ;;

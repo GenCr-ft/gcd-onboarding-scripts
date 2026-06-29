@@ -149,6 +149,26 @@ test_commitlint_and_hook_managers_failure() {
     log_success "[TEST SUITE] commitlint and hook_managers npm failure: PASSED"
 }
 
+# ==============================================================================
+# Cycle 5 — AC-6: opentofu dispatcher || trap → no false "No version" warn
+# ==============================================================================
+test_dispatcher_opentofu_failure_no_false_warn() {
+    local checks_failed=0
+
+    install_binary_from_github() { return 1; }
+
+    local output
+    output=$(install_tool "opentofu" 2>&1) || true
+
+    unset -f install_binary_from_github
+
+    [[ "$output" != *"No version for 'opentofu' in SSoT"* ]] || \
+        { log_error "FAIL: AC-6: false 'No version' warn must not appear on installer failure; got: $output"; ((checks_failed++)); }
+
+    if [[ $checks_failed -ne 0 ]]; then return 1; fi
+    log_success "[TEST SUITE] dispatcher opentofu failure no false warn: PASSED"
+}
+
 main() {
     local failed_suites=0
 
@@ -156,6 +176,7 @@ main() {
     test_install_rustup_chains_failure             || ((failed_suites++))
     test_cargo_install_failure                     || ((failed_suites++))
     test_commitlint_and_hook_managers_failure      || ((failed_suites++))
+    test_dispatcher_opentofu_failure_no_false_warn || ((failed_suites++))
 
     echo "-------------------------------------------"
     if [[ $failed_suites -ne 0 ]]; then

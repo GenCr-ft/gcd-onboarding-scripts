@@ -35,11 +35,26 @@ detect_os_arch() {
 # --- Specific SSoT-driven Tool Installers ---
 
 install_node() {
-    local version="$1"; local nvm_version_string; nvm_version_string=$(echo "$version" | sed 's/-/\\//')
+    local version="$1"
+    local nvm_version_string
+    nvm_version_string=$(echo "$version" | sed 's/-/\//')
+    if [[ -z "$nvm_version_string" ]]; then
+        log_error "Node.js version not specified — check role tooling matrix in SSoT (GOV-GUIDE-010)."
+        return 1
+    fi
     log_info "Installing Node.js version '$nvm_version_string' via nvm..."
-    if [ ! -s "$HOME/.nvm/nvm.sh" ]; then log_error "nvm not found." && return 1; fi
-    . "$HOME/.nvm/nvm.sh" && nvm install "$nvm_version_string" && nvm alias default "$nvm_version_string"
-    log_success "Node.js $version installed and set as default."
+    if [ ! -s "$HOME/.nvm/nvm.sh" ]; then
+        log_error "nvm not found. Install: https://github.com/nvm-sh/nvm#installing-and-updating"
+        return 1
+    fi
+    # shellcheck source=/dev/null
+    . "$HOME/.nvm/nvm.sh"
+    if nvm install "$nvm_version_string" && nvm alias default "$nvm_version_string"; then
+        log_success "Node.js $version installed and set as default."
+    else
+        log_error "Node.js '$nvm_version_string' installation via nvm failed."
+        return 1
+    fi
 }
 
 install_python() {

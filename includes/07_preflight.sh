@@ -31,12 +31,14 @@ PREFLIGHT_RESULTS=()
 # Each line format: "display_label:cmd:min_major:pkg"
 # min_major empty = any version accepted
 _pf_workspace_checks_for() {
-    case "${1:-}" in
-        aethel|agent-factory)
+    # Accept canonical or legacy ids (ENG-ADR-087) by canonicalizing first.
+    local ws; ws="$(canonicalize_workspace "${1:-}" 2>/dev/null)" || ws="${1:-}"
+    case "$ws" in
+        aethel|agent-ecosystem)
             printf '%s\n' "node >= 20:node:20:nodejs" "docker:docker::docker" ;;
-        evai-platform)
+        gft-platform)
             printf '%s\n' "node >= 20:node:20:nodejs" "docker:docker::docker" "cargo (rust):cargo::cargo" ;;
-        workspace-ops|studio-gencraft)
+        onboarding)
             printf '%s\n' "node >= 20:node:20:nodejs" ;;
         *) ;;
     esac

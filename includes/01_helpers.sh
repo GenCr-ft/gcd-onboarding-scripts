@@ -83,41 +83,49 @@ confirm_action() {
 
 # --- CLI / Quickstart Helpers ---
 
+# Four canonical workspaces (ENG-ADR-087). Legacy ids remain accepted as aliases
+# and are canonicalized transparently for backward compatibility.
 valid_workspaces() {
     printf '%s\n' \
         "aethel" \
-        "evai-platform" \
-        "agent-factory" \
-        "workspace-ops" \
-        "studio-gencraft"
+        "gft-platform" \
+        "onboarding" \
+        "agent-ecosystem"
 }
 
 format_valid_workspaces() {
-    printf '%s' "aethel, evai-platform, agent-factory, workspace-ops, studio-gencraft"
+    printf '%s' "aethel, gft-platform, onboarding, agent-ecosystem"
 }
 
-is_valid_workspace() {
-    local workspace="$1"
-    case "$workspace" in
-        aethel|evai-platform|agent-factory|workspace-ops|studio-gencraft) return 0 ;;
+# canonicalize_workspace <id> — echo the canonical id for a canonical or legacy id.
+# Returns 1 (and echoes nothing) for an unknown id.
+canonicalize_workspace() {
+    case "$1" in
+        aethel)                          printf '%s\n' "aethel" ;;
+        gft-platform|evai-platform|studio-gencraft) printf '%s\n' "gft-platform" ;;
+        onboarding|workspace-ops)        printf '%s\n' "onboarding" ;;
+        agent-ecosystem|agent-factory)   printf '%s\n' "agent-ecosystem" ;;
         *) return 1 ;;
     esac
 }
 
+is_valid_workspace() {
+    canonicalize_workspace "$1" >/dev/null 2>&1
+}
+
 workspace_role() {
-    local workspace="$1"
+    local workspace; workspace="$(canonicalize_workspace "$1")" || return 1
     case "$workspace" in
-        aethel) printf '%s\n' "rendering-engine-developer" ;;
-        evai-platform) printf '%s\n' "lead-developer-tech-lead" ;;
-        agent-factory) printf '%s\n' "game-designer" ;;
-        workspace-ops) printf '%s\n' "devops-specialist" ;;
-        studio-gencraft) printf '%s\n' "producer-project-manager" ;;
+        aethel)          printf '%s\n' "rendering-engine-developer" ;;
+        gft-platform)    printf '%s\n' "lead-developer-tech-lead" ;;
+        onboarding)      printf '%s\n' "devops-specialist" ;;
+        agent-ecosystem) printf '%s\n' "game-designer" ;;
         *) return 1 ;;
     esac
 }
 
 workspace_repositories() {
-    local workspace="$1"
+    local workspace; workspace="$(canonicalize_workspace "$1")" || return 1
     case "$workspace" in
         aethel)
             printf '%s\n' \
@@ -128,33 +136,30 @@ workspace_repositories() {
                 "gcl-srv-persistence" \
                 "gcp-aethel-backlog"
             ;;
-        evai-platform)
+        gft-platform)
             printf '%s\n' \
                 "gcs-plt-tools" \
                 "gcs-plt-docs-req" \
-                "gcs-plt-architecture"
-            ;;
-        agent-factory)
-            printf '%s\n' \
-                "gcs-plt-gemop" \
-                "gcs-plt-gembp" \
-                "gcs-plt-tools"
-            ;;
-        workspace-ops)
-            printf '%s\n' \
-                "gcd-onboarding-scripts" \
-                "gcd-ops-scripts" \
-                "gcd-shared-actions" \
-                "gencraft-iac"
-            ;;
-        studio-gencraft)
-            printf '%s\n' \
+                "gcs-plt-architecture" \
                 "gcs-core-governance" \
                 "gcs-engineering-handbook" \
                 "gcs-security-core" \
                 "gcs-studio-legal" \
                 "gcs-project-management" \
                 "gencr-ft.github.io"
+            ;;
+        onboarding)
+            printf '%s\n' \
+                "gcd-onboarding-scripts" \
+                "gcd-ops-scripts" \
+                "gcd-shared-actions" \
+                "gencraft-iac"
+            ;;
+        agent-ecosystem)
+            printf '%s\n' \
+                "gcs-plt-gemop" \
+                "gcs-plt-gembp" \
+                "gcs-plt-tools"
             ;;
         *) return 1 ;;
     esac
@@ -169,10 +174,9 @@ Usage:
 
 Workspaces:
   aethel
-  evai-platform
-  agent-factory
-  workspace-ops
-  studio-gencraft
+  gft-platform      (legacy aliases: evai-platform, studio-gencraft)
+  onboarding        (legacy alias: workspace-ops)
+  agent-ecosystem   (legacy alias: agent-factory)
 EOF
 }
 
@@ -249,7 +253,7 @@ parse_cli_args() {
         fi
         GFT_QUICKSTART="true"
         GFT_NON_INTERACTIVE="true"
-        GFT_WORKSPACE="$workspace"
+        GFT_WORKSPACE="$(canonicalize_workspace "$workspace")"
         if [[ -z "$role" ]]; then
             role="$(workspace_role "$workspace")"
         fi
@@ -259,7 +263,7 @@ parse_cli_args() {
             log_error "Unknown workspace '$workspace'. Valid workspaces: $(format_valid_workspaces)"
             return 1
         fi
-        GFT_WORKSPACE="$workspace"
+        GFT_WORKSPACE="$(canonicalize_workspace "$workspace")"
         export GFT_WORKSPACE
     fi
 

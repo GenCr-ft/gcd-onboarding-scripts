@@ -158,7 +158,8 @@ workspace_repositories() {
         agent-ecosystem)
             printf '%s\n' \
                 "gcs-plt-gemop" \
-                "gcs-plt-gembp"
+                "gcs-plt-gembp" \
+                "gcs-plt-tools"
             ;;
         *) return 1 ;;
     esac

@@ -540,7 +540,7 @@ test_workspace_quickstart_contract() {
     local help_err;     help_err=$(mktemp)
     trap "rm -f '$ws_parse_out' '$ws_parse_err' '$help_out' '$help_err'; trap - RETURN" RETURN
 
-    for workspace in aethel evai-platform agent-factory workspace-ops studio-gencraft; do
+    for workspace in aethel gft-platform onboarding agent-ecosystem; do
         if ! parse_cli_args --quickstart --workspace "$workspace"; then
             log_error "FAIL: valid workspace '$workspace' was rejected."
             ((checks_failed++))

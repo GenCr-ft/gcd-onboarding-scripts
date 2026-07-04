@@ -89,8 +89,31 @@ test_help_shows_canonical() {
     unset GFT_SHOW_HELP_ONLY
 }
 
+# Back-compat: no repo that a legacy workspace previously cloned may be dropped
+# after canonicalization (adversary IMPL-REVIEW FINDING-01).
+test_legacy_repo_sets_preserved() {
+    log_info "[TEST] legacy repo sets preserved (no repo dropped) under canonicalization"
+    # legacy_id : space-separated repos the pre-remap implementation provided
+    local -A LEGACY=(
+        [evai-platform]="gcs-plt-tools gcs-plt-docs-req gcs-plt-architecture"
+        [agent-factory]="gcs-plt-gemop gcs-plt-gembp gcs-plt-tools"
+        [workspace-ops]="gcd-onboarding-scripts gcd-ops-scripts gcd-shared-actions gencraft-iac"
+        [studio-gencraft]="gcs-core-governance gcs-engineering-handbook gcs-security-core gcs-studio-legal gcs-project-management gencr-ft.github.io"
+    )
+    local legacy repo now
+    for legacy in "${!LEGACY[@]}"; do
+        now="$(workspace_repositories "$legacy")"
+        for repo in ${LEGACY[$legacy]}; do
+            if ! grep -qx "$repo" <<<"$now"; then
+                log_error "FAIL: legacy '$legacy' repo '$repo' dropped after canonicalization"; ((failed++))
+            fi
+        done
+    done
+}
+
 test_canonical_ids_valid
 test_aliases_canonicalize
+test_legacy_repo_sets_preserved
 test_quickstart_sets_canonical_workspace
 test_unknown_rejected_lists_canonical
 test_help_shows_canonical

@@ -344,10 +344,16 @@ check_prerequisites() {
 # This ensures the script always uses the latest SSoT configuration.
 setup_ssot_repository() {
     log_info "Setting up SSoT configuration repository..."
-    if [ -d "$GFT_SSOT_PATH" ]; then
+    if [ -d "$GFT_SSOT_PATH/.git" ]; then
         log_info "Updating existing SSoT repository at $GFT_SSOT_PATH..."
         run_command_with_logging git -C "$GFT_SSOT_PATH" pull --ff-only
     else
+        # A path that exists but is not a git repo (stale/partial leftover) would
+        # break `git pull` with 'fatal: not a git repository'. Remove and re-clone.
+        if [ -e "$GFT_SSOT_PATH" ]; then
+            log_warn "$GFT_SSOT_PATH exists but is not a git repository; removing and re-cloning."
+            rm -rf "$GFT_SSOT_PATH"
+        fi
         log_info "Cloning SSoT repository into $GFT_SSOT_PATH..."
         run_command_with_logging git clone --depth 1 "$GFT_SSOT_REPO" "$GFT_SSOT_PATH"
     fi

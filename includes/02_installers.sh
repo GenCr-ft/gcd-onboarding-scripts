@@ -43,10 +43,20 @@ install_node() {
         return 1
     fi
     log_info "Installing Node.js version '$nvm_version_string' via nvm..."
+    # Self-bootstrap nvm if absent (no sudo required — installs into ~/.nvm).
     if [ ! -s "$HOME/.nvm/nvm.sh" ]; then
-        log_error "nvm not found. Install: https://github.com/nvm-sh/nvm#installing-and-updating"
+        log_info "nvm not found — installing nvm automatically..."
+        export NVM_DIR="$HOME/.nvm"
+        if ! curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash; then
+            log_error "Automatic nvm install failed. See https://github.com/nvm-sh/nvm#installing-and-updating"
+            return 1
+        fi
+    fi
+    if [ ! -s "$HOME/.nvm/nvm.sh" ]; then
+        log_error "nvm still not found after install attempt."
         return 1
     fi
+    export NVM_DIR="$HOME/.nvm"
     # shellcheck source=/dev/null
     . "$HOME/.nvm/nvm.sh"
     if nvm install "$nvm_version_string" && nvm alias default "$nvm_version_string"; then
@@ -57,20 +67,81 @@ install_node() {
     fi
 }
 
+# Loads pyenv into the current shell if present (idempotent).
+_load_pyenv() {
+    export PYENV_ROOT="${PYENV_ROOT:-$HOME/.pyenv}"
+    case ":$PATH:" in *":$PYENV_ROOT/bin:"*) ;; *) export PATH="$PYENV_ROOT/bin:$PATH" ;; esac
+    command -v pyenv >/dev/null 2>&1 && eval "$(pyenv init - 2>/dev/null)" 2>/dev/null || true
+}
+
+# True if a system python3 meets the studio floor (>= 3.9).
+_system_python_ok() {
+    command -v python3 >/dev/null 2>&1 || return 1
+    python3 - <<'PY' 2>/dev/null
+import sys
+raise SystemExit(0 if sys.version_info[:2] >= (3, 9) else 1)
+PY
+}
+
+# True if we can compile a CLEAN CPython: either passwordless sudo (to add build
+# deps) or all key build deps are already present. Prevents pyenv from building a
+# Python missing sqlite3/bz2/readline (which build as optional modules with warnings).
+_python_can_compile() {
+    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then return 0; fi
+    if command -v dpkg >/dev/null 2>&1; then
+        local p
+        for p in libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libffi-dev liblzma-dev; do
+            dpkg -s "$p" >/dev/null 2>&1 || return 1
+        done
+        return 0
+    fi
+    return 1   # unknown platform + no passwordless sudo → prefer the complete system python
+}
+
 install_python() {
     local version="$1"
-    log_info "Installing Python version '$version' via pyenv..."
-    if ! command -v pyenv &>/dev/null; then
-        log_error "pyenv not found. Install: curl https://pyenv.run | bash"
-        log_info "  After installation, restart your shell and re-run this script."
-        return 1
+    log_info "Setting up Python (target pinned version '$version' via pyenv)..."
+
+    # 1. Self-bootstrap pyenv if absent (git-based installer — no sudo required).
+    if ! command -v pyenv >/dev/null 2>&1 && [ ! -x "$HOME/.pyenv/bin/pyenv" ]; then
+        log_info "pyenv not found — installing pyenv automatically..."
+        curl -fsSL https://pyenv.run | bash || log_warn "Automatic pyenv install did not complete."
     fi
-    if pyenv install -s "$version" && pyenv global "$version"; then
-        log_success "Python $version installed and set as global default."
-    else
-        log_error "Python '$version' installation via pyenv failed. Check pyenv output above."
-        return 1
+    _load_pyenv
+
+    # 2. Install the pinned version — but only attempt a compile when we can build a
+    #    CLEAN CPython (passwordless sudo to add deps, or deps present). If we can't
+    #    and a good system python3 exists, skip straight to the fallback (§3) rather
+    #    than build a Python missing sqlite3/bz2/readline.
+    if command -v pyenv >/dev/null 2>&1 && { _python_can_compile || ! _system_python_ok; }; then
+        if command -v apt-get >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+            log_info "Installing Python build dependencies (apt)..."
+            sudo -n apt-get update -qq || true
+            sudo -n apt-get install -y make build-essential libssl-dev zlib1g-dev \
+                libbz2-dev libreadline-dev libsqlite3-dev libffi-dev liblzma-dev \
+                libncursesw5-dev xz-utils tk-dev >/dev/null 2>&1 || true
+        fi
+        pyenv install -s "$version" 2>/dev/null || true
+        if pyenv versions --bare 2>/dev/null | grep -qx "$version"; then
+            pyenv global "$version" 2>/dev/null || true
+            log_success "Python $version installed and set as global default via pyenv."
+            return 0
+        fi
     fi
+
+    # 3. Graceful fallback: don't block onboarding if a compatible system python3 exists.
+    if _system_python_ok; then
+        local sysver
+        sysver=$(python3 -c 'import sys;print("%d.%d.%d"%sys.version_info[:3])' 2>/dev/null)
+        log_warn "Could not install pinned Python $version via pyenv (needs build deps / sudo)."
+        log_warn "Using system python3 $sysver, which meets the >= 3.9 requirement. Onboarding continues."
+        log_info "  To pin exactly later:  pyenv install $version && pyenv global $version"
+        return 0
+    fi
+
+    log_error "Python $version could not be installed via pyenv and no python3 >= 3.9 was found."
+    log_info "  Install pyenv build deps or a system python3 >= 3.9, then re-run."
+    return 1
 }
 
 install_binary_from_github() {
@@ -160,6 +231,26 @@ install_commitlint() {
     fi
 }
 
+install_prettier() {
+    log_info "Installing prettier (global npm package)..."
+    # npm comes from nvm's node (installed earlier); source nvm if not yet on PATH.
+    if ! command -v npm >/dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then
+        export NVM_DIR="$HOME/.nvm"
+        # shellcheck source=/dev/null
+        . "$HOME/.nvm/nvm.sh"
+    fi
+    if ! command -v npm >/dev/null 2>&1; then
+        log_warn "npm not available yet — skipping prettier (formatter, non-blocking)."
+        return 0
+    fi
+    if npm install -g prettier; then
+        log_success "prettier installed."
+    else
+        log_warn "prettier installation via npm failed (non-blocking)."
+    fi
+    return 0
+}
+
 install_rustup() {
     log_info "Installing Rust toolchain via rustup..."
     if command -v rustup &>/dev/null; then
@@ -179,7 +270,7 @@ install_rustup() {
     fi
     # shellcheck source=/dev/null
     if [ ! -f "$HOME/.cargo/env" ]; then
-        log_warn "~/.cargo/env not found after rustup install — PATH may not include ~/.cargo/bin."
+        log_warn "\$HOME/.cargo/env not found after rustup install — PATH may not include \$HOME/.cargo/bin."
     else
         . "$HOME/.cargo/env"
     fi
@@ -348,6 +439,7 @@ install_tool() {
         rustup) install_rustup ;;
         wasm-pack) install_wasm_pack ;;
         wasm-bindgen-cli) install_wasm_bindgen_cli ;;
+        prettier) install_prettier ;;
         *) log_warn "No SSoT-driven installation logic defined for tool '$tool_from_matrix'." ;;
     esac
 }

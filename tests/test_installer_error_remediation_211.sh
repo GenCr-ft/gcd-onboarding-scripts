@@ -69,21 +69,24 @@ test_install_node_nvm_chain_failure() {
 # --- Test Runner ---
 # ==============================================================================
 # ==============================================================================
-# Cycle 3 — AC-3: pyenv missing → [ERROR] + install URL; dispatcher || trap fixed
+# Cycle 3 — AC-3 (updated by WI-229): pyenv absent → auto-install attempted; if the
+# pinned version cannot be provided, gracefully fall back to a system python3 >= 3.9
+# instead of aborting onboarding. (curl mocked so no real network install runs.)
 # ==============================================================================
 test_install_python_pyenv_missing() {
     local checks_failed=0
+    local output rc
+    curl() { return 0; }   # neutralize the pyenv.run network installer
+    output=$( PATH="/usr/bin:/bin"; HOME="$(mktemp -d)"; install_python "3.11.5" 2>&1 ); rc=$?
+    unset -f curl
 
-    local output
-    output=$(PATH="/usr/bin:/bin" install_python "3.11.5" 2>&1) || true
-
-    [[ "$output" == *"https://pyenv.run"* ]] || \
-        { log_error "FAIL: AC-3: expected pyenv install URL; got: $output"; ((checks_failed++)); }
-    [[ "$output" != *"installed and set as global default"* ]] || \
-        { log_error "FAIL: AC-3: success message must not appear; got: $output"; ((checks_failed++)); }
+    [[ $rc -eq 0 ]] || \
+        { log_error "FAIL: AC-3: install_python must not abort when system python3 >= 3.9 exists (rc=$rc)"; ((checks_failed++)); }
+    [[ "$output" == *"system python3"* ]] || \
+        { log_error "FAIL: AC-3: expected graceful system-python fallback message; got: $output"; ((checks_failed++)); }
 
     if [[ $checks_failed -ne 0 ]]; then return 1; fi
-    log_success "[TEST SUITE] install_python pyenv missing: PASSED"
+    log_success "[TEST SUITE] install_python pyenv-absent graceful fallback: PASSED"
 }
 
 # Dispatcher: failing install_python must NOT emit the "No version" warning

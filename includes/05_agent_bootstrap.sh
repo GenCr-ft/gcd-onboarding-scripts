@@ -50,16 +50,23 @@ setup_agent_skills() {
                 skill_name=$(basename "$skill_dir")
                 local target_link="${target_skills_dir}/${skill_name}"
 
-                if [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$skill_dir" ]]; then
+                if [[ "$skill_dir" -ef "$target_link" ]]; then
+                    # Same dir (incl. target already a symlink into source) — leave it.
                     skipped=$((skipped + 1))
                     continue
-                elif [[ -L "$target_link" ]]; then
-                    rm "$target_link"
+                elif [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$skill_dir" ]]; then
+                    skipped=$((skipped + 1))
+                    continue
+                elif [[ -e "$target_link" || -L "$target_link" ]]; then
+                    # Stale symlink, or a pre-existing real dir/file in our managed
+                    # skill namespace — replace it (plain `ln -s` would nest or abort).
+                    rm -rf "$target_link"
+                    ln -s "$skill_dir" "$target_link"
                     updated=$((updated + 1))
                 else
+                    ln -s "$skill_dir" "$target_link"
                     linked=$((linked + 1))
                 fi
-                ln -s "$skill_dir" "$target_link"
             fi
         done
     done

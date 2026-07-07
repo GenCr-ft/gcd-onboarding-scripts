@@ -96,10 +96,16 @@ provision_agent_files() {
             fi
             local target_link="${target_agents_dir}/${agent_name}"
 
-            if [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$agent_file" ]]; then
+            if [[ "$agent_file" -ef "$target_link" ]]; then
+                # Already the same file (incl. when the target dir is itself a symlink
+                # into the source) — nothing to do, and never clobber the source.
                 skipped=$((skipped + 1))
-            elif [[ -L "$target_link" ]]; then
-                rm "$target_link"
+            elif [[ -L "$target_link" ]] && [[ "$(readlink "$target_link")" == "$agent_file" ]]; then
+                skipped=$((skipped + 1))
+            elif [[ -e "$target_link" || -L "$target_link" ]]; then
+                # Pre-existing regular file or a stale/broken symlink — replace it
+                # idempotently (plain `ln -s` would fail with 'File exists').
+                rm -f "$target_link"
                 ln -s "$agent_file" "$target_link"
                 updated=$((updated + 1))
             else

@@ -162,9 +162,12 @@ clone_repositories_for_role() {
     local gft_workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
     mkdir -p "$gft_workspace"
 
+    # Universal base repos cloned for every workspace: governance SSoT, and
+    # gcs-plt-tools (the canonical owner of the global `gft` CLI, needed so gft
+    # installs regardless of the selected workspace).
     local -a base_repos=(
         "gcs-core-governance"
-        "gcs-core-governance"
+        "gcs-plt-tools"
     )
 
     local python_helper_script="${SCRIPT_DIR}/includes/get_role_repos.py"
@@ -254,16 +257,20 @@ clone_repositories_for_role() {
 # Writes GFT_PLT_ROOT and GFT_WORKSPACE into the shell profile so gft can
 # locate gcs-plt-tools without relying on the file-tree heuristic.
 configure_gft_cli() {
+    # Non-fatal: a fully-cloned, tool-installed workspace is valuable on its own.
+    # If gft can't be installed/configured now, warn with a fix command and let
+    # onboarding finish rather than aborting at the last step.
     if ! install_gft_cli "false"; then
-        log_error "Unable to install or repair gft before environment configuration."
-        return 1
+        log_warn "Could not install the gft CLI now (its owner repo gcs-plt-tools may be missing or its setup failed)."
+        log_info "  Install it later:  cd \"\${GFT_PROJECTS_HOME:-\$HOME/gft_studio}/gcs-plt-tools\" && bash onboard.sh"
+        return 0
     fi
 
     export PATH="$HOME/.local/bin:$PATH"
 
     if ! command -v gft &>/dev/null; then
-        log_error "gft command not found after delegated installation."
-        return 1
+        log_warn "gft is installed but not on PATH in this shell yet — restart your terminal, then run: gft doctor"
+        return 0
     fi
 
     log_info "Configuring gft CLI environment variables..."

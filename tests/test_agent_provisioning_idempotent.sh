@@ -36,5 +36,19 @@ fi
 
 rm -rf "$gp" "$home2"
 
+# --- setup_agent_skills: pre-existing REAL DIR at target must be replaced (WI-234) ---
+gp2=$(mktemp -d); mkdir -p "$gp2/skills/analyze-project"; printf 'skill\n' > "$gp2/skills/analyze-project/SKILL.md"
+home3=$(mktemp -d); mkdir -p "$home3/.claude/skills/analyze-project"   # stray real dir → old bug trigger
+( HOME="$home3" GFT_SSOT_GEMOP_PATH="$gp2" setup_agent_skills >/dev/null 2>&1 ); src=$?
+[[ $src -eq 0 ]] || { echo "FAIL: setup_agent_skills aborted on a pre-existing real dir (rc=$src)"; ((failed++)); }
+if [[ -L "$home3/.claude/skills/analyze-project" ]]; then
+  [[ "$(readlink "$home3/.claude/skills/analyze-project")" == "$gp2/skills/analyze-project" ]] \
+    || { echo "FAIL: skill symlink does not point at source"; ((failed++)); }
+else
+  echo "FAIL: pre-existing skill dir not replaced by a symlink (nested-link bug)"; ((failed++))
+fi
+( HOME="$home3" GFT_SSOT_GEMOP_PATH="$gp2" setup_agent_skills >/dev/null 2>&1 ) || { echo "FAIL: second skills run not idempotent"; ((failed++)); }
+rm -rf "$gp2" "$home3"
+
 if [[ $failed -ne 0 ]]; then echo "🔴 test_agent_provisioning_idempotent: $failed failed."; exit 1; fi
 echo "✓ test_agent_provisioning_idempotent: all checks passed."

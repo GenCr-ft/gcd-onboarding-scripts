@@ -345,7 +345,7 @@ MOCK
 }
 
 test_configure_gft_cli_fails_when_owner_repo_missing_post_clone() {
-    log_info "[TEST SUITE 6c] Testing configure_gft_cli fails without gcs-plt-tools after clone..."
+    log_info "[TEST SUITE 6c] Testing configure_gft_cli is non-fatal without gcs-plt-tools after clone..."
     local tmp_home; tmp_home=$(mktemp -d)
     local tmp_workspace; tmp_workspace=$(mktemp -d)
     local original_home="$HOME"
@@ -364,10 +364,10 @@ test_configure_gft_cli_fails_when_owner_repo_missing_post_clone() {
     local profile_file="$HOME/.bashrc"
     local checks_failed=0
 
-    [[ $status -eq 0 ]] && log_error "FAIL (configure gft missing owner): configure_gft_cli should fail when gcs-plt-tools is missing post-clone." && ((checks_failed++))
-    [[ "$output" != *"cannot configure gft after clone without the canonical owner repo"* ]] && log_error "FAIL (configure gft missing owner): missing hard-failure message." && ((checks_failed++))
-    [[ -f "$profile_file" && "$(grep -c 'export GFT_PLT_ROOT=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (configure gft missing owner): GFT_PLT_ROOT should not be written on failure." && ((checks_failed++))
-    [[ -f "$profile_file" && "$(grep -c 'export GFT_WORKSPACE=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (configure gft missing owner): GFT_WORKSPACE should not be written on failure." && ((checks_failed++))
+    [[ $status -ne 0 ]] && log_error "FAIL (configure gft missing owner): configure_gft_cli should be non-fatal (return 0) when gcs-plt-tools is missing post-clone." && ((checks_failed++))
+    [[ "$output" != *"Could not install the gft CLI now"* ]] && log_error "FAIL (configure gft missing owner): missing graceful gft-deferred warning." && ((checks_failed++))
+    [[ -f "$profile_file" && "$(grep -c 'export GFT_PLT_ROOT=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (configure gft missing owner): GFT_PLT_ROOT should not be written when gft is deferred." && ((checks_failed++))
+    [[ -f "$profile_file" && "$(grep -c 'export GFT_WORKSPACE=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (configure gft missing owner): GFT_WORKSPACE should not be written when gft is deferred." && ((checks_failed++))
 
     export HOME="$original_home"
     export GFT_PROJECTS_HOME="$original_workspace"

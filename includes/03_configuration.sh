@@ -92,9 +92,10 @@ setup_ssh_key() {
         if [[ $gh_exit -eq 0 ]]; then
             log_success "SSH key added to GitHub account."
         else
-            log_error "Failed to add SSH key to GitHub (exit $gh_exit): $gh_output"
-            log_info "  If this is a scope error, refresh your token:"
-            log_info "    gh auth refresh -h github.com -s admin:public_key"
+            # Non-fatal: repositories clone over HTTPS with the gh token, so onboarding
+            # continues. SSH upload just needs a broader token scope.
+            log_warn "Could not upload the SSH key to GitHub (optional — repos clone over HTTPS). Details: $gh_output"
+            log_info "  To enable SSH pushes later:  gh auth refresh -h github.com -s admin:public_key && gh ssh-key add ~/.ssh/id_ed25519.pub"
         fi
     fi
 }
@@ -446,7 +447,7 @@ configure_environment_variables() {
                 local stripped="${var_value//\"/}"
                 if [[ "$stripped" == '~'* ]]; then
                     evaluated_path="${HOME}${stripped:1}"
-                elif [[ "$stripped" == '$HOME'* ]]; then
+                elif [[ "$stripped" == "\$HOME"* ]]; then
                     evaluated_path="${HOME}${stripped:5}"
                 else
                     evaluated_path="$stripped"

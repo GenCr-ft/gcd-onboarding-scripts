@@ -173,6 +173,7 @@ fi
 step "Build: gcp-aethel-server"
 cd "$SERVER_DIR"
 [[ ! -d node_modules ]] && npm install --silent
+rm -rf dist tsconfig.build.tsbuildinfo
 npm run build
 
 step "Start: gcp-aethel-server (HTTP :3100, WS :3001)"

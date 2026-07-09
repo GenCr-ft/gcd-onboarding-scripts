@@ -361,6 +361,8 @@ MOCK
     }
 
     export HOME="$tmp_home"
+    git config --global user.name "Smoke Test"
+    git config --global user.email "smoke@example.com"
     export GFT_PROJECTS_HOME="$tmp_workspace"
     export GFT_NON_INTERACTIVE=true
     export GFT_ROLE=devops-specialist

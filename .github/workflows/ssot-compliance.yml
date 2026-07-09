@@ -5,17 +5,18 @@ name: SSoT Compliance Check
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+
 jobs:
- validate-ssot:
-    name: "Run Official SSoT Linter"
+  validate-ssot:
+    name: 'Run Official SSoT Linter'
     # This calls the master workflow from the correct SSoT location.
-    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.2
+    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.4
     secrets:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
     with:
-      # We keep the default behavior which is to fail the job on error.
-      continue-on-error: true
+      # Hard gate: repo is clean (0 broken links) — refs gcs-core-governance — archived from gcs-core-governance.
+      continue-on-error: false
       # We specify the exact, stable versions of our governance and tooling.
-      governance-version: "v1.4.0"
-      tooling-version: "v4.1.2"
+      governance-version: 'v1.4.0'
+      tooling-version: 'v4.3.2'

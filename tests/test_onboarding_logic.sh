@@ -11,6 +11,12 @@ export TEST_ENV=true
 export SCRIPT_DIR="$PROJECT_ROOT"
 export GFT_SSOT_PATH="${TEST_SCRIPT_PATH}/fixtures/mock_ssot"
 
+# Hermetic isolation of HOME to prevent host state leakage
+TEST_HOME=$(mktemp -d)
+export HOME="$TEST_HOME"
+unset GFT_PROJECTS_HOME GFT_WORKSPACE GFT_ROLE
+trap 'rm -rf "$TEST_HOME"' EXIT
+
 # Source all dependencies
 source "${PROJECT_ROOT}/includes/00_bootstrap.sh"
 source "${PROJECT_ROOT}/includes/01_helpers.sh"

@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-WORKSPACE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORKSPACE="${WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 AUTH_DIR="${WORKSPACE}/gcl-srv-authentication"
 SERVER_DIR="${WORKSPACE}/gcp-aethel-server"
 KEY_DIR="${WORKSPACE}/.keys"
@@ -140,9 +140,40 @@ case "$REGISTER_STATUS" in
 esac
 
 # ─── 8. Build + start game server ─────────────────────────────────────────────
+step "Build: gcl-voxel-engine"
+VOXEL_DIR="${WORKSPACE}/gcl-voxel-engine"
+cd "$VOXEL_DIR"
+if [[ ! -d node_modules ]]; then
+  npm install --silent
+fi
+if ! npm run build; then
+  echo "ERROR: gcl-voxel-engine package build failed" >&2
+  exit 1
+fi
+
+# Parse package.json main and types entrypoints
+local_voxel_json="${VOXEL_DIR}/package.json"
+if [[ ! -f "$local_voxel_json" ]]; then
+  echo "ERROR: gcl-voxel-engine package.json missing" >&2
+  exit 1
+fi
+main_entry=$(node -e "console.log(require('$local_voxel_json').main || '')" 2>/dev/null || true)
+types_entry=$(node -e "console.log(require('$local_voxel_json').types || '')" 2>/dev/null || true)
+
+if [[ -z "$main_entry" || ! -f "${VOXEL_DIR}/${main_entry}" ]]; then
+  echo "ERROR: gcl-voxel-engine package main entrypoint missing: ${VOXEL_DIR}/${main_entry:-}" >&2
+  exit 1
+fi
+
+if [[ -z "$types_entry" || ! -f "${VOXEL_DIR}/${types_entry}" ]]; then
+  echo "ERROR: gcl-voxel-engine package types entrypoint missing: ${VOXEL_DIR}/${types_entry:-}" >&2
+  exit 1
+fi
+
 step "Build: gcp-aethel-server"
 cd "$SERVER_DIR"
 [[ ! -d node_modules ]] && npm install --silent
+rm -rf dist tsconfig.build.tsbuildinfo
 npm run build
 
 step "Start: gcp-aethel-server (HTTP :3100, WS :3001)"

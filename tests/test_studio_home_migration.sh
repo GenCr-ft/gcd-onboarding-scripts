@@ -88,12 +88,14 @@ printf 'junk\n' > "$h4/.gft-studio/gcs-plt-gemop/STALE"
 # --------------------------------------------------------- warn_legacy once-only
 h5=$(mktemp -d); mkdir -p "$h5/gft_studio"
 out=$( HOME="$h5" bash -c "source '$PROJECT_ROOT/includes/00_bootstrap.sh'; source '$PROJECT_ROOT/includes/01_helpers.sh'; warn_legacy_gft_studio; warn_legacy_gft_studio" 2>&1 )
-n=$(printf '%s\n' "$out" | grep -c 'gft_studio' || true)
+# Count the unique WARN line ("Legacy workspace …"); the single call also emits a
+# separate INFO hint line, so we must not match on the shared "gft_studio" token.
+n=$(printf '%s\n' "$out" | grep -c 'Legacy workspace' || true)
 [[ "$n" -eq 1 ]] || fail "warn_legacy_gft_studio should warn exactly once, warned $n times"
 
 h6=$(mktemp -d)   # no legacy dir → silent
 out=$( HOME="$h6" bash -c "source '$PROJECT_ROOT/includes/00_bootstrap.sh'; source '$PROJECT_ROOT/includes/01_helpers.sh'; warn_legacy_gft_studio" 2>&1 )
-printf '%s\n' "$out" | grep -q 'gft_studio' && fail "warn_legacy_gft_studio warned when no legacy dir exists"
+printf '%s\n' "$out" | grep -q 'Legacy workspace' && fail "warn_legacy_gft_studio warned when no legacy dir exists"
 
 rm -rf "$FAKE_BIN" "$h1" "$h2" "$h3" "$h4" "$h5" "$h6"
 

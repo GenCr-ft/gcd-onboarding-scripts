@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GFT_DIR="${ROOT}/gcs-plt-tools/services/gft"
+# Shared tooling (gcs-plt-tools) installs once into the studio home
+# (~/.gft-studio, override GFT_STUDIO_HOME) per ENG-ADR-088, not the workspace.
+GFT_DIR="${GFT_STUDIO_HOME:-$HOME/.gft-studio}/gcs-plt-tools/services/gft"
 
 # High-level workspace help block printed during bootstrap/no-poetry scenarios
 print_workspace_help() {

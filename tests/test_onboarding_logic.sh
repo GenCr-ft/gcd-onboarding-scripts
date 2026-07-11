@@ -131,7 +131,9 @@ test_gft_install_delegates_to_gcs_plt_tools_onboard() {
     log_info "[TEST SUITE 1c] Testing delegated gft installation..."
     local tmp_home; tmp_home=$(mktemp -d)
     local tmp_workspace; tmp_workspace=$(mktemp -d)
-    local plt_root="$tmp_workspace/gcs-plt-tools"
+    # gcs-plt-tools now lives in studio_home() (default $HOME/.gft-studio), not
+    # the project workspace (ENG-ADR-088 §3 / WI-384b).
+    local plt_root="$tmp_home/.gft-studio/gcs-plt-tools"
     local log_file="$tmp_workspace/onboard.called"
     local original_home="$HOME"
     local original_workspace="${GFT_PROJECTS_HOME:-}"
@@ -184,24 +186,42 @@ MOCK
 
 test_repository_cloning_logic() {
     log_info "[TEST SUITE 2] Testing Repository Cloning Logic..."
+    local previous_mock="${MOCK_ROLE_REPO_OUTPUT:-}"
+    MOCK_ROLE_REPO_OUTPUT=$'gencraft-iac\ngct-service-template-py'
     local output; output=$(clone_repositories_for_role "devops-specialist" 2>&1)
-    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-core-governance"* ]]; then
-        log_error "FAIL (Repo): 'gcs-core-governance' was not cloned." && echo "$output" && return 1
+    MOCK_ROLE_REPO_OUTPUT="$previous_mock"
+    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gencraft-iac"* ]]; then
+        log_error "FAIL (Repo): project repo 'gencraft-iac' was not cloned." && echo "$output" && return 1
     fi
     log_success "Repository Cloning Logic: PASSED"
 }
 
+# WI-384b: shared tooling installs exactly once into studio_home() via
+# bootstrap_shared_tooling(); clone_repositories_for_role must NEVER clone it
+# into the project workspace, even when a role matrix lists it (ENG-ADR-088 §3).
 test_base_repository_injection_when_missing() {
-    log_info "[TEST SUITE 2b] Testing Base Repository Injection..."
-    local previous_mock="$MOCK_ROLE_REPO_OUTPUT"
-    MOCK_ROLE_REPO_OUTPUT=$'gcs-plt-tools\ngct-service-template-py\ngencraft-iac'
+    log_info "[TEST SUITE 2b] Testing shared-tooling is skipped in the workspace clone..."
+    local previous_mock="${MOCK_ROLE_REPO_OUTPUT:-}"
+    MOCK_ROLE_REPO_OUTPUT=$'gcs-plt-tools\ngcs-plt-gemop\ngcs-core-governance\ngct-service-template-py'
     local output; output=$(clone_repositories_for_role "devops-specialist" 2>&1)
     MOCK_ROLE_REPO_OUTPUT="$previous_mock"
 
-    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gcs-core-governance"* ]]; then
-        log_error "FAIL (Base Repo): 'gcs-core-governance' was not injected when missing." && echo "$output" && return 1
+    local checks_failed=0
+    local st
+    for st in gcs-plt-tools gcs-plt-gemop gcs-core-governance; do
+        if [[ "$output" == *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/${st} "* ]]; then
+            log_error "FAIL (Shared): '${st}' must NOT be cloned into the workspace." && ((checks_failed++))
+        fi
+    done
+    if [[ "$output" != *"MOCK_gh_CALLED_WITH: repo clone GenCr-ft/gct-service-template-py"* ]]; then
+        log_error "FAIL (Shared): genuine project repo was not cloned." && ((checks_failed++))
     fi
-    log_success "Base Repository Injection Logic: PASSED"
+    if [[ "$output" != *"shared tooling installs once"* ]]; then
+        log_error "FAIL (Shared): missing shared-tooling workspace-skip notice." && ((checks_failed++))
+    fi
+
+    if [[ $checks_failed -ne 0 ]]; then echo "$output" && return 1; fi
+    log_success "Shared-tooling workspace-skip Logic: PASSED"
 }
 
 test_environment_variable_logic() {
@@ -266,7 +286,9 @@ test_performance_and_caching_logic() {
 test_final_validation_logic() {
     log_info "[TEST SUITE 6] Testing Final Validation Logic..."
     local workspace; workspace=$(mktemp -d)
-    mkdir -p "$workspace/gcs-core-governance"
+    # A returning user keeps a project-local gcs-core-governance checkout;
+    # final_validation prefers it (git repo) over the shared studio home.
+    mkdir -p "$workspace/gcs-core-governance/.git"
     export GFT_PROJECTS_HOME="$workspace"
 
     local mock_bin; mock_bin=$(mktemp -d)
@@ -302,7 +324,8 @@ test_configure_gft_cli_bootstraps_cli_and_exports_env() {
     log_info "[TEST SUITE 6b] Testing configure_gft_cli bootstraps gft..."
     local tmp_home; tmp_home=$(mktemp -d)
     local tmp_workspace; tmp_workspace=$(mktemp -d)
-    local plt_root="$tmp_workspace/gcs-plt-tools"
+    # gcs-plt-tools now lives in studio_home() (default $HOME/.gft-studio).
+    local plt_root="$tmp_home/.gft-studio/gcs-plt-tools"
     local original_home="$HOME"
     local original_workspace="${GFT_PROJECTS_HOME:-}"
     local original_path="$PATH"

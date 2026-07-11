@@ -68,8 +68,7 @@ register_studio_hooks() {
 
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
     if [[ -z "$gemop_path" ]]; then
-        local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
-        gemop_path="${workspace}/gcs-plt-gemop"
+        gemop_path="$(studio_home)/gcs-plt-gemop"
     fi
 
     local hooks_dir="${gemop_path}/hooks"
@@ -136,6 +135,10 @@ PYEOF
 main() {
     log_info "Welcome to the GenCr@ft Studio Onboarding Script V2!"
 
+    # One-shot notice if the legacy ~/gft_studio layout is present. Emitted from
+    # the parent shell so the once-guard survives (ENG-ADR-088).
+    warn_legacy_gft_studio
+
     # --- Prerequisite & SSoT Setup ---
     run_preflight
     setup_ssot_repository
@@ -157,6 +160,12 @@ main() {
     configure_environment_variables "$selected_role_name"
     install_vscode_extensions_for_role "$selected_role_name"
     clone_repositories_for_role "$selected_role_name"
+
+    # Install the three shared-tooling repos exactly once into studio_home()
+    # (~/.gft-studio) before their consumers run: agent bootstrap, gft CLI
+    # configuration, and final validation (ENG-ADR-088 §3).
+    bootstrap_shared_tooling
+
     install_gft_ops_scripts
     deploy_workspace_files
     deploy_planning_metadata_hook

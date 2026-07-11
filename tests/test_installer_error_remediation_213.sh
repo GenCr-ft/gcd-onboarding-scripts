@@ -176,7 +176,8 @@ test_configure_gft_cli_path_guidance() {
     local checks_failed=0
     local tmp_home; tmp_home=$(mktemp -d)
     local tmp_workspace; tmp_workspace=$(mktemp -d)
-    local plt_root="$tmp_workspace/gcs-plt-tools"
+    # gcs-plt-tools now resolves from studio_home() (default $HOME/.gft-studio).
+    local plt_root="$tmp_home/.gft-studio/gcs-plt-tools"
     local orig_home="$HOME" orig_ws="${GFT_PROJECTS_HOME:-}" orig_path="$PATH"
     local output_file; output_file=$(mktemp)
     trap 'export HOME="$orig_home" GFT_PROJECTS_HOME="$orig_ws" PATH="$orig_path"; rm -rf "$tmp_home" "$tmp_workspace" "$output_file"' RETURN

@@ -26,8 +26,7 @@ setup_agent_skills() {
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
 
     if [[ -z "$gemop_path" ]]; then
-        local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
-        gemop_path="${workspace}/gcs-plt-gemop"
+        gemop_path="$(studio_home)/gcs-plt-gemop"
     fi
 
     local source_skills_dir="${gemop_path}/skills"
@@ -79,8 +78,7 @@ provision_agent_files() {
     local gemop_path="${GFT_SSOT_GEMOP_PATH:-}"
 
     if [[ -z "$gemop_path" ]]; then
-        local workspace="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
-        gemop_path="${workspace}/gcs-plt-gemop"
+        gemop_path="$(studio_home)/gcs-plt-gemop"
     fi
 
     local source_agents_dir="${gemop_path}/agents"

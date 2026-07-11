@@ -195,7 +195,9 @@ test_clone_repositories_uses_gft_projects_home() {
 
     export HOME="$tmp_home"
     export GFT_PROJECTS_HOME="$tmp_workspace"
-    MOCK_ROLE_REPO_OUTPUT="gcs-plt-tools"
+    # A project repo — shared tooling (gcs-plt-*) now installs into studio_home()
+    # and is skipped by clone_repositories_for_role (ENG-ADR-088 §3 / WI-384b).
+    MOCK_ROLE_REPO_OUTPUT="gencraft-iac"
 
     clone_repositories_for_role "devops-specialist" >/tmp/gft-clone.out 2>/tmp/gft-clone.err || {
         local err
@@ -207,14 +209,14 @@ test_clone_repositories_uses_gft_projects_home() {
         return 1
     }
 
-    [[ -d "$tmp_workspace/gcs-core-governance" ]] || {
+    [[ -d "$tmp_workspace/gencraft-iac" ]] || {
         export HOME="$original_home"
         export GFT_PROJECTS_HOME="$original_workspace"
         rm -rf "$tmp_home" "$tmp_workspace" /tmp/gft-clone.out /tmp/gft-clone.err
         fail "expected repositories under GFT_PROJECTS_HOME"
         return 1
     }
-    [[ ! -d "$tmp_home/gft_studio/gcs-core-governance" ]] || {
+    [[ ! -d "$tmp_home/gft_studio/gencraft-iac" ]] || {
         export HOME="$original_home"
         export GFT_PROJECTS_HOME="$original_workspace"
         rm -rf "$tmp_home" "$tmp_workspace" /tmp/gft-clone.out /tmp/gft-clone.err
@@ -379,12 +381,22 @@ MOCK
         return 1
     }
 
-    [[ -d "$tmp_workspace/gcs-plt-tools" ]] || {
+    # Shared tooling installs once into studio_home() (~/.gft-studio), NOT the
+    # project workspace (ENG-ADR-088 §3 / WI-384b).
+    [[ -d "$tmp_home/.gft-studio/gcs-plt-tools" ]] || {
         export HOME="$original_home"
         export GFT_PROJECTS_HOME="$original_workspace"
         export PATH="$original_path"
         rm -rf "$tmp_home" "$tmp_workspace" /tmp/gft-main-smoke.out /tmp/gft-main-smoke.err
-        fail "expected gcs-plt-tools under GFT_PROJECTS_HOME"
+        fail "expected gcs-plt-tools under studio_home() (~/.gft-studio)"
+        return 1
+    }
+    [[ ! -d "$tmp_workspace/gcs-plt-tools" ]] || {
+        export HOME="$original_home"
+        export GFT_PROJECTS_HOME="$original_workspace"
+        export PATH="$original_path"
+        rm -rf "$tmp_home" "$tmp_workspace" /tmp/gft-main-smoke.out /tmp/gft-main-smoke.err
+        fail "shared tooling gcs-plt-tools must NOT be cloned into GFT_PROJECTS_HOME"
         return 1
     }
     [[ ! -d "$tmp_home/gft_studio/gcs-plt-tools" ]] || {
@@ -392,7 +404,7 @@ MOCK
         export GFT_PROJECTS_HOME="$original_workspace"
         export PATH="$original_path"
         rm -rf "$tmp_home" "$tmp_workspace" /tmp/gft-main-smoke.out /tmp/gft-main-smoke.err
-        fail "main smoke cloned repositories under HOME/gft_studio"
+        fail "main smoke cloned repositories under legacy HOME/gft_studio"
         return 1
     }
     [[ -x "$tmp_home/.local/bin/gft" ]] || {

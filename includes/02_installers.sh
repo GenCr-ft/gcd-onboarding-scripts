@@ -317,8 +317,9 @@ install_wasm_bindgen_cli() {
 # ~/.local/bin/gft and ~/.config/gft/config.env for the active workspace.
 install_gft_cli() {
     local allow_defer="${1:-true}"
-    local workspace_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
-    local plt_root="${workspace_root}/gcs-plt-tools"
+    # gcs-plt-tools (the canonical owner of the global `gft` CLI) is shared
+    # tooling — it lives in studio_home() (~/.gft-studio), not the workspace.
+    local plt_root; plt_root="$(studio_home)/gcs-plt-tools"
     local onboard_script="${plt_root}/onboard.sh"
     local gft_bin="$HOME/.local/bin/gft"
 

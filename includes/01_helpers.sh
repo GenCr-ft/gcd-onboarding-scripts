@@ -360,6 +360,91 @@ setup_ssot_repository() {
     log_success "SSoT repository is up to date."
 }
 
+# --- Shared Studio-Tooling Home (ENG-ADR-088 §3/§10) ---
+
+# The three repos that install exactly ONCE into the shared studio-tooling home
+# (ENG-ADR-088 Repository-Classification). Project repos live under
+# GFT_PROJECTS_HOME instead. NOT readonly: this file is re-sourced during
+# onboarding, and a readonly re-declaration would abort the source under set -e.
+GFT_SHARED_TOOLING_REPOS=(gcs-plt-tools gcs-plt-gemop gcs-core-governance)
+
+# Echoes the shared studio-tooling home directory. Defaults to ~/.gft-studio;
+# override with GFT_STUDIO_HOME. Mirrors the gft CLI resolver (gcs-plt-tools
+# WI-384a / #622) so the shell and Python halves agree on one location.
+studio_home() {
+    echo "${GFT_STUDIO_HOME:-$HOME/.gft-studio}"
+}
+
+# Warns ONCE per shell when the legacy ~/gft_studio layout exists, so returning
+# users learn shared tooling has moved. MUST be called from the parent shell
+# (never a subshell) or the once-guard will not persist. Initialized only if
+# unset, so re-sourcing this file does not reset a warning that already fired.
+: "${_GFT_LEGACY_WARNED:=0}"
+warn_legacy_gft_studio() {
+    [[ "$_GFT_LEGACY_WARNED" == "1" ]] && return 0
+    if [[ -d "$HOME/gft_studio" ]]; then
+        _GFT_LEGACY_WARNED=1
+        log_warn "Legacy workspace ~/gft_studio detected — shared studio tooling now lives in $(studio_home) (ENG-ADR-088)."
+        log_info "  Your project repos under ~/gft_studio are left untouched. If you previously set GFT_SSOT_GEMOP_PATH to a ~/gft_studio path, update it to $(studio_home)/gcs-plt-gemop or unset it to take the new default."
+    fi
+    return 0
+}
+
+# Installs the three shared-tooling repos into studio_home(), exactly once each,
+# idempotently (ENG-ADR-088 §8). Reuses the setup_ssot_repository() decision
+# pattern: existing git repo → pull --ff-only; non-git leftover → rm -rf + clone;
+# absent → clone. Transport mirrors clone_repositories_for_role (gh when present,
+# else git+SSH). Non-interactive: shared tooling is always required.
+bootstrap_shared_tooling() {
+    local home_dir; home_dir="$(studio_home)"
+    log_info "Bootstrapping shared studio tooling into ${home_dir} ..."
+    mkdir -p "$home_dir"
+    chmod 0755 "$home_dir" 2>/dev/null || true
+
+    # if-form (not `cmd && var=true`) so a missing gh never trips `set -e`.
+    local gh_available=false
+    if command -v gh &>/dev/null; then
+        gh_available=true
+    fi
+
+    local repo target clone_ok
+    for repo in "${GFT_SHARED_TOOLING_REPOS[@]}"; do
+        target="${home_dir}/${repo}"
+        if [[ -d "${target}/.git" ]]; then
+            log_info "Updating shared repo '${repo}' at ${target} ..."
+            if ! run_command_with_logging git -C "$target" pull --ff-only; then
+                log_warn "Could not fast-forward '${repo}'; leaving the existing checkout in place."
+            fi
+            continue
+        fi
+        # A path that exists but is not a git repo (stale/partial leftover) would
+        # break `git pull`. Remove and re-clone (never `[[ -d ]] || clone`).
+        if [[ -e "$target" ]]; then
+            log_warn "${target} exists but is not a git repository; removing and re-cloning."
+            rm -rf "$target"
+        fi
+        log_info "Cloning shared repo '${repo}' into ${target} ..."
+        # Direct invocation (NOT run_command_with_logging): the clone is non-fatal,
+        # so a failure must not print a misleading [ERROR] line ahead of our [WARN]
+        # + fix hint. Command output is captured to the run log.
+        clone_ok=0
+        if $gh_available; then
+            gh repo clone "GenCr-ft/${repo}" "$target" >>"${LOG_FILE:-/dev/null}" 2>&1 || clone_ok=$?
+        else
+            git clone "git@github.com:GenCr-ft/${repo}.git" "$target" >>"${LOG_FILE:-/dev/null}" 2>&1 || clone_ok=$?
+        fi
+        # Non-fatal (matches the deferred-gft pattern): a single clone failure
+        # must not abort onboarding — its consumers degrade gracefully.
+        if [[ "$clone_ok" -ne 0 ]]; then
+            log_warn "Could not clone shared repo '${repo}' (non-fatal). Install it later with:"
+            log_info "  gh repo clone GenCr-ft/${repo} \"${target}\""
+        else
+            log_success "Cloned shared repo '${repo}'."
+        fi
+    done
+    log_success "Shared studio tooling bootstrap complete in ${home_dir}."
+}
+
 # Loads the YAML content from the Role-Tooling matrix into a global variable.
 load_ssot_configuration() {
     log_info "Loading role and tooling data from SSoT..."

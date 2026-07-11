@@ -162,13 +162,11 @@ clone_repositories_for_role() {
     local gft_workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
     mkdir -p "$gft_workspace"
 
-    # Universal base repos cloned for every workspace: governance SSoT, and
-    # gcs-plt-tools (the canonical owner of the global `gft` CLI, needed so gft
-    # installs regardless of the selected workspace).
-    local -a base_repos=(
-        "gcs-core-governance"
-        "gcs-plt-tools"
-    )
+    # Shared tooling (gcs-plt-tools, gcs-plt-gemop, gcs-core-governance) is no
+    # longer cloned per-workspace here — it installs exactly once into
+    # studio_home() (~/.gft-studio) via bootstrap_shared_tooling() (ENG-ADR-088
+    # §3). Only role/workspace project repos are cloned into GFT_PROJECTS_HOME.
+    local -a base_repos=()
 
     local python_helper_script="${SCRIPT_DIR}/includes/get_role_repos.py"
     if [ ! -f "$python_helper_script" ]; then
@@ -187,6 +185,17 @@ clone_repositories_for_role() {
     declare -A seen_repo
     for repo_name in "${required_repos[@]}" "${workspace_repos[@]}" "${base_repos[@]}"; do
         if [[ -z "$repo_name" || -n "${seen_repo[$repo_name]:-}" ]]; then
+            continue
+        fi
+        # Shared tooling installs exactly once into studio_home() via
+        # bootstrap_shared_tooling() — never clone it into the project workspace,
+        # even if a role/workspace matrix lists it (ENG-ADR-088 §3).
+        local _is_shared=false _st
+        for _st in "${GFT_SHARED_TOOLING_REPOS[@]}"; do
+            if [[ "$repo_name" == "$_st" ]]; then _is_shared=true; break; fi
+        done
+        if [[ "$_is_shared" == "true" ]]; then
+            log_info "Skipping '$repo_name' here — shared tooling installs once into $(studio_home)."
             continue
         fi
         seen_repo[$repo_name]=1
@@ -262,7 +271,7 @@ configure_gft_cli() {
     # onboarding finish rather than aborting at the last step.
     if ! install_gft_cli "false"; then
         log_warn "Could not install the gft CLI now (its owner repo gcs-plt-tools may be missing or its setup failed)."
-        log_info "  Install it later:  cd \"\${GFT_PROJECTS_HOME:-\$HOME/gft_studio}/gcs-plt-tools\" && bash onboard.sh"
+        log_info "  Install it later:  cd \"$(studio_home)/gcs-plt-tools\" && bash onboard.sh"
         return 0
     fi
 
@@ -275,8 +284,9 @@ configure_gft_cli() {
 
     log_info "Configuring gft CLI environment variables..."
 
-    local plt_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}/gcs-plt-tools"
+    local plt_root; plt_root="$(studio_home)/gcs-plt-tools"
     local workspace="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
+    local gemop_path; gemop_path="$(studio_home)/gcs-plt-gemop"
 
     local shell_profile_file=""
     if [[ "${GFT_SHELL_PROFILE+x}" == "x" ]]; then
@@ -294,7 +304,7 @@ configure_gft_cli() {
         if ! grep -qF "$start_marker" "$shell_profile_file"; then
             echo -e "\n$start_marker\n# Managed by gft-onboarding.sh — do not edit manually.\n$end_marker" >> "$shell_profile_file"
         fi
-        for var_assignment in "GFT_PLT_ROOT=${plt_root}" "GFT_WORKSPACE=${workspace}"; do
+        for var_assignment in "GFT_PLT_ROOT=${plt_root}" "GFT_WORKSPACE=${workspace}" "GFT_SSOT_GEMOP_PATH=${gemop_path}"; do
             local var_name="${var_assignment%%=*}"
             if grep -qF "export ${var_assignment}" "$shell_profile_file"; then
                 log_info "${var_name} is already set to the correct value."
@@ -311,6 +321,7 @@ configure_gft_cli() {
     # Export for the remainder of this session.
     export GFT_PLT_ROOT="$plt_root"
     export GFT_WORKSPACE="$workspace"
+    export GFT_SSOT_GEMOP_PATH="$gemop_path"
 
     if [[ -n "$shell_profile_file" ]]; then
         log_success "gft CLI configured. Run the following to activate gft in new terminals:"
@@ -344,8 +355,15 @@ final_validation() {
     fi
 
     local standards_dir
+    # gcs-core-governance is shared tooling (studio_home()), but a returning user
+    # may still have a project-local copy under GFT_PROJECTS_HOME. Prefer that if
+    # it is a real git checkout, otherwise fall back to the shared home.
     local projects_root="${GFT_PROJECTS_HOME:-$HOME/gft_studio}"
-    standards_dir="${projects_root}/gcs-core-governance"
+    if [[ -d "${projects_root}/gcs-core-governance/.git" ]]; then
+        standards_dir="${projects_root}/gcs-core-governance"
+    else
+        standards_dir="$(studio_home)/gcs-core-governance"
+    fi
     local precommit_status=0
 
     if ! command -v pre-commit &> /dev/null; then

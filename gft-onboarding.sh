@@ -166,6 +166,14 @@ main() {
     # configuration, and final validation (ENG-ADR-088 §3).
     bootstrap_shared_tooling
 
+    # Converge THIS session's gemop path onto the freshly-installed shared copy.
+    # A returning user may have GFT_SSOT_GEMOP_PATH exported (from a sourced
+    # profile) still pointing at the legacy ~/gft_studio layout; without this,
+    # the agent/skills/hooks steps below would resolve gemop from the stale path.
+    # (configure_gft_cli additionally persists this into the shell profile.)
+    GFT_SSOT_GEMOP_PATH="$(studio_home)/gcs-plt-gemop"
+    export GFT_SSOT_GEMOP_PATH
+
     install_gft_ops_scripts
     deploy_workspace_files
     deploy_planning_metadata_hook

@@ -377,8 +377,9 @@ studio_home() {
 
 # Warns ONCE per shell when the legacy ~/gft_studio layout exists, so returning
 # users learn shared tooling has moved. MUST be called from the parent shell
-# (never a subshell) or the once-guard will not persist.
-_GFT_LEGACY_WARNED=0
+# (never a subshell) or the once-guard will not persist. Initialized only if
+# unset, so re-sourcing this file does not reset a warning that already fired.
+: "${_GFT_LEGACY_WARNED:=0}"
 warn_legacy_gft_studio() {
     [[ "$_GFT_LEGACY_WARNED" == "1" ]] && return 0
     if [[ -d "$HOME/gft_studio" ]]; then
@@ -423,17 +424,22 @@ bootstrap_shared_tooling() {
             rm -rf "$target"
         fi
         log_info "Cloning shared repo '${repo}' into ${target} ..."
+        # Direct invocation (NOT run_command_with_logging): the clone is non-fatal,
+        # so a failure must not print a misleading [ERROR] line ahead of our [WARN]
+        # + fix hint. Command output is captured to the run log.
         clone_ok=0
         if $gh_available; then
-            run_command_with_logging gh repo clone "GenCr-ft/${repo}" "$target" || clone_ok=$?
+            gh repo clone "GenCr-ft/${repo}" "$target" >>"${LOG_FILE:-/dev/null}" 2>&1 || clone_ok=$?
         else
-            run_command_with_logging git clone "git@github.com:GenCr-ft/${repo}.git" "$target" || clone_ok=$?
+            git clone "git@github.com:GenCr-ft/${repo}.git" "$target" >>"${LOG_FILE:-/dev/null}" 2>&1 || clone_ok=$?
         fi
         # Non-fatal (matches the deferred-gft pattern): a single clone failure
         # must not abort onboarding — its consumers degrade gracefully.
         if [[ "$clone_ok" -ne 0 ]]; then
-            log_warn "Could not clone shared repo '${repo}'. Install it later with:"
+            log_warn "Could not clone shared repo '${repo}' (non-fatal). Install it later with:"
             log_info "  gh repo clone GenCr-ft/${repo} \"${target}\""
+        else
+            log_success "Cloned shared repo '${repo}'."
         fi
     done
     log_success "Shared studio tooling bootstrap complete in ${home_dir}."

@@ -50,7 +50,14 @@ cat <<'GHEOF'
 gh() {
     if [[ "${1:-}" == "ssh-key" || ( "${1:-}" == "repo" && "${2:-}" == "view" ) ]]; then echo 1; return 0; fi
     if [[ "${1:-}" == "repo" && "${2:-}" == "clone" ]]; then
-        mkdir -p "$4"
+        mkdir -p "$4/.git"   # a real clone leaves a .git dir
+        if [[ "$3" == "GenCr-ft/gcs-plt-gemop" ]]; then
+            # Populate the freshly-cloned shared gemop so agent/skills deployment
+            # has a source — proving which gemop path the run resolved.
+            mkdir -p "$4/skills/analyze-project" "$4/agents" "$4/hooks"
+            printf 'skill\n' > "$4/skills/analyze-project/SKILL.md"
+            printf 'agent\n' > "$4/agents/axiom.md"
+        fi
         if [[ "$3" == "GenCr-ft/gcs-plt-tools" ]]; then
             cat > "$4/onboard.sh" <<'MOCK'
 #!/usr/bin/env bash
@@ -73,6 +80,9 @@ run_onboarding() {  # $1=home $2=workspace $3=out ; runs the real main in a subs
         export HOME="$home" GFT_PROJECTS_HOME="$ws"
         export GFT_NON_INTERACTIVE=true GFT_ROLE=devops-specialist
         export PATH="/usr/bin:/bin"
+        # Simulate a returning user whose profile already exported a stale gemop
+        # path into the environment (the Finding-2 env-var path).
+        [[ -n "${E2E_STALE_GEMOP:-}" ]] && export GFT_SSOT_GEMOP_PATH="$E2E_STALE_GEMOP"
         git config --global user.name "E2E" 2>/dev/null || true
         git config --global user.email "e2e@example.com" 2>/dev/null || true
         eval "$(make_gh_stub)"
@@ -95,7 +105,7 @@ run_onboarding "$A_home" "$A_ws" "$A_out"; a_rc=$?
 
 [[ $a_rc -eq 0 ]] || { fail "fresh: onboarding main exited $a_rc"; sed -n '$p;1,3p' "$A_out"; }
 for r in gcs-plt-tools gcs-plt-gemop gcs-core-governance; do
-    [[ -d "$A_home/.gft-studio/$r" ]] || fail "fresh: shared repo '$r' not in studio_home (~/.gft-studio)"
+    [[ -d "$A_home/.gft-studio/$r/.git" ]] || fail "fresh: shared repo '$r' not cloned into studio_home (~/.gft-studio)"
     [[ ! -d "$A_ws/$r" ]] || fail "fresh: shared repo '$r' must NOT be cloned into GFT_PROJECTS_HOME"
 done
 [[ -x "$A_home/.local/bin/gft" ]] || fail "fresh: delegated gft wrapper not installed"
@@ -124,7 +134,23 @@ grep -q "export GFT_SSOT_GEMOP_PATH=$B_home/.gft-studio/gcs-plt-gemop" "$B_home/
 grep -q "gft_studio/gcs-plt-gemop\"" "$B_home/.bashrc" \
     && fail "returning: stale ~/gft_studio GFT_SSOT_GEMOP_PATH still present after convergence"
 
-rm -rf "$A_home" "$A_ws" "$A_out" "$B_home" "$B_ws" "$B_out"
+# ============ Scenario C: returning user with a STALE *exported* gemop =========
+# Finding-2 regression: setup_agent_skills / provision_agent_files run BEFORE
+# configure_gft_cli, so a stale *exported* GFT_SSOT_GEMOP_PATH (from a sourced
+# profile) must be overridden to studio_home() for the current run — otherwise
+# skills/agents deploy from (or silently skip) the legacy path.
+C_home=$(mktemp -d); C_ws=$(mktemp -d); C_out=$(mktemp)
+mkdir -p "$C_home/gft_studio/gcs-plt-gemop"   # legacy gemop present but has NO skills/agents
+E2E_STALE_GEMOP="$C_home/gft_studio/gcs-plt-gemop" run_onboarding "$C_home" "$C_ws" "$C_out"; c_rc=$?
+[[ $c_rc -eq 0 ]] || { fail "stale-env: onboarding main exited $c_rc"; sed -n '$p' "$C_out"; }
+# Skills/agents must come from the freshly-cloned studio_home gemop (which HAS
+# them), not the stale legacy path (which has none) — proving session convergence.
+[[ -L "$C_home/.claude/skills/analyze-project" ]] \
+    || fail "stale-env: skills not deployed from studio_home gemop (stale exported GFT_SSOT_GEMOP_PATH won)"
+[[ "$(readlink "$C_home/.claude/skills/analyze-project" 2>/dev/null)" == "$C_home/.gft-studio/gcs-plt-gemop/skills/analyze-project" ]] \
+    || fail "stale-env: skill symlink does not point at studio_home gemop"
+
+rm -rf "$A_home" "$A_ws" "$A_out" "$B_home" "$B_ws" "$B_out" "$C_home" "$C_ws" "$C_out"
 
 if [[ $failed -ne 0 ]]; then echo "🔴 test_studio_home_e2e: $failed failed."; exit 1; fi
-echo "✓ test_studio_home_e2e: fresh + returning-user scenarios passed."
+echo "✓ test_studio_home_e2e: fresh + returning-user + stale-exported-env scenarios passed."

@@ -75,6 +75,11 @@ printf 'preexisting\n' > "$h3/.gft-studio/gcs-plt-tools/SENTINEL"
 [[ $rc -eq 0 ]] || fail "bootstrap_shared_tooling (pull) rc=$rc"
 [[ -f "$h3/.gft-studio/gcs-plt-tools/SENTINEL" ]] || fail "pull branch: existing repo was reclobbered (SENTINEL lost)"
 grep -q "git -C $h3/.gft-studio/gcs-plt-tools pull" "$CALLLOG" || fail "pull branch: did not run 'git -C … pull' for existing repo"
+# The other two repos are absent here → must still be cloned (loop must not skip
+# them after the pull-branch `continue`).
+for r in gcs-plt-gemop gcs-core-governance; do
+  [[ -d "$h3/.gft-studio/$r/.git" ]] || fail "pull branch: absent repo '$r' was not cloned alongside the pulled one"
+done
 
 # ------------------------------ bootstrap: reclone branch (dir exists, not a git)
 h4=$(mktemp -d)

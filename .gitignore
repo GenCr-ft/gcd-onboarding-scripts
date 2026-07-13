@@ -39,3 +39,8 @@ env/
 # Java (for completeness)
 *.class
 *.jar
+
+# Launcher-generated RS256 dev keys — never commit
+.keys/
+**/.keys/
+*.pem

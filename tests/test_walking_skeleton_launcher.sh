@@ -317,11 +317,39 @@ EOF
   rm -rf "${ws_dir}" "${mock_bin}"
 }
 
+test_smoke_exit_contract() {
+  log_test "F1.5: --smoke-exit-after-spawn boot-proof contract (Forge, gcs-project-management#414)"
+  local src="${LAUNCHER_SRC}"
+  local pass_all=1
+
+  # Launcher must remain syntactically valid.
+  if ! bash -n "${src}" 2>/dev/null; then
+    fail "smoke-exit: launcher has a bash syntax error"
+    return 1
+  fi
+  # Arg parsing + flag.
+  grep -qE '\-\-smoke-exit-after-spawn' "${src}" || { fail "smoke-exit: no --smoke-exit-after-spawn arg parsing"; pass_all=0; }
+  grep -qE 'SMOKE_EXIT' "${src}" || { fail "smoke-exit: no SMOKE_EXIT flag"; pass_all=0; }
+  # Boot-proof sentinels (Forge contract).
+  grep -qE 'AETHEL_BOOT_PROOF:SERVICES_READY' "${src}" || { fail "smoke-exit: missing SERVICES_READY sentinel"; pass_all=0; }
+  grep -qE 'AETHEL_BOOT_PROOF:CLEAN_EXIT' "${src}" || { fail "smoke-exit: missing CLEAN_EXIT sentinel"; pass_all=0; }
+  grep -qE 'AETHEL_BOOT_PROOF:TIMEOUT' "${src}" || { fail "smoke-exit: missing TIMEOUT sentinel"; pass_all=0; }
+  # Smoke-timeout exit code 6.
+  grep -qE 'exit 6' "${src}" || { fail "smoke-exit: missing 'exit 6' (smoke watchdog timeout)"; pass_all=0; }
+  # Backward-compat: the default (non-smoke) path keeps the interactive trap.
+  grep -qE 'trap _cleanup EXIT INT TERM' "${src}" || { fail "smoke-exit: default 'trap _cleanup EXIT INT TERM' removed (breaks interactive mode)"; pass_all=0; }
+
+  if (( pass_all == 1 )); then
+    ok "smoke-exit contract present (arg parsing, sentinels, exit-6, backward-compat)"
+  fi
+}
+
 # Run all tests
 test_launcher_success_path
 test_voxel_build_failure
 test_missing_main_entrypoint
 test_missing_types_entrypoint
+test_smoke_exit_contract
 
 echo ""
 echo "Walking Skeleton Launcher Tests: Passed: ${passed}  Failed: ${failures}"

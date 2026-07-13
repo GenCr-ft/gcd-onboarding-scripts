@@ -15,6 +15,22 @@
 
 set -euo pipefail
 
+# ─── F1.5 smoke-exit contract (Forge, gcs-project-management#414 §6.2) ──────────
+# --smoke-exit-after-spawn lets the E2E harness drive this launcher: after all
+# services are healthy it prints AETHEL_BOOT_PROOF:SERVICES_READY, then waits;
+# the harness performs the WebSocket boot proof and sends SIGTERM, which (in
+# smoke mode) triggers a clean exit 0. Absent the flag, behaviour is unchanged.
+SMOKE_EXIT=false
+SMOKE_TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-60}"
+AUTH_PID=""
+GAME_PID=""
+for arg in "$@"; do
+  case "$arg" in
+    --smoke-exit-after-spawn) SMOKE_EXIT=true ;;
+    *) echo "ERROR: Unknown argument: $arg" >&2; exit 1 ;;
+  esac
+done
+
 WORKSPACE="${WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 AUTH_DIR="${WORKSPACE}/gcl-srv-authentication"
 SERVER_DIR="${WORKSPACE}/gcp-aethel-server"
@@ -235,16 +251,31 @@ fi
 
 wait_for_http "http://localhost:3100/health" "game server"
 
+# F1.5: signal the E2E harness that all services are healthy and the WebSocket
+# port is accepting connections — its cue to begin the protocol-level boot proof.
+if [[ "$SMOKE_EXIT" == "true" ]]; then
+  echo "AETHEL_BOOT_PROOF:SERVICES_READY"
+fi
+
 # ─── Cleanup ───────────────────────────────────────────────────────────────────
 _cleanup() {
   echo ""
   echo "Shutting down…"
   # SIGKILL: skip graceful shutdown so ports are released before the script exits,
-  # preventing EADDRINUSE on the next run.
-  kill -9 "$AUTH_PID" "$GAME_PID" 2>/dev/null || true
+  # preventing EADDRINUSE on the next run. Guard on non-empty PIDs so cleanup is
+  # safe even when a failure fires the EXIT trap before a service PID is assigned.
+  [[ -n "$AUTH_PID" ]] && kill -9 "$AUTH_PID" 2>/dev/null || true
+  [[ -n "$GAME_PID" ]] && kill -9 "$GAME_PID" 2>/dev/null || true
   docker compose -f "${AUTH_DIR}/docker-compose.dev.yml" down 2>/dev/null || true
 }
-trap _cleanup EXIT INT TERM
+if [[ "$SMOKE_EXIT" == "true" ]]; then
+  # Smoke mode: EXIT trap cleans up; a harness SIGTERM signals boot-proof reached
+  # and exits 0 cleanly (distinct from an interactive Ctrl-C teardown).
+  trap '_cleanup' EXIT
+  trap 'echo "AETHEL_BOOT_PROOF:CLEAN_EXIT"; exit 0' TERM
+else
+  trap _cleanup EXIT INT TERM
+fi
 
 # ─── 9. Instructions ───────────────────────────────────────────────────────────
 echo ""
@@ -264,4 +295,13 @@ echo "  Press ${BOLD}Ctrl+C${NC} to stop all services."
 echo "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-wait
+if [[ "$SMOKE_EXIT" == "true" ]]; then
+  # Boot-proof watchdog: the harness sends SIGTERM after asserting the boot proof,
+  # interrupting this sleep so the TERM trap fires (CLEAN_EXIT / exit 0). If no
+  # SIGTERM arrives in time, the harness hung — fail with a distinct exit code.
+  sleep "${SMOKE_TIMEOUT_SECONDS}" || true
+  echo "AETHEL_BOOT_PROOF:TIMEOUT" >&2
+  exit 6
+else
+  wait
+fi

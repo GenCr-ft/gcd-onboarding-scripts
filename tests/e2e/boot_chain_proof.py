@@ -193,6 +193,11 @@ def _assert_boot_handshake(token: str) -> None:
 def test_boot_chain_reaches_spawn_and_exits_clean() -> None:
     reason = prerequisites_missing()
     if reason:
+        # In CI the M1 gate MUST actually run: a silent skip would exit 0 and
+        # masquerade as a pass. AETHEL_REQUIRE_E2E=1 turns "not ready" into a
+        # hard failure so the boot-chain-smoke job can only go green on a real run.
+        if os.environ.get("AETHEL_REQUIRE_E2E") == "1":
+            pytest.fail(f"E2E required but prerequisites missing: {reason}")
         pytest.skip(f"boot-chain prerequisites missing: {reason}")
 
     launcher = _LauncherProcess()

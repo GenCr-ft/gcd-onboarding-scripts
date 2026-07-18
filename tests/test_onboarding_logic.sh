@@ -407,6 +407,65 @@ test_configure_gft_cli_fails_when_owner_repo_missing_post_clone() {
     log_success "configure_gft_cli missing-owner Logic: PASSED"
 }
 
+test_configure_gft_cli_sources_and_defers_to_config_env() {
+    log_info "[TEST SUITE 6d] Testing configure_gft_cli defers GFT_WORKSPACE to config.env (no shadowing, #247)..."
+    local tmp_home; tmp_home=$(mktemp -d)
+    local tmp_workspace; tmp_workspace=$(mktemp -d)
+    local plt_root="$tmp_home/.gft-studio/gcs-plt-tools"
+    local original_home="$HOME"
+    local original_workspace="${GFT_PROJECTS_HOME:-}"
+    local original_path="$PATH"
+
+    mkdir -p "$plt_root"
+    cat > "$plt_root/onboard.sh" <<'MOCK'
+#!/usr/bin/env bash
+mkdir -p "$HOME/.local/bin"
+cat > "$HOME/.local/bin/gft" <<'INNER'
+#!/usr/bin/env bash
+[[ "${1:-}" == "version" ]] && { echo "2.0.0-configured"; exit 0; }
+echo "configured gft $*"
+INNER
+chmod +x "$HOME/.local/bin/gft"
+MOCK
+    chmod +x "$plt_root/onboard.sh"
+
+    export HOME="$tmp_home"
+    export GFT_PROJECTS_HOME="$tmp_workspace"
+    export PATH="/usr/bin:/bin"
+
+    # Authoritative per-workspace config.env (as `gft onboard` would write it).
+    mkdir -p "$HOME/.config/gft"
+    cat > "$HOME/.config/gft/config.env" <<EOF
+export GFT_WORKSPACE=/real/ws
+export GFT_PLT_ROOT=/real/ws/gcs-plt-tools
+EOF
+
+    local output_file; output_file=$(mktemp)
+    configure_gft_cli >"$output_file" 2>&1
+    configure_gft_cli >>"$output_file" 2>&1  # second run — must stay idempotent
+    local profile_file="$HOME/.bashrc"
+    local checks_failed=0
+
+    # AC-1: exactly one config.env source line (idempotent).
+    local src_count; src_count=$(grep -c '\.config/gft/config\.env' "$profile_file" 2>/dev/null || echo 0)
+    [[ "$src_count" -ne 1 ]] && log_error "FAIL (6d): expected exactly 1 config.env source line, got $src_count." && ((checks_failed++))
+
+    # AC-3: with config.env present, no conflicting hardcoded GFT_WORKSPACE export written.
+    [[ "$(grep -c '^export GFT_WORKSPACE=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (6d): configure_gft_cli hardcoded GFT_WORKSPACE while config.env owns it." && ((checks_failed++))
+
+    # AC-2: sourcing the profile yields config.env's value (config.env wins).
+    local resolved; resolved=$(HOME="$tmp_home" bash -c "unset GFT_WORKSPACE; source '$profile_file' >/dev/null 2>&1; echo \$GFT_WORKSPACE")
+    [[ "$resolved" != "/real/ws" ]] && log_error "FAIL (6d): sourced GFT_WORKSPACE='$resolved', expected '/real/ws' (config.env should win)." && ((checks_failed++))
+
+    export HOME="$original_home"
+    export GFT_PROJECTS_HOME="$original_workspace"
+    export PATH="$original_path"
+    rm -rf "$tmp_home" "$tmp_workspace" "$output_file"
+
+    if [[ $checks_failed -ne 0 ]]; then echo "--- Raw 6d Output ---" && cat "$output_file" 2>/dev/null; return 1; fi
+    log_success "configure_gft_cli config.env-deference Logic: PASSED"
+}
+
 test_path_expansion_no_eval() {
     log_info "[TEST SUITE 7] Testing safe tilde/HOME path expansion (no eval)..."
     local checks_failed=0
@@ -1181,6 +1240,7 @@ main() {
     test_final_validation_logic || ((failed_suites++))
     test_configure_gft_cli_bootstraps_cli_and_exports_env || ((failed_suites++))
     test_configure_gft_cli_fails_when_owner_repo_missing_post_clone || ((failed_suites++))
+    test_configure_gft_cli_sources_and_defers_to_config_env || ((failed_suites++))
     test_path_expansion_no_eval || ((failed_suites++))
     test_sed_inplace_portability || ((failed_suites++))
     test_validate_env_has_set_e || ((failed_suites++))

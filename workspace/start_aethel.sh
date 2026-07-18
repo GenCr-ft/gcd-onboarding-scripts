@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# run-walking-skeleton.sh — boots all services needed to run the Phase 4 walking skeleton
+# start_aethel.sh — boots all services needed to run the Aethel walking skeleton
 #
 # Services and ports:
 #   gcl-srv-authentication  →  :3010  (avoids WSL2-mirrored Windows port :3000)
@@ -12,6 +12,7 @@
 #   - Docker + docker compose
 #   - Node.js 20+ with npm
 #   - openssl
+#   - wasm-pack (for PCG WASM rebuild when src/**.rs is newer than pkg/)
 
 set -euo pipefail
 
@@ -31,9 +32,12 @@ for arg in "$@"; do
   esac
 done
 
-WORKSPACE="${WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+# Resolve workspace root: this script lives at <workspace>/gcd-onboarding-scripts/workspace/
+# so we need to go up two levels. Override with WORKSPACE= if your layout differs.
+WORKSPACE="${WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)}"
 AUTH_DIR="${WORKSPACE}/gcl-srv-authentication"
 SERVER_DIR="${WORKSPACE}/gcp-aethel-server"
+PCG_DIR="${WORKSPACE}/gcp-aethel-pcg"
 KEY_DIR="${WORKSPACE}/.keys"
 
 GREEN=$'\033[0;32m'
@@ -186,6 +190,23 @@ if [[ -z "$types_entry" || ! -f "${VOXEL_DIR}/${types_entry}" ]]; then
   exit 1
 fi
 
+# ─── 8a. PCG WASM: rebuild if pkg/ is absent or any .rs source is newer ───────
+step "Build: gcp-aethel-pcg WASM (conditional)"
+if [[ ! -d "$PCG_DIR" ]]; then
+  warn "gcp-aethel-pcg not found at ${PCG_DIR} — skipping WASM rebuild."
+elif [[ ! -f "${PCG_DIR}/pkg/aethel_pcg.js" ]] || \
+   find "${PCG_DIR}/src" -name "*.rs" -newer "${PCG_DIR}/pkg/aethel_pcg.js" | grep -q .; then
+  if ! command -v wasm-pack &>/dev/null; then
+    warn "wasm-pack not found — skipping WASM rebuild. Run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh"
+  else
+    cd "$PCG_DIR"
+    wasm-pack build --target nodejs
+    ok "PCG WASM rebuilt."
+  fi
+else
+  ok "PCG WASM is up to date — skipping rebuild."
+fi
+
 step "Build: gcp-aethel-server"
 cd "$SERVER_DIR"
 [[ ! -d node_modules ]] && npm install --silent
@@ -280,7 +301,7 @@ fi
 # ─── 9. Instructions ───────────────────────────────────────────────────────────
 echo ""
 echo "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo "${BOLD}  Walking Skeleton — all services ready${NC}"
+echo "${BOLD}  Aethel — all services ready${NC}"
 echo ""
 echo "  Auth service    ${GREEN}http://localhost:3010${NC}"
 echo "  Game server     ${GREEN}http://localhost:3100${NC}  |  ${GREEN}ws://localhost:3001${NC}"

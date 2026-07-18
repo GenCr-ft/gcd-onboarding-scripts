@@ -297,6 +297,14 @@ configure_gft_cli() {
         shell_profile_file="$HOME/.zshrc"
     fi
 
+    # The authoritative per-workspace config.env (written by the gft-native path) is
+    # the source of truth for GFT_WORKSPACE/GFT_PLT_ROOT. Hardcoding them here would
+    # shadow it in new shells (gcs-plt-tools#749 / #247). So: always write the
+    # studio-home-derived GFT_SSOT_GEMOP_PATH (not in config.env); write explicit
+    # GFT_WORKSPACE/GFT_PLT_ROOT ONLY when config.env is absent (legacy standalone);
+    # and ensure the block SOURCES config.env as its final line so its values override
+    # any earlier hardcoded exports (incl. the SSoT role-var writer that runs first).
+    local config_env="$HOME/.config/gft/config.env"
     if [ -n "$shell_profile_file" ]; then
         local start_marker="# GENCRAFT ENVIRONMENT - START"
         local end_marker="# GENCRAFT ENVIRONMENT - END"
@@ -304,7 +312,13 @@ configure_gft_cli() {
         if ! grep -qF "$start_marker" "$shell_profile_file"; then
             echo -e "\n$start_marker\n# Managed by gft-onboarding.sh — do not edit manually.\n$end_marker" >> "$shell_profile_file"
         fi
-        for var_assignment in "GFT_PLT_ROOT=${plt_root}" "GFT_WORKSPACE=${workspace}" "GFT_SSOT_GEMOP_PATH=${gemop_path}"; do
+        local -a assignments=("GFT_SSOT_GEMOP_PATH=${gemop_path}")
+        if [ ! -f "$config_env" ]; then
+            assignments+=("GFT_PLT_ROOT=${plt_root}" "GFT_WORKSPACE=${workspace}")
+        else
+            log_info "config.env present — deferring GFT_WORKSPACE/GFT_PLT_ROOT to it (no hardcode)."
+        fi
+        for var_assignment in "${assignments[@]}"; do
             local var_name="${var_assignment%%=*}"
             if grep -qF "export ${var_assignment}" "$shell_profile_file"; then
                 log_info "${var_name} is already set to the correct value."
@@ -316,6 +330,13 @@ configure_gft_cli() {
                 log_info "Added export ${var_assignment} to $shell_profile_file"
             fi
         done
+        # Source config.env as the final line of the managed block (idempotent).
+        if ! grep -qF '.config/gft/config.env' "$shell_profile_file"; then
+            local source_line='[ -f "$HOME/.config/gft/config.env" ] && . "$HOME/.config/gft/config.env"'
+            local source_line_esc="${source_line//&/\\&}"
+            _sed_inplace "s|^${end_marker}$|${source_line_esc}\n${end_marker}|" "$shell_profile_file"
+            log_info "Added config.env source line to $shell_profile_file (authoritative workspace SoT)."
+        fi
     fi
 
     # Export for the remainder of this session.

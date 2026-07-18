@@ -55,6 +55,7 @@ WORKSPACE="${WORKSPACE:-$(_detect_workspace)}"
 AUTH_DIR="${WORKSPACE}/gcl-srv-authentication"
 SERVER_DIR="${WORKSPACE}/gcp-aethel-server"
 PCG_DIR="${WORKSPACE}/gcp-aethel-pcg"
+PCG_WASM_JS="${PCG_DIR}/pkg/node/gcp_aethel_pcg.js"
 KEY_DIR="${WORKSPACE}/.keys"
 
 GREEN=$'\033[0;32m'
@@ -211,13 +212,13 @@ fi
 step "Build: gcp-aethel-pcg WASM (conditional)"
 if [[ ! -d "$PCG_DIR" ]]; then
   warn "gcp-aethel-pcg not found at ${PCG_DIR} — skipping WASM rebuild."
-elif [[ ! -f "${PCG_DIR}/pkg/aethel_pcg.js" ]] || \
-   find "${PCG_DIR}/src" -name "*.rs" -newer "${PCG_DIR}/pkg/aethel_pcg.js" | grep -q .; then
+elif [[ ! -f "$PCG_WASM_JS" ]] || \
+   find "${PCG_DIR}/src" -name "*.rs" -newer "$PCG_WASM_JS" | grep -q .; then
   if ! command -v wasm-pack &>/dev/null; then
     warn "wasm-pack not found — skipping WASM rebuild. Run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh"
   else
     cd "$PCG_DIR"
-    wasm-pack build --target nodejs
+    wasm-pack build --target nodejs --out-dir pkg/node
     ok "PCG WASM rebuilt."
   fi
 else
@@ -294,6 +295,9 @@ wait_for_http "http://localhost:3100/health" "game server"
 if [[ "$SMOKE_EXIT" == "true" ]]; then
   echo "AETHEL_BOOT_PROOF:SERVICES_READY"
 fi
+
+export AETHEL_BUILD
+AETHEL_BUILD="$(git -C "${WORKSPACE}/gcp-aethel-client" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 # ─── Cleanup ───────────────────────────────────────────────────────────────────
 _cleanup() {

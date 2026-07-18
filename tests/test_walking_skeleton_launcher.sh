@@ -344,12 +344,37 @@ test_smoke_exit_contract() {
   fi
 }
 
+test_pcg_wasm_and_build_stamp_contract() {
+  log_test "WI-255: launcher stamps AETHEL_BUILD and targets the pkg/node WASM the server loads"
+  local src="${LAUNCHER_SRC}"
+  local pass_all=1
+
+  # Launcher must remain syntactically valid.
+  if ! bash -n "${src}" 2>/dev/null; then
+    fail "wasm/stamp: launcher has a bash syntax error"
+    return 1
+  fi
+  # Build stamp: AETHEL_BUILD exported from the client short HEAD (fallback "unknown").
+  grep -qE 'export AETHEL_BUILD' "${src}" || { fail "wasm/stamp: missing 'export AETHEL_BUILD'"; pass_all=0; }
+  grep -qE 'AETHEL_BUILD="\$\(git -C .*gcp-aethel-client.* rev-parse --short HEAD' "${src}" \
+    || { fail "wasm/stamp: AETHEL_BUILD not derived from gcp-aethel-client short HEAD"; pass_all=0; }
+  # PCG WASM path must be the server-loaded pkg/node build, not the stale top-level pkg.
+  grep -qE 'pkg/node/gcp_aethel_pcg\.js' "${src}" || { fail "wasm/stamp: staleness check does not target pkg/node/gcp_aethel_pcg.js"; pass_all=0; }
+  grep -qE 'wasm-pack build --target nodejs --out-dir pkg/node' "${src}" \
+    || { fail "wasm/stamp: rebuild does not use --out-dir pkg/node"; pass_all=0; }
+
+  if (( pass_all == 1 )); then
+    ok "wasm/stamp contract present (AETHEL_BUILD stamp + pkg/node WASM path)"
+  fi
+}
+
 # Run all tests
 test_launcher_success_path
 test_voxel_build_failure
 test_missing_main_entrypoint
 test_missing_types_entrypoint
 test_smoke_exit_contract
+test_pcg_wasm_and_build_stamp_contract
 
 echo ""
 echo "Walking Skeleton Launcher Tests: Passed: ${passed}  Failed: ${failures}"

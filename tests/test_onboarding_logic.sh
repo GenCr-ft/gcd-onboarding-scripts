@@ -440,22 +440,33 @@ export GFT_WORKSPACE=/real/ws
 export GFT_PLT_ROOT=/real/ws/gcs-plt-tools
 EOF
 
+    # Pre-seed the managed block with a STALE hardcoded GFT_WORKSPACE — exactly what
+    # the SSoT role-var writer (configure_environment_variables) emits, running before
+    # configure_gft_cli. This proves config.env OVERRIDES it, not merely that it applies.
+    local profile_file="$HOME/.bashrc"
+    cat > "$profile_file" <<'SEED'
+# GENCRAFT ENVIRONMENT - START
+# This block is managed by the Gencraft onboarding script. Do not edit manually.
+export GFT_WORKSPACE=/stale/hardcoded
+# GENCRAFT ENVIRONMENT - END
+SEED
+
     local output_file; output_file=$(mktemp)
     configure_gft_cli >"$output_file" 2>&1
     configure_gft_cli >>"$output_file" 2>&1  # second run — must stay idempotent
-    local profile_file="$HOME/.bashrc"
     local checks_failed=0
 
     # AC-1: exactly one config.env source line (idempotent).
     local src_count; src_count=$(grep -c '\.config/gft/config\.env' "$profile_file" 2>/dev/null || echo 0)
     [[ "$src_count" -ne 1 ]] && log_error "FAIL (6d): expected exactly 1 config.env source line, got $src_count." && ((checks_failed++))
 
-    # AC-3: with config.env present, no conflicting hardcoded GFT_WORKSPACE export written.
-    [[ "$(grep -c '^export GFT_WORKSPACE=' "$profile_file" 2>/dev/null)" -gt 0 ]] && log_error "FAIL (6d): configure_gft_cli hardcoded GFT_WORKSPACE while config.env owns it." && ((checks_failed++))
+    # AC-3: configure_gft_cli added NO second GFT_WORKSPACE (only the pre-seeded one remains).
+    [[ "$(grep -c '^export GFT_WORKSPACE=' "$profile_file" 2>/dev/null)" -ne 1 ]] && log_error "FAIL (6d): configure_gft_cli should not add its own GFT_WORKSPACE when config.env owns it." && ((checks_failed++))
 
-    # AC-2: sourcing the profile yields config.env's value (config.env wins).
+    # AC-2 (the override proof): despite the stale hardcoded export in the block,
+    # sourcing the profile yields config.env's value because config.env is sourced last.
     local resolved; resolved=$(HOME="$tmp_home" bash -c "unset GFT_WORKSPACE; source '$profile_file' >/dev/null 2>&1; echo \$GFT_WORKSPACE")
-    [[ "$resolved" != "/real/ws" ]] && log_error "FAIL (6d): sourced GFT_WORKSPACE='$resolved', expected '/real/ws' (config.env should win)." && ((checks_failed++))
+    [[ "$resolved" != "/real/ws" ]] && log_error "FAIL (6d): sourced GFT_WORKSPACE='$resolved', expected '/real/ws' (config.env must override the stale hardcoded export)." && ((checks_failed++))
 
     export HOME="$original_home"
     export GFT_PROJECTS_HOME="$original_workspace"

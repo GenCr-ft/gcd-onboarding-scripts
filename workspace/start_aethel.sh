@@ -32,9 +32,26 @@ for arg in "$@"; do
   esac
 done
 
-# Resolve workspace root: this script lives at <workspace>/gcd-onboarding-scripts/workspace/
-# so we need to go up two levels. Override with WORKSPACE= if your layout differs.
-WORKSPACE="${WORKSPACE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../" && pwd)}"
+# Resolve workspace root by probing for a known sibling repo. The script may be
+# run from the workspace root directly OR from gcd-onboarding-scripts/workspace/.
+# Override with WORKSPACE= if your layout differs.
+_detect_workspace() {
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # Deployed at workspace root: siblings are the repos themselves
+  if [[ -d "${script_dir}/gcl-srv-authentication" ]]; then
+    echo "${script_dir}"; return
+  fi
+  # Canonical location: gcd-onboarding-scripts/workspace/ — two levels up
+  local candidate
+  candidate="$(cd "${script_dir}/../../" && pwd)"
+  if [[ -d "${candidate}/gcl-srv-authentication" ]]; then
+    echo "${candidate}"; return
+  fi
+  echo "ERROR: Cannot locate workspace root from ${script_dir}. Set WORKSPACE= explicitly." >&2
+  exit 1
+}
+WORKSPACE="${WORKSPACE:-$(_detect_workspace)}"
 AUTH_DIR="${WORKSPACE}/gcl-srv-authentication"
 SERVER_DIR="${WORKSPACE}/gcp-aethel-server"
 PCG_DIR="${WORKSPACE}/gcp-aethel-pcg"

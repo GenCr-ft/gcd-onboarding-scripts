@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test_walking_skeleton_launcher.sh — TDD regression tests for run-walking-skeleton.sh
+# test_walking_skeleton_launcher.sh — TDD regression tests for start_aethel.sh
 set -euo pipefail
 
 TEST_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 REPO_ROOT=$(cd "${TEST_DIR}/.." && pwd)
-LAUNCHER_SRC="${REPO_ROOT}/workspace/run-walking-skeleton.sh"
+LAUNCHER_SRC="${REPO_ROOT}/workspace/start_aethel.sh"
 
 failures=0
 passed=0

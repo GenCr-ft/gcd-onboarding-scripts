@@ -11,10 +11,17 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  # One in-flight run per workflow per ref. Superseded pushes are cancelled on branches;
+  # main is never cancelled, so a run that uploads artefacts always completes (pm#546).
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   unit-tests:
     name: Shell Unit Tests
     runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 20
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout
@@ -27,6 +34,7 @@ jobs:
   shellcheck:
     name: ShellCheck Lint
     runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 10
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout

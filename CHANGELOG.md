@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bound every `ci.yml` job with `timeout-minutes` and added a workflow `concurrency` group that cancels superseded branch runs but never `main`. (#546, @loigallain)
+
 ### Added
 - Add workspace quickstart onboarding for bounded newcomer workspaces. (#115, @loigallain)
 - Add install_gft_ops_scripts to ensure idempotent pipx installation of gft-ops-scripts during onboarding. (#308, @Antigravity)

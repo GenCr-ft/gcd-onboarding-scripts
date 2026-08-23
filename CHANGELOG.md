@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Brought the blocking SSoT gate to zero findings: added compliant frontmatter to three documents that had none, repaired `DVO-SPEC-001`'s frontmatter (its `docId` was a prose title), renamed all four to the `<docId>.<description>.md` form, and moved the two inbound references (`README.md`, TEST SUITE 13). Re-pinned `governance-version` from the ambiguous `v1.4.0` — a tag carried by both the archived `gcs-devops-standards` and the live `gcs-core-governance` — to `v1.6.0`, which exists only in the live Law; measured delta 0 errors over scanned=4 at both tags. (#260, @loigallain)
 - Bound every `ci.yml` job with `timeout-minutes` and added a workflow `concurrency` group that cancels superseded branch runs but never `main`. (#546, @loigallain)
 
 ### Added

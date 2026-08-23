@@ -1,10 +1,34 @@
 ---
-docId: G@FT.ai Developer Onboarding Script & Tooling Standardization
+docId: DVO-SPEC-001
 title: "Final AI Specification: G@FT.ai Developer Onboarding Script & Tooling Standardization"
-version: 1.7
-date: '2025-06-24'
-recipient: "Code-Generating AI (Large Language Model - LLM)"
-objective: "To provide comprehensive and detailed specifications for the AI-driven creation of a multi-platform (Bash) developer onboarding script, and to define the conceptual infrastructure of standardized GitHub repository templates for the G@FT.ai Studio."
+version: 1.7.0
+authors:
+- GCS DevOps Enablement Guild
+creation_date: '2025-06-24'
+last_updated_date: '2026-08-23'
+language: en
+knowledgeGuardian:
+- Diane (GCT-DVO-DTL-001)
+ssot_path: https://github.com/GenCr-ft/gcd-onboarding-scripts/blob/main/spec/DVO-SPEC-001.gft-developer-onboarding-specification.md
+summary: >
+  Specification for the AI-driven creation of a multi-platform (Bash) developer onboarding
+  script, and for the conceptual infrastructure of standardized GitHub repository templates
+  for the GenCr@ft Studio. Original audience: a code-generating large language model.
+metadata:
+  lifecycle-stage: approved
+  scope: project-platform
+  domain: devops-and-infrastructure
+  doc-type: specification
+  intended-audience:
+  - developers
+  - ai-agents
+  - devops-crew
+  security-classification: l2_confidential
+  keywords:
+  - onboarding
+  - tooling-standardization
+  - repository-templates
+  - bash
 ---
 
 # Final AI Specification: <G@FT.ai> Developer Onboarding Script & Tooling Standardization

@@ -1,3 +1,36 @@
+---
+docId: DVO-PLAN-001
+title: Preflight Environment Readiness Implementation Plan
+version: 1.0.0
+authors:
+- GCS DevOps Enablement Guild
+creation_date: '2026-06-14'
+last_updated_date: '2026-08-23'
+language: en
+knowledgeGuardian:
+- Diane (GCT-DVO-DTL-001)
+ssot_path: https://github.com/GenCr-ft/gcd-onboarding-scripts/blob/main/docs/superpowers/plans/DVO-PLAN-001.preflight-env-readiness.md
+summary: >
+  Implementation plan for includes/07_preflight.sh — a workspace-aware preflight that prints a
+  readiness table, asks permission before installing anything, and exits cleanly on unresolved
+  critical failures.
+metadata:
+  lifecycle-stage: approved
+  scope: project-platform
+  domain: devops-and-infrastructure
+  doc-type: plan
+  intended-audience:
+  - developers
+  - devops-crew
+  - ai-agents
+  security-classification: l2_confidential
+  keywords:
+  - onboarding
+  - preflight
+  - environment-readiness
+  - bash
+---
+
 # Preflight Environment Readiness Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

@@ -18,5 +18,13 @@ jobs:
       # Hard gate: repo is clean (0 broken links) — refs gcs-core-governance — archived from gcs-core-governance.
       continue-on-error: false
       # We specify the exact, stable versions of our governance and tooling.
-      governance-version: 'v1.4.0'
+      # governance-version: re-pinned v1.4.0 -> v1.6.0 for GenCr-ft/gcs-core-governance#342.
+      # 'v1.4.0' was ambiguous: it is a tag in BOTH the archived gcs-devops-standards and the live
+      # gcs-core-governance (gcd-shared-actions#125), so the pin named one of two documents and the
+      # `uses:` line above decided which. 'v1.6.0' exists only in the live Law, so it names one thing.
+      # uses: is @v1.3.4, at/above the cutover, so this pin already resolved against the live Law.
+      # Measured at both tags, engine v4.3.2, CI's own 26-name prune list: scanned=4, delta 0 errors.
+      # scanned=4 is the load-bearing number — this gate judges 4 files, not the whole repo, so a
+      # future reader must not read its "0 errors" as repo-wide compliance.
+      governance-version: 'v1.6.0'
       tooling-version: 'v4.3.2'

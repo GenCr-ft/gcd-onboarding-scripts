@@ -1,3 +1,36 @@
+---
+docId: DVO-REFE-001
+title: Auxiliary Script Reference
+version: 1.0.0
+authors:
+- GCS DevOps Enablement Guild
+creation_date: '2026-06-19'
+last_updated_date: '2026-08-23'
+language: en
+knowledgeGuardian:
+- Diane (GCT-DVO-DTL-001)
+ssot_path: https://github.com/GenCr-ft/gcd-onboarding-scripts/blob/main/docs/DVO-REFE-001.auxiliary-scripts.md
+summary: >
+  Supplements the repository README by detailing the helper scripts that support onboarding,
+  diagnostics, and infrastructure workflows — the Windows bootstrapper, the OpenTofu
+  environment helper, and the environment validators.
+metadata:
+  lifecycle-stage: approved
+  scope: project-platform
+  domain: devops-and-infrastructure
+  doc-type: reference
+  intended-audience:
+  - developers
+  - devops-crew
+  security-classification: l2_confidential
+  keywords:
+  - onboarding
+  - auxiliary-scripts
+  - powershell
+  - opentofu
+  - validators
+---
+
 # Auxiliary Script Reference
 
 This document supplements the main README by detailing helper scripts that support onboarding, diagnostics, and infrastructure workflows.

@@ -7,7 +7,7 @@ authors:
 - AI Compliance Agent
 reviewers: []
 creation_date: '2025-06-26'
-last_updated_date: '2026-06-19'
+last_updated_date: '2026-08-23'
 knowledgeGuardian:
 - Béatrice (GCT-MGT-SPM-001)
 language: en
@@ -199,7 +199,7 @@ There is no `onboard.sh` in this repo — it *is* the onboarding system.
 
 ### Documentation
 
-- **Auxiliary Scripts:** See `docs/auxiliary-scripts.md` for details on `onboarding-win.ps1` and validators.
+- **Auxiliary Scripts:** See `docs/DVO-REFE-001.auxiliary-scripts.md` for details on `onboarding-win.ps1` and validators.
 - **Knowledge Base:** Link this README in the "How-To: Onboard devs" KB entry.
 
 ---

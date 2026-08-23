@@ -1,3 +1,36 @@
+---
+docId: DVO-TDD-001
+title: "Design: Workspace-Aware Environment Readiness Preflight"
+version: 1.0.0
+authors:
+- GCS DevOps Enablement Guild
+creation_date: '2026-06-14'
+last_updated_date: '2026-08-23'
+language: en
+knowledgeGuardian:
+- Diane (GCT-DVO-DTL-001)
+ssot_path: https://github.com/GenCr-ft/gcd-onboarding-scripts/blob/main/docs/superpowers/specs/DVO-TDD-001.preflight-env-readiness-design.md
+summary: >
+  Design for a workspace-aware environment readiness preflight in gft-onboarding.sh, replacing
+  check_prerequisites() so that missing tools and unauthenticated GitHub CLI are surfaced up
+  front rather than failing mid-run.
+metadata:
+  lifecycle-stage: approved
+  scope: project-platform
+  domain: devops-and-infrastructure
+  doc-type: technical-design-detail
+  intended-audience:
+  - developers
+  - devops-crew
+  - architects
+  security-classification: l2_confidential
+  keywords:
+  - onboarding
+  - preflight
+  - environment-readiness
+  - design
+---
+
 # Design: Workspace-Aware Environment Readiness Preflight
 
 **Date:** 2026-06-14

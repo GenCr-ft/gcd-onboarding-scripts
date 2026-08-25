@@ -556,7 +556,7 @@ test_sed_inplace_portability() {
 }
 
 test_environment_variable_idempotency() {
-    log_info "[TEST SUITE 4] Testing Environment Variable Idempotency..."
+    log_info "[TEST SUITE 3b] Testing Environment Variable Idempotency..."
     local PROFILE_FILE; PROFILE_FILE=$(mktemp)
     trap "rm -f '$PROFILE_FILE'; trap - RETURN" RETURN
 
@@ -709,7 +709,7 @@ test_workspace_quickstart_contract() {
 }
 
 test_preflight_connectivity_hard_fail() {
-    log_info "[TEST SUITE] Preflight: connectivity hard fail exits 1..."
+    log_info "[TEST SUITE 14] Preflight: connectivity hard fail exits 1..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity() { return 1; }
@@ -730,7 +730,7 @@ test_preflight_connectivity_hard_fail() {
 }
 
 test_preflight_table_all_pass() {
-    log_info "[TEST SUITE] Preflight: table renders with all checks passing..."
+    log_info "[TEST SUITE 15] Preflight: table renders with all checks passing..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity()   { return 0; }
@@ -763,7 +763,7 @@ test_preflight_table_all_pass() {
 }
 
 test_preflight_table_mixed() {
-    log_info "[TEST SUITE] Preflight: table renders with missing gh row..."
+    log_info "[TEST SUITE 16] Preflight: table renders with missing gh row..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity()   { return 0; }
@@ -802,7 +802,7 @@ test_preflight_table_mixed() {
 }
 
 test_preflight_install_prompt_yes() {
-    log_info "[TEST SUITE] Preflight: install prompt Y triggers install..."
+    log_info "[TEST SUITE 17] Preflight: install prompt Y triggers install..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     local _install_flag; _install_flag=$(mktemp)
@@ -841,7 +841,7 @@ test_preflight_install_prompt_yes() {
 }
 
 test_preflight_install_prompt_no() {
-    log_info "[TEST SUITE] Preflight: install prompt N marks SKIPPED and exits 1..."
+    log_info "[TEST SUITE 18] Preflight: install prompt N marks SKIPPED and exits 1..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity()   { return 0; }
@@ -874,7 +874,7 @@ test_preflight_install_prompt_no() {
 }
 
 test_preflight_gh_auth_prompts_login() {
-    log_info "[TEST SUITE] Preflight: unauth gh prompts gh auth login..."
+    log_info "[TEST SUITE 19] Preflight: unauth gh prompts gh auth login..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     local _flag_file; _flag_file=$(mktemp)
@@ -919,7 +919,7 @@ test_preflight_gh_auth_prompts_login() {
 }
 
 test_preflight_workspace_aethel_checks_node_docker() {
-    log_info "[TEST SUITE] Preflight: aethel workspace adds node and docker rows..."
+    log_info "[TEST SUITE 20] Preflight: aethel workspace adds node and docker rows..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity()   { return 0; }
@@ -948,7 +948,7 @@ test_preflight_workspace_aethel_checks_node_docker() {
 }
 
 test_preflight_no_workspace_no_extra_checks() {
-    log_info "[TEST SUITE] Preflight: no workspace omits workspace-specific rows..."
+    log_info "[TEST SUITE 21] Preflight: no workspace omits workspace-specific rows..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity()   { return 0; }
@@ -976,7 +976,7 @@ test_preflight_no_workspace_no_extra_checks() {
 }
 
 test_preflight_critical_fail_exits_one() {
-    log_info "[TEST SUITE] Preflight: unresolved critical failure exits 1 with summary..."
+    log_info "[TEST SUITE 22] Preflight: unresolved critical failure exits 1 with summary..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity()   { return 0; }
@@ -1005,7 +1005,7 @@ test_preflight_critical_fail_exits_one() {
 }
 
 test_preflight_disk_warn_non_blocking() {
-    log_info "[TEST SUITE] Preflight: low disk triggers warn, user can continue..."
+    log_info "[TEST SUITE 23] Preflight: low disk triggers warn, user can continue..."
     source "${PROJECT_ROOT}/includes/07_preflight.sh"
 
     _pf_check_connectivity()   { return 0; }
@@ -1131,7 +1131,7 @@ test_env_var_warns_when_ssot_empty() {
 }
 
 test_win_bootstrap_filename_consistency() {
-    log_info "[TEST SUITE] Win Bootstrap: PS1 filename matches bash entry point..."
+    log_info "[TEST SUITE 24] Win Bootstrap: PS1 filename matches bash entry point..."
     local checks_failed=0
 
     local ps1_file="${PROJECT_ROOT}/onboarding-win.ps1"
@@ -1161,7 +1161,7 @@ test_win_bootstrap_filename_consistency() {
 }
 
 test_main_orchestration_smoke() {
-    log_info "[TEST SUITE] Main Orchestration Smoke: isolated HOME, all network stubbed..."
+    log_info "[TEST SUITE 25] Main Orchestration Smoke: isolated HOME, all network stubbed..."
     local smoke_home; smoke_home=$(mktemp -d)
     local smoke_ws; smoke_ws=$(mktemp -d)
     local smoke_out; smoke_out=$(mktemp)
@@ -1213,6 +1213,11 @@ test_auxiliary_scripts_windows_invocation_uses_clone() {
 
     if grep -q "Invoke-WebRequest" "$aux_path"; then
         log_error "FAIL: docs/DVO-REFE-001.auxiliary-scripts.md still references Invoke-WebRequest — must use git clone."
+        ((checks_failed++))
+    fi
+
+    if ! grep -q "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force" "$aux_path"; then
+        log_error "FAIL: docs/auxiliary-scripts.md missing Set-ExecutionPolicy invocation — required for PS5.1 compatibility."
         ((checks_failed++))
     fi
 

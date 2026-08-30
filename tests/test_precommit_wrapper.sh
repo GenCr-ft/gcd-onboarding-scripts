@@ -196,6 +196,145 @@ deploy_planning_metadata_hook >/dev/null 2>&1
 second=$(sha256sum "$HOOKS/pre-commit" | cut -d' ' -f1)
 check "re-running onboarding does not rewrite a current wrapper" "$first" "$second"
 
+# ==============================================================================
+# WI-272 — the gate's verdict depended on PATH, and a crash printed as a verdict
+# ==============================================================================
+#
+# Step 1 of the wrapper executed the linter as a bare executable, so its interpreter came
+# from `#!/usr/bin/env python3` -> PATH. Two symptoms, ONE defect: a crash and a genuine
+# violation BOTH exit 1, so "could not run" cannot be recovered after invocation and has
+# to be established before it. That is why the diagnosis fix and the interpreter fix are
+# the same change.
+#
+# On the environment these arms assume: the CANNOT-RUN path fires only when NO candidate
+# interpreter can import the linter's requirement. `/usr/bin/python3` is a fixed candidate
+# and carries PyYAML on the dev machine and on the self-hosted runner CI uses, so the arms
+# below reach that path with GFT_LINTER_REQUIRED_MODULE -- a requirement nothing can
+# satisfy -- rather than by trying to strip PyYAML off the machine.
+#
+# Every arm re-stages via `stage`, so GFT_PROJECTS_HOME is always a fresh fixture under
+# the hermetic HOME.
+
+# stage_entry — an installed console-script entry point beside the fixture's linter,
+# mirroring gcd-ops-scripts' real layout (<clone>/.venv/bin/validate-planning-metadata).
+# The real one's shebang is an ABSOLUTE interpreter path, which is precisely why it ignores
+# PATH; this stub stands in for that property by announcing itself.
+stage_entry() {
+  local d="$WS/gcd-ops-scripts/.venv/bin"
+  mkdir -p "$d"
+  printf '#!/usr/bin/env bash\necho "RAN=entrypoint"\nexit 0\n' > "$d/validate-planning-metadata"
+  chmod +x "$d/validate-planning-metadata"
+}
+
+# broken_python <dir> — a `python3` that cannot run the linter, failing on the import
+# exactly as the yaml-less poetry interpreter on the dev machine does. Staged rather than
+# inherited: an arm that relied on the ambient PATH happening to put a broken interpreter
+# first would itself be the environment-dependence this WI removes.
+broken_python() {
+  mkdir -p "$1"
+  cat > "$1/python3" <<'BROKEN'
+#!/usr/bin/env bash
+# `-c` is the importability probe: this interpreter fails every one.
+if [ "${1:-}" = "-c" ]; then exit 1; fi
+echo "ModuleNotFoundError: No module named 'yaml'" >&2
+exit 1
+BROKEN
+  chmod +x "$1/python3"
+}
+
+echo "=== AC-272.1 (MUST-FIRE): an unrunnable linter reads as 'cannot run', not 'failed' ==="
+stage w272a
+( export GFT_LINTER_REQUIRED_MODULE="gft_no_such_module_272"
+  deploy_planning_metadata_hook >/dev/null 2>&1 )
+out=$(cd "$WS/repo" && "$HOOKS/pre-commit" 2>&1); rc=$?
+if printf '%s' "$out" | grep -qi 'validation failed'; then
+  bad "an unrunnable gate does not report a validation failure" \
+      "said 'validation failed' — the crash is still dressed as a verdict"
+elif printf '%s' "$out" | grep -q 'gft_no_such_module_272' \
+  && printf '%s' "$out" | grep -q 'python3'; then
+  ok "an unrunnable gate does not report a validation failure"
+else
+  bad "an unrunnable gate does not report a validation failure" \
+      "names neither the requirement nor an interpreter: $(printf '%s' "$out" | tr '\n' '|' | cut -c1-140)"
+fi
+
+echo "=== AC-272.2 (MUST-FIRE): it still refuses the commit, distinguishably ==="
+# Same staging as AC-272.1, asserted separately because the two regress apart: a message
+# fix that quietly returned 0 would satisfy AC-272.1 and defeat the gate entirely.
+if [ "$rc" -eq 0 ]; then
+  bad "an unrunnable gate refuses the commit with a code distinct from a verdict" \
+      "exit 0 — a broken gate was turned into a passing one"
+elif [ "$rc" -eq 1 ]; then
+  bad "an unrunnable gate refuses the commit with a code distinct from a verdict" \
+      "rc=1 — indistinguishable from a content verdict"
+else
+  ok "an unrunnable gate refuses the commit with a code distinct from a verdict"
+fi
+
+echo "=== AC-272.3 (MUST-FIRE): the linter executed is identical under two PATH orderings ==="
+stage w272c
+stage_entry
+# Two distinct `python3`s, each announcing itself. Today the wrapper reaches the linter
+# through `#!/usr/bin/env python3`, so whichever leads PATH is what runs, and the two runs
+# disagree. With the entry point consumed, PATH plays no part.
+for d in A B; do
+  mkdir -p "$TEST_HOME/py272$d"
+  printf '#!/usr/bin/env bash\necho "RAN=%s"\nexit 0\n' "$d" > "$TEST_HOME/py272$d/python3"
+  chmod +x "$TEST_HOME/py272$d/python3"
+done
+deploy_planning_metadata_hook >/dev/null 2>&1
+o1=$(cd "$WS/repo" && PATH="$TEST_HOME/py272A:$PATH" "$HOOKS/pre-commit" 2>&1); r1=$?
+o2=$(cd "$WS/repo" && PATH="$TEST_HOME/py272B:$PATH" "$HOOKS/pre-commit" 2>&1); r2=$?
+l1=$(printf '%s\n' "$o1" | grep '^RAN=' | head -1)
+l2=$(printf '%s\n' "$o2" | grep '^RAN=' | head -1)
+# `-n "$l1"` is not decoration: without it, two runs that both printed nothing would
+# compare equal and this arm would pass having observed no linter at all.
+if [ -n "$l1" ] && [ "$l1" = "$l2" ] && [ "$r1" = "$r2" ]; then
+  ok "the linter executed, and the verdict, are PATH-independent"
+else
+  bad "the linter executed, and the verdict, are PATH-independent" \
+      "run1=[${l1:-<none>} rc=$r1] run2=[${l2:-<none>} rc=$r2]"
+fi
+
+echo "=== AC-272.4 (MUST-FIRE): a yaml-less python3 leading PATH no longer blocks a clean commit ==="
+# The reported bug, reproduced end to end. The broken interpreter leads PATH at BOTH
+# generation and commit time, so this also proves generation-time resolution is not
+# poisoned by whatever happened to lead PATH during onboarding.
+stage w272d
+broken_python "$TEST_HOME/py272broken"
+( export PATH="$TEST_HOME/py272broken:$PATH"
+  deploy_planning_metadata_hook >/dev/null 2>&1 )
+out=$(cd "$WS/repo" && PATH="$TEST_HOME/py272broken:$PATH" "$HOOKS/pre-commit" 2>&1); rc=$?
+if [ "$rc" -eq 0 ]; then
+  ok "a compliant commit survives a yaml-less interpreter at the head of PATH"
+else
+  bad "a compliant commit survives a yaml-less interpreter at the head of PATH" \
+      "rc=$rc out=$(printf '%s' "$out" | tr '\n' '|' | cut -c1-140)"
+fi
+
+echo "=== AC-272.5 (MUST-NOT-FIRE): a genuine violation still reports as a validation failure ==="
+stage w272e
+printf '#!/usr/bin/env python3\nimport sys\nsys.exit(1)\n' > "$WS/linters/validate_planning_metadata.py"
+chmod +x "$WS/linters/validate_planning_metadata.py"
+deploy_planning_metadata_hook >/dev/null 2>&1
+out=$(cd "$WS/repo" && "$HOOKS/pre-commit" 2>&1); rc=$?
+if [ "$rc" -eq 1 ] && printf '%s' "$out" | grep -qi 'validation failed'; then
+  ok "a genuine violation still reports as a validation failure, exit 1"
+else
+  bad "a genuine violation still reports as a validation failure, exit 1" \
+      "rc=$rc out=$(printf '%s' "$out" | tr '\n' '|' | cut -c1-140)"
+fi
+
+echo "=== AC-272.6 (MUST-NOT-FIRE): the deployer still exits 0 on success ==="
+# Guards tests/test_workspace_files.sh:141 from here, where the generator is changed.
+stage w272f
+if deploy_planning_metadata_hook >/dev/null 2>&1; then
+  ok "deploy_planning_metadata_hook exits 0 on success"
+else
+  bad "deploy_planning_metadata_hook exits 0 on success" \
+      "non-zero — folding a new failure into the return code breaks test_workspace_files.sh:141"
+fi
+
 echo
 echo "  passed=$PASS failed=$FAIL"
 [ "$FAIL" -eq 0 ]

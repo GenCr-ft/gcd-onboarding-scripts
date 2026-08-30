@@ -85,6 +85,9 @@ deploy_planning_metadata_hook() {
     chmod +x "$linter_src"
 
     local deployed=0 skipped=0 failed=0
+    # commit-msg outcomes are tracked apart from `failed`: they must not change this
+    # function's exit status. See the note at the install site.
+    local cm_installed=0 cm_failed=0 cm_absent=0
 
     # Scan all directories in target_dir to find Git repositories
     for repo_path in "${target_dir}"/*; do
@@ -184,13 +187,26 @@ EOF
             # pre-commit type would move our wrapper to .legacy and create the self-call loop
             # guarded against above. \`pre-commit install\` has no -C and needs cwd inside the
             # repo, hence the subshell.
+            # Counted SEPARATELY from `failed`, and deliberately NOT folded into the return
+            # code. `command -v pre-commit` can succeed while running it fails: its shebang is
+            # /usr/bin/python3 and its module lives under ~/.local/lib, so any environment with
+            # a relocated HOME finds the binary and gets ModuleNotFoundError. Folding that in
+            # made this function return non-zero on an otherwise successful deployment, which
+            # broke the contract tests/test_workspace_files.sh already asserts ("exits 0 on
+            # success") and would abort onboarding on every such machine.
+            #
+            # The wrapper is the security-critical artefact and it deployed. A missing
+            # commit-msg stage is reported loudly rather than by failing the run.
             if command -v pre-commit >/dev/null 2>&1; then
                 if ( cd "$repo_path" && pre-commit install --hook-type commit-msg >/dev/null 2>&1 ); then
                     log_info "  commit-msg stage installed in ${repo_name}"
+                    cm_installed=$((cm_installed + 1))
                 else
-                    log_warn "  commit-msg stage could not be installed in ${repo_name}"
-                    failed=$((failed + 1))
+                    log_warn "  commit-msg stage NOT installed in ${repo_name} — run 'pre-commit install --hook-type commit-msg' there once its toolchain works"
+                    cm_failed=$((cm_failed + 1))
                 fi
+            else
+                cm_absent=$((cm_absent + 1))
             fi
 
             deployed=$((deployed + 1))
@@ -198,5 +214,12 @@ EOF
     done
 
     log_success "Pre-commit hooks deployed: ${deployed} wrapper(s) installed, ${skipped} skipped, ${failed} failed."
+    # Reported, never folded into the exit status. A summary that counted these as failures
+    # would abort onboarding wherever `pre-commit` is present but unrunnable.
+    if (( cm_failed > 0 || cm_absent > 0 )); then
+        log_warn "commit-msg stage: ${cm_installed} installed, ${cm_failed} failed, ${cm_absent} skipped (pre-commit not on PATH)."
+    else
+        log_info "commit-msg stage: ${cm_installed} installed."
+    fi
     return "$failed"
 }

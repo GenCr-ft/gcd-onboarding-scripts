@@ -148,3 +148,57 @@ $ bash tests/test_precommit_wrapper.sh            exit 0 — passed=8 failed=0
 $ shellcheck includes/06_workspace_files.sh tests/test_precommit_wrapper.sh
                                                   SC1091 info only, cleaner than the repo norm
 ```
+
+## Two things CI found that my own runs did not
+
+### A regression of mine, and the narrow lesson
+
+Folding commit-msg install failures into `failed` made `deploy_planning_metadata_hook` return
+non-zero on an otherwise successful deployment. That broke a contract the repository **already
+asserted** — `tests/test_workspace_files.sh`: *"deploy_planning_metadata_hook exits 0 on success"* —
+and would have aborted onboarding on any machine where `pre-commit` is present but unrunnable.
+
+`command -v pre-commit` succeeds while running it fails: shebang `/usr/bin/python3`, module under
+`~/.local/lib`, so a relocated `HOME` finds the binary and gets `ModuleNotFoundError`. Now counted in
+`cm_installed` / `cm_failed` / `cm_absent`, reported in the summary, and **never folded into the exit
+status** — the wrapper is the security-critical artefact and it deployed.
+
+**The lesson is narrow: run the repository's whole suite, not only the file you added.** The plan
+named the wrong harness (`bats`) and I ran only `test_precommit_wrapper.sh` until CI disagreed. Now:
+`test.sh` → `✓ All tests passed (19 test file(s) run)`.
+
+### A pre-existing red, fixed as boy-scout work — and my first control was vacuous
+
+`tests/test_ssot_parity.sh` failed in CI on fixture drift: the live `gcs-core-governance` SSoT gained
+`poetry 2.4.1` and the mock fixture had three lines. Synced; `[PASS] Fixture matches production.`
+
+Worth recording how nearly I mis-attributed it. My first control ran the test locally on both
+`origin/main` and this branch, got **exit 0 from both**, and I reported that as evidence it was
+environmental. It was not evidence of anything:
+
+```bash
+if [[ -z "${CROSS_REPO_PAT:-}" ]]; then
+  if [[ -z "${CI:-}" ]]; then
+    echo "[WARN] CROSS_REPO_PAT not set — skipping parity check" >&2
+    exit 0
+```
+
+The test **skips** without `CI` set. A plain local run is a vacuous pass with a WARN on stderr, so
+`./test.sh` reports green locally on a check that never ran. Re-run with `CI=true`, `origin/main`
+fails identically — which is the actual control.
+
+That is the same shape as everything else this programme keeps finding: **silence reported as
+success.** Not filed separately, because the fix here is the fixture and the skip is a deliberate
+offline accommodation — but it is why "it passes locally" was not an answer.
+
+### And the gate blocked the fix, correctly
+
+Editing the regression tripped `❌ LIFECYCLE GATE BLOCKED [IMPLEMENT]` — #268's body carried no
+tasklist linking its `[DESIGN]` and `[IMPL]` sub-issues. Note the asymmetry: `gft wi gate --phase
+implement` had already **recorded** `IMPLEMENT:PASS` without checking that, and the hook does not
+honour the recorded marker. A recorder that does not verify what a blocking hook demands is
+GenCr-ft/gcs-plt-tools#974's family, observed here from the other side.
+
+Fixed by creating `[IMPL]` #274 and adding the tasklist. While editing the body, two errors in it
+were corrected: the umbrella was cited as `gcs-plt-gemop#351` — the wrong repo, and both repos have a
+`#351`, so it resolved silently — and the denominator read "30 of 32 clones" against a measured 34.

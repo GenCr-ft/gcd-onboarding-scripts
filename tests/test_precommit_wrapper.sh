@@ -312,6 +312,29 @@ else
       "rc=$rc out=$(printf '%s' "$out" | tr '\n' '|' | cut -c1-140)"
 fi
 
+echo "=== AC-272.7 (MUST-FIRE): a broken entry point is 'cannot run', not a verdict ==="
+# The entry point is now the PRIMARY path, so a venv whose interpreter has been moved or
+# deleted is the likeliest residual failure -- and bash reports it as 126/127, which without
+# this branch would be relabelled "validation failed": the original defect, one layer in.
+# Staged by giving the entry-point stub a shebang pointing at an interpreter that is not
+# there, which is exactly what a deleted venv looks like.
+stage w272g
+mkdir -p "$WS/gcd-ops-scripts/.venv/bin"
+printf '#!%s/gcd-ops-scripts/.venv/bin/python\nprint("unreachable")\n' "$WS" \
+  > "$WS/gcd-ops-scripts/.venv/bin/validate-planning-metadata"
+chmod +x "$WS/gcd-ops-scripts/.venv/bin/validate-planning-metadata"
+deploy_planning_metadata_hook >/dev/null 2>&1
+out=$(cd "$WS/repo" && "$HOOKS/pre-commit" 2>&1); rc=$?
+if printf '%s' "$out" | grep -qi 'validation failed'; then
+  bad "a broken entry point reads as 'cannot run'" \
+      "said 'validation failed' — an exec failure is dressed as a verdict"
+elif [ "$rc" -ne 0 ] && [ "$rc" -ne 1 ] && printf '%s' "$out" | grep -qi 'cannot run'; then
+  ok "a broken entry point reads as 'cannot run'"
+else
+  bad "a broken entry point reads as 'cannot run'" \
+      "rc=$rc out=$(printf '%s' "$out" | tr '\n' '|' | cut -c1-140)"
+fi
+
 echo "=== AC-272.5 (MUST-NOT-FIRE): a genuine violation still reports as a validation failure ==="
 stage w272e
 printf '#!/usr/bin/env python3\nimport sys\nsys.exit(1)\n' > "$WS/linters/validate_planning_metadata.py"

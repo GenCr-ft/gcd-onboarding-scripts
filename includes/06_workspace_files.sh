@@ -217,12 +217,37 @@ LINTER_REQ="${linter_req}"
 LINTER_VENV_PY="${linter_venv_py}"
 LINTER_PATH_PY="${linter_path_py}"
 
+# The one place the "could not run" diagnosis is worded. Reached from two callers -- a
+# broken entry point, and no candidate interpreter satisfying the requirement -- and both
+# must say the same thing, because to the developer they are the same fact.
+gate_cannot_run() {
+    {
+        echo "[TRACEABILITY GATE] CANNOT RUN — the planning metadata linter was not executed."
+        echo "  Your commit has NOT been judged. This is not a validation failure."
+        echo "  Missing requirement: python module '\$LINTER_REQ'"
+        echo "  Interpreters tried:\${GATE_TRIED:- (none executable)}"
+        echo "  Entry point looked for: \${LINTER_ENTRY:-<none installed>}"
+        echo "  Fix: (cd ${target_dir}/gcd-ops-scripts && poetry install)"
+        echo "  Or:  set GFT_LINTER_PYTHON to an interpreter that has '\$LINTER_REQ'."
+    } >&2
+}
+
 run_linter() {
     # Primary: the installed console script. Its shebang is an absolute interpreter path
     # into the environment that declares the linter's dependencies, so PATH plays no part.
     if [ -n "\$LINTER_ENTRY" ] && [ -x "\$LINTER_ENTRY" ]; then
         "\$LINTER_ENTRY" "\$@"
-        return \$?
+        GATE_RC=\$?
+        # 126/127 from the entry point mean its own shebang interpreter could not be
+        # executed -- a deleted or moved venv. That is "could not run", not a verdict, and
+        # this is now the PRIMARY path, so a broken venv here is the likeliest residual
+        # failure. The linter itself only ever exits 0 or 1, so neither code is ambiguous.
+        if [ \$GATE_RC -eq 126 ] || [ \$GATE_RC -eq 127 ]; then
+            GATE_TRIED=" \$LINTER_ENTRY (exec failed: \$GATE_RC)"
+            gate_cannot_run
+            return \$GATE_CANNOT_RUN
+        fi
+        return \$GATE_RC
     fi
 
     # Documented fallback: no entry point installed. PROBE each candidate for the
@@ -242,15 +267,7 @@ run_linter() {
     # Nothing can run it. Fail CLOSED -- an unrunnable gate must not wave a commit
     # through -- but say what actually happened. "The check said no" and "the check could
     # not run" must not print the same sentence.
-    {
-        echo "[TRACEABILITY GATE] CANNOT RUN — the planning metadata linter was not executed."
-        echo "  Your commit has NOT been judged. This is not a validation failure."
-        echo "  Missing requirement: python module '\$LINTER_REQ'"
-        echo "  Interpreters tried:\${GATE_TRIED:- (none executable)}"
-        echo "  Entry point looked for: \${LINTER_ENTRY:-<none installed>}"
-        echo "  Fix: (cd ${target_dir}/gcd-ops-scripts && poetry install)"
-        echo "  Or:  set GFT_LINTER_PYTHON to an interpreter that has '\$LINTER_REQ'."
-    } >&2
+    gate_cannot_run
     return \$GATE_CANNOT_RUN
 }
 

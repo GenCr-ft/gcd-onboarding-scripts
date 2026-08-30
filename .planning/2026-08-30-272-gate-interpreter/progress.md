@@ -198,6 +198,29 @@ After both fixes:
 
 All 14 arms in the file, including the 8 pre-existing WI-268 arms, pass.
 
+### AC-272.7 — a residual instance of the same defect, in the path now made primary
+
+Found by reviewing the finished generated block rather than by a failing test. The entry
+point is now the **primary** path, so a venv whose interpreter has been moved or deleted is
+the likeliest residual failure — and bash reports that as `126`/`127`, which the first
+implementation passed straight through to be relabelled `Planning metadata validation
+failed`. The original defect, one layer in.
+
+Fixed by mapping `126`/`127` from the entry point to CANNOT-RUN, and extracting the message
+into `gate_cannot_run()` so both callers say the same thing. Proven capable of failing, by
+stashing only the generator and keeping the arm:
+
+```
+$ git stash push -- includes/06_workspace_files.sh
+$ bash tests/test_precommit_wrapper.sh
+=== AC-272.7 (MUST-FIRE): a broken entry point is 'cannot run', not a verdict ===
+  FAIL  a broken entry point reads as 'cannot run'
+          said 'validation failed' — an exec failure is dressed as a verdict
+  passed=14 failed=1
+```
+
+With the fix restored: `passed=15 failed=0`.
+
 ## Verification
 
 ### Whole suite — 19 files
@@ -215,8 +238,28 @@ FULL SUITE exit=1
 `deploy_planning_metadata_hook exits 0 on success` contract at line 141 — nothing new was
 folded into that return code.
 
-The single failure, `tests/test_studio_home_e2e.sh`, is **pre-existing and unrelated**.
-Proven against a clean detached worktree of `origin/main`, not inferred:
+The single failure, `tests/test_studio_home_e2e.sh`, is **pre-existing and unrelated** — and
+my first characterisation of it was wrong. It failed three consecutive times, including on
+clean `origin/main`, so I filed it as "red on main". After the suite had run once it passes,
+and `6/6` on repeat:
+
+```
+$ bash test.sh
+exit=0
+$ for i in 1 2 3 4 5 6; do bash tests/test_studio_home_e2e.sh >/dev/null 2>&1; echo "run$i exit=$?"; done
+run1..run6 exit=0
+```
+
+So it is **flaky / order-dependent**, not deterministic. Mechanism found:
+`gft-onboarding.sh:62` declares `readonly GFT_SSOT_PATH="/tmp/gft-ssot-onboarding"` — a
+hardcoded shared path outside any hermetic `HOME`, and unoverridable — while the test's own
+`seed_mock_ssot` begins `rm -rf "$GFT_SSOT_PATH"`. Tests interfere through a fixed global
+path, so the suite is also unsafe to run concurrently with itself. Correction and revised
+controls posted to #278. The unconditional finding stands: whenever it fails it fails
+**silently**, because the captured output is discarded and inherited `set -e` pre-empts the
+test's own reporting.
+
+The original evidence, real when measured:
 
 ```
 $ git worktree add /tmp/wi272-baseline origin/main --detach

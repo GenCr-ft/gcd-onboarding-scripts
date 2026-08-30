@@ -2,7 +2,7 @@
 docId: GOV-PLAN-272
 title: WI-272 — gate interpreter
 issue-id: GenCr-ft/gcd-onboarding-scripts#272
-status: in_progress
+status: complete
 ---
 
 # [CODE] WI-272 — gate interpreter
@@ -108,9 +108,9 @@ workspace clone, and alters a gate's exit-code contract.
 | Gate | State |
 |---|---|
 | REFINE | ✅ analysis posted on #272, `LIFECYCLE:REFINE:PASS` recorded |
-| DESIGN | sub-issue raised — **stops for human approval** |
-| PLAN | this file |
-| IMPLEMENT | blocked on DESIGN approval |
+| DESIGN | ✅ #276 approved by `loigallain` on all three decisions, closed, `status:approved` |
+| PLAN | ✅ this file |
+| IMPLEMENT | ✅ red `b212a41` → green; 14/14 arms, `test_workspace_files` 52/0 |
 
 ## Notes
 

@@ -62,7 +62,29 @@ deploy_workspace_files() {
 #: with no legacy and therefore failed open, and re-running onboarding could not fix any of them.
 #: Bump WRAPPER_VERSION whenever the generated body changes semantics.
 WRAPPER_MARKER="GenCr@ft Studio - Chained Pre-Commit Hook wrapper"
-WRAPPER_VERSION="2"
+WRAPPER_VERSION="3"
+
+#: Exit status the wrapper uses for "the linter could not run", distinct from the linter's
+#: own 0 (compliant) and 1 (violation).
+#:
+#: A third code is not decoration: a ModuleNotFoundError crash and a genuine violation BOTH
+#: exit 1, so "could not run" cannot be recovered from the linter's status after the fact.
+#: Establishing it is the whole reason the diagnosis fix and the interpreter fix are one
+#: change. 3 avoids 1 (verdict), 2 (shell usage) and 126/127 (exec faults).
+GATE_EXIT_CANNOT_RUN=3
+
+#: The linter's only third-party import. Named here so the coupling is in ONE place.
+#:
+#: Overridable so the CANNOT-RUN branch is reachable in tests: `/usr/bin/python3` is a fixed
+#: candidate and carries PyYAML on the dev machine and the self-hosted CI runner, so an arm
+#: cannot reach that branch by manipulating PATH. A branch that cannot be exercised is a
+#: branch that is not tested. It becomes dead weight once every clone has an installed
+#: entry point, which is the primary path below.
+#:
+#: Read at GENERATION time (inside deploy_planning_metadata_hook), not here: this file is
+#: sourced once at startup, so resolving the override here would bake whatever the
+#: environment held at source time and silently ignore a later change.
+LINTER_REQUIRED_MODULE="yaml"
 
 deploy_planning_metadata_hook() {
     local target_dir="${GFT_PROJECTS_HOME:-${HOME}/gft_studio}"
@@ -83,6 +105,59 @@ deploy_planning_metadata_hook() {
 
     # Ensure the script is executable
     chmod +x "$linter_src"
+
+    # ── Interpreter resolution ────────────────────────────────────────────────────────
+    #
+    # The wrapper used to exec `"$linter_src" "$@"`, so the interpreter came from the
+    # linter's `#!/usr/bin/env python3` -> PATH. That made a GOVERNANCE GATE's answer a
+    # function of the developer's shell: on the dev machine
+    # /home/lgan/.gft-studio/.poetry/bin/python3 (no PyYAML) resolves BEFORE
+    # /usr/bin/python3 (PyYAML 6.0.3), so the same commit passed one hour and was
+    # hard-blocked the next (#272, and #271 which reported the same defect first).
+    #
+    # The pin already exists and was simply not being called: gcd-ops-scripts declares
+    # `PyYAML = ">=6.0.2"` and ships a `validate-planning-metadata` console script whose
+    # shebang is an ABSOLUTE path into the environment that declares it -- it runs with
+    # PATH emptied. Preferring it puts the pin where the dependency is declared, instead
+    # of mirroring another repo's pyproject.toml in shell here.
+    #
+    # Deliberately NOT done: changing the linter's own shebang. `#!/usr/bin/env python3`
+    # is correct for a source module in a package; an absolute path there would break the
+    # repo's own venv, its CI, and macOS. A shebang cannot express "the interpreter that
+    # has my dependencies" -- an entry point is exactly that mechanism.
+    # Resolved from target_dir ONLY, never via `command -v`.
+    #
+    # An earlier revision also accepted `command -v validate-planning-metadata`, and it was
+    # wrong twice over. It re-introduced ambient resolution through a different variable --
+    # a stale global install would be preferred over this workspace's own clone -- and it
+    # let source and execution disagree: `linter_src` is resolved from target_dir, so an
+    # entry point from somewhere else could be an entirely different revision of the
+    # linter than the file this wrapper claims to run. It was caught by the fixture arms,
+    # which found the DEVELOPER'S REAL linter on PATH and ran it against a mock workspace.
+    #
+    # The rule: always execute the linter belonging to this workspace. Entry point from
+    # this clone if installed, else this clone's source under a probed interpreter.
+    local linter_entry="${target_dir}/gcd-ops-scripts/.venv/bin/validate-planning-metadata"
+    [[ -x "$linter_entry" ]] || linter_entry=""
+
+    local linter_req="${GFT_LINTER_REQUIRED_MODULE:-${LINTER_REQUIRED_MODULE}}"
+
+    # Fallback candidates, used only when no entry point is installed (a clone with the
+    # source tree and no `poetry install`). Each is PROBED for the requirement before use;
+    # an interpreter that cannot import it is not a candidate, so the crash cannot occur.
+    # Ordered for determinism over ambient preference, which is the point of this WI:
+    # the linter's own venv, then a fixed absolute path, then PATH as a last resort.
+    local linter_venv_py="${target_dir}/gcd-ops-scripts/.venv/bin/python3"
+    [[ -x "$linter_venv_py" ]] || linter_venv_py=""
+    local linter_path_py
+    linter_path_py="$(command -v python3 2>/dev/null || true)"
+
+    if [[ -n "$linter_entry" ]]; then
+        log_info "  Planning linter entry point: ${linter_entry}"
+    else
+        log_warn "  No validate-planning-metadata entry point found; the wrapper will probe an interpreter for '${linter_req}'."
+        log_warn "  Install it once with: (cd ${target_dir}/gcd-ops-scripts && poetry install)"
+    fi
 
     local deployed=0 skipped=0 failed=0
     # commit-msg outcomes are tracked apart from `failed`: they must not change this
@@ -132,9 +207,60 @@ deploy_planning_metadata_hook() {
 # Automatically generated by onboarding scripts. Do not edit in place.
 # wrapper-version: ${WRAPPER_VERSION}
 
-# 1. Run strict planning metadata validation
-"${linter_src}" "\$@"
+# 1. Run strict planning metadata validation.
+#
+# Resolved at generation time so the gate's answer does not depend on the shell's PATH.
+GATE_CANNOT_RUN=${GATE_EXIT_CANNOT_RUN}
+LINTER_ENTRY="${linter_entry}"
+LINTER_SRC="${linter_src}"
+LINTER_REQ="${linter_req}"
+LINTER_VENV_PY="${linter_venv_py}"
+LINTER_PATH_PY="${linter_path_py}"
+
+run_linter() {
+    # Primary: the installed console script. Its shebang is an absolute interpreter path
+    # into the environment that declares the linter's dependencies, so PATH plays no part.
+    if [ -n "\$LINTER_ENTRY" ] && [ -x "\$LINTER_ENTRY" ]; then
+        "\$LINTER_ENTRY" "\$@"
+        return \$?
+    fi
+
+    # Documented fallback: no entry point installed. PROBE each candidate for the
+    # requirement and use the first that satisfies it. Never a bare \`python3\` -- that is
+    # today's behaviour and the whole defect.
+    GATE_TRIED=""
+    for py in "\${GFT_LINTER_PYTHON:-}" "\$LINTER_VENV_PY" /usr/bin/python3 "\$LINTER_PATH_PY"; do
+        [ -n "\$py" ] && [ -x "\$py" ] || continue
+        case " \$GATE_TRIED " in *" \$py "*) continue ;; esac
+        GATE_TRIED="\$GATE_TRIED \$py"
+        if "\$py" -c "import \$LINTER_REQ" >/dev/null 2>&1; then
+            "\$py" "\$LINTER_SRC" "\$@"
+            return \$?
+        fi
+    done
+
+    # Nothing can run it. Fail CLOSED -- an unrunnable gate must not wave a commit
+    # through -- but say what actually happened. "The check said no" and "the check could
+    # not run" must not print the same sentence.
+    {
+        echo "[TRACEABILITY GATE] CANNOT RUN — the planning metadata linter was not executed."
+        echo "  Your commit has NOT been judged. This is not a validation failure."
+        echo "  Missing requirement: python module '\$LINTER_REQ'"
+        echo "  Interpreters tried:\${GATE_TRIED:- (none executable)}"
+        echo "  Entry point looked for: \${LINTER_ENTRY:-<none installed>}"
+        echo "  Fix: (cd ${target_dir}/gcd-ops-scripts && poetry install)"
+        echo "  Or:  set GFT_LINTER_PYTHON to an interpreter that has '\$LINTER_REQ'."
+    } >&2
+    return \$GATE_CANNOT_RUN
+}
+
+run_linter "\$@"
 LINTER_EXIT=\$?
+
+if [ \$LINTER_EXIT -eq \$GATE_CANNOT_RUN ]; then
+    # run_linter already explained itself; do not relabel it as a verdict.
+    exit \$LINTER_EXIT
+fi
 
 if [ \$LINTER_EXIT -ne 0 ]; then
     echo "[TRACEABILITY GATE] Planning metadata validation failed. Commit aborted."

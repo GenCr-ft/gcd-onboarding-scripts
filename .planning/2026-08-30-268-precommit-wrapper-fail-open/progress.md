@@ -61,4 +61,90 @@ That is the most dangerous thing in this work item and it is handled at the harn
 
 ## Green
 
-Pending.
+```
+$ bash tests/test_precommit_wrapper.sh
+passed=8 failed=0
+
+ok    wrapper runs the declared set when no legacy hook exists
+ok    a v1 wrapper with no legacy is rewritten
+ok    .git/hooks/commit-msg exists after deployment
+ok    the pre-commit hook type is NEVER installed (recursion hazard)
+ok    self-delegation is refused rather than recursing
+ok    declared-but-unrunnable hook set fails closed, naming pre-commit
+ok    a repo declaring no hooks still commits
+ok    re-running onboarding does not rewrite a current wrapper
+```
+
+Eight arms, up from the seven planned: the stub records its argv, so AC-3 also pins that the
+generator requests `--hook-type commit-msg` and **never** `--hook-type pre-commit`. Which hook type
+is requested is a security property, not a detail — installing the pre-commit type is what moves the
+wrapper to `.legacy` and creates the self-call loop.
+
+### Three arms were wrong before the code was, and each failure read as a defect
+
+**AC-1 asserted on text, not behaviour.** It grepped the generated wrapper for a bare `exit 0` line —
+which the *correct* v2 wrapper also contains, legitimately, for the no-config case. A static match
+would have failed a working fix. Rewritten to put a **failing stub `pre-commit`** on PATH in a repo
+that declares a config with no legacy: a wrapper that runs the declared set propagates the failure, a
+wrapper that fails open exits 0. Confirmed still red against the unmodified generator before
+proceeding.
+
+**The fixture faked the repository.** `stage()` did `mkdir -p .git/hooks`, and `pre-commit install`
+refuses that: *"FatalError: git failed. Is it installed, and are you in a Git repository directory?"*.
+AC-3 therefore reported "nothing writes it" while the generator was working. Now `git init`.
+
+**The real `pre-commit` cannot run under a hermetic HOME at all.** Its shebang is
+`/usr/bin/python3` and its module lives under `~/.local/lib`, so every test in this repo — all of
+which override `HOME` for isolation — gets `ModuleNotFoundError: No module named 'pre_commit'`. That
+is why AC-3 still failed after the fixture fix. Replaced with a stub, which is both hermetic and
+strictly more informative.
+
+Three fixture/arm defects, three failures that each looked like the implementation. **The pattern is
+the point: when a must-fire arm fails, the first question is whether the arm can distinguish the
+defect from its own scaffolding.**
+
+## Stage A exit criterion — the old generator could not have repaired the fleet
+
+The arm the whole staging rests on. The pre-change generator is extracted from `origin/main` rather
+than reconstructed:
+
+```
+=== the OLD generator, on a clone that never ran 'pre-commit install' ===
+  generator exit: 0
+  reports: wrapper(s) installed, 0 skipped, 0 failed.
+  commit-msg written?  NO
+  wrapper version line: 0
+  wrapper exit with a FAILING declared set: 0  (0 == failed open)
+  did the declared set run? NO
+=== and re-running it again is still a no-op (the skip branch) ===
+  wrapper byte-identical after a second run: YES
+```
+
+It **reports success while doing neither job**, and a second run is byte-identical — so re-running
+onboarding could never have fixed the 30 fail-open clones. Both defects confirmed independently, and
+the third (the version-less skip) is what made them permanent.
+
+## A consequence Stage B must expect
+
+Comparing shellcheck output as a side-effect of verification: my two files produce only `SC1091`
+(info, "not following" sourced files, with `args: ["-x"]` commented out in this repo's config), while
+the **existing** `tests/test_onboarding_logic.sh` produces six distinct codes — `SC1091 SC2016 SC2034
+SC2064 SC2088 SC2317`.
+
+That is not a criticism of those files. It is evidence of this work item's own premise from a new
+direction: **the declared hook set has never run in these clones**, so nothing has ever enforced
+shellcheck on them. When Stage B deploys the working wrapper across 34 clones, 33 of them begin
+running shellcheck, markdownlint and `detect-secrets` **for the first time**.
+
+So Stage B is not a mechanical rollout. It is the same layered revelation as fixing `lint` uncovering
+a dead `test` job, and it should be sequenced expecting a wave of first-time findings rather than
+discovering them mid-sweep. Recorded here so the Stage B issue inherits it.
+
+## Verification
+
+```
+$ bash -n includes/06_workspace_files.sh          syntax ok
+$ bash tests/test_precommit_wrapper.sh            exit 0 — passed=8 failed=0
+$ shellcheck includes/06_workspace_files.sh tests/test_precommit_wrapper.sh
+                                                  SC1091 info only, cleaner than the repo norm
+```

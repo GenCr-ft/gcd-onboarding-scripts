@@ -51,11 +51,20 @@ ok()   { PASS=$((PASS+1)); printf '  ok    %s\n' "$1"; }
 bad()  { FAIL=$((FAIL+1)); printf '  FAIL  %s\n' "$1"; [ -n "${2:-}" ] && printf '          %s\n' "$2"; }
 check(){ if [ "$2" = "$3" ]; then ok "$1"; else bad "$1" "want=$3 got=$2"; fi; }
 
-# stage <name> — a fresh fixture workspace with one git repo and a linter present
+# stage <name> — a fresh fixture workspace with one REAL git repo and a linter present
+#
+# `git init`, not `mkdir -p .git/hooks`. The first version of this helper faked the repo, and
+# AC-3 failed as a result: `pre-commit install` refuses a directory that is not a real
+# repository ("FatalError: git failed. Is it installed, and are you in a Git repository
+# directory?"). That read exactly like the implementation not writing the hook. A fixture that
+# is not the thing under test produces a failure that looks like a defect.
 stage() {
   WS="$TEST_HOME/$1"; rm -rf "$WS"
   export GFT_PROJECTS_HOME="$WS"
-  mkdir -p "$WS/repo/.git/hooks" "$WS/linters"
+  mkdir -p "$WS/repo" "$WS/linters"
+  git -C "$WS/repo" init -q
+  git -C "$WS/repo" config user.email a@b
+  git -C "$WS/repo" config user.name a
   printf '#!/usr/bin/env python3\nimport sys\nsys.exit(0)\n' > "$WS/linters/validate_planning_metadata.py"
   chmod +x "$WS/linters/validate_planning_metadata.py"
   HOOKS="$WS/repo/.git/hooks"
@@ -65,11 +74,24 @@ echo "=== AC-1 (MUST-FIRE): a clone that never ran 'pre-commit install' must not
 stage ac1
 printf 'repos:\n  - repo: local\n    hooks:\n      - id: x\n' > "$WS/repo/.pre-commit-config.yaml"
 deploy_planning_metadata_hook >/dev/null 2>&1
-# No legacy hook exists, so a fail-open wrapper reaches `exit 0` regardless of the declared set.
-if grep -qE '^\s*exit 0\s*$' "$HOOKS/pre-commit" 2>/dev/null; then
-  bad "wrapper does not fail open when no legacy hook exists" "the wrapper ends in a bare 'exit 0'"
+# BEHAVIOURAL, not textual. The first version of this arm grepped the wrapper for a bare
+# `exit 0` line -- which the CORRECT v2 wrapper also contains, legitimately, for the
+# no-config case. A static text match would therefore have failed a working fix, and it was
+# asserting on the file's prose rather than on what the hook does.
+#
+# Instead: put a stub `pre-commit` on PATH that FAILS, in a repo that declares a config and
+# has no legacy hook. A wrapper that runs the declared set propagates that failure; a wrapper
+# that fails open exits 0 and the declared set never runs.
+mkdir -p "$TEST_HOME/stub-fail"
+printf '#!/usr/bin/env bash\necho "STUB pre-commit ran" >&2\nexit 1\n' > "$TEST_HOME/stub-fail/pre-commit"
+chmod +x "$TEST_HOME/stub-fail/pre-commit"
+out=$(cd "$WS/repo" && PATH="$TEST_HOME/stub-fail:$PATH" "$HOOKS/pre-commit" 2>&1); rc=$?
+if [ "$rc" -ne 0 ] && printf '%s' "$out" | grep -q "STUB pre-commit ran"; then
+  ok "wrapper runs the declared set when no legacy hook exists"
+elif [ "$rc" -eq 0 ]; then
+  bad "wrapper runs the declared set when no legacy hook exists" "exit 0 -- failed OPEN, the declared set never ran"
 else
-  ok "wrapper does not fail open when no legacy hook exists"
+  bad "wrapper runs the declared set when no legacy hook exists" "rc=$rc but the declared set was not invoked"
 fi
 
 echo "=== AC-2 (MUST-FIRE): a v1 wrapper with no legacy must be REWRITTEN, not skipped ==="
@@ -86,11 +108,51 @@ else
   ok "a v1 wrapper with no legacy is rewritten"
 fi
 
-echo "=== AC-3 (MUST-FIRE): the commit-msg stage must be installed ==="
+echo "=== AC-3 (MUST-FIRE): the commit-msg stage must be installed, and ONLY that one ==="
 stage ac3
-deploy_planning_metadata_hook >/dev/null 2>&1
-if [ -f "$HOOKS/commit-msg" ]; then ok ".git/hooks/commit-msg exists after deployment"
-else bad ".git/hooks/commit-msg exists after deployment" "nothing writes it"; fi
+# A STUB `pre-commit`, not the real one. The real binary cannot run here at all: its shebang is
+# /usr/bin/python3 and its module lives under ~/.local/lib, so the hermetic HOME every test in
+# this repo uses makes it `ModuleNotFoundError: No module named 'pre_commit'`. An arm depending
+# on it fails for a reason that has nothing to do with the code under test -- which is exactly
+# how this arm first read as "nothing writes it" when the generator was in fact working.
+#
+# The stub records its argv, which lets this arm assert something stronger than the file
+# appearing: that the generator asks for `commit-msg` and NEVER for `pre-commit`. Installing the
+# pre-commit type is what moves the wrapper to .legacy and creates the self-call loop, so
+# "which hook type was requested" is a security property, not a detail.
+mkdir -p "$TEST_HOME/stub-pc"
+cat > "$TEST_HOME/stub-pc/pre-commit" <<'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >> "${STUB_ARGV_LOG}"
+hook=""
+prev=""
+for a in "$@"; do
+  [ "$prev" = "--hook-type" ] && hook="$a"
+  prev="$a"
+done
+if [ "${1:-}" = "install" ] && [ -n "$hook" ]; then
+  d="$(git rev-parse --git-path hooks 2>/dev/null || echo .git/hooks)"
+  mkdir -p "$d"
+  printf '#!/usr/bin/env bash\n# stub %s hook\nexit 0\n' "$hook" > "$d/$hook"
+  chmod +x "$d/$hook"
+fi
+exit 0
+STUB
+chmod +x "$TEST_HOME/stub-pc/pre-commit"
+export STUB_ARGV_LOG="$TEST_HOME/ac3-argv.log"; : > "$STUB_ARGV_LOG"
+( export PATH="$TEST_HOME/stub-pc:$PATH"; deploy_planning_metadata_hook >/dev/null 2>&1 )
+if [ ! -f "$HOOKS/commit-msg" ]; then
+  bad ".git/hooks/commit-msg exists after deployment" "nothing writes it"
+elif ! grep -q -- "--hook-type commit-msg" "$STUB_ARGV_LOG"; then
+  bad ".git/hooks/commit-msg exists after deployment" "the file appeared but commit-msg was never requested"
+else
+  ok ".git/hooks/commit-msg exists after deployment"
+fi
+if grep -q -- "--hook-type pre-commit" "$STUB_ARGV_LOG"; then
+  bad "the pre-commit hook type is NEVER installed (recursion hazard)" "it was requested — this recreates the self-call loop"
+else
+  ok "the pre-commit hook type is NEVER installed (recursion hazard)"
+fi
 
 echo "=== AC-5 (MUST-FIRE): a delegate carrying the wrapper's own marker must be refused ==="
 stage ac5

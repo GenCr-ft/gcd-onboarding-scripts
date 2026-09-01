@@ -11,7 +11,7 @@ jobs:
   validate-ssot:
     name: 'Run Official SSoT Linter'
     # This calls the master workflow from the correct SSoT location.
-    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.4
+    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.8
     secrets:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
     with:
@@ -26,5 +26,5 @@ jobs:
       # Measured at both tags, engine v4.3.2, CI's own 26-name prune list: scanned=4, delta 0 errors.
       # scanned=4 is the load-bearing number — this gate judges 4 files, not the whole repo, so a
       # future reader must not read its "0 errors" as repo-wide compliance.
-      governance-version: 'v1.6.0'
-      tooling-version: 'v4.3.2'
+      governance-version: 'v1.6.1'
+      tooling-version: 'v4.4.1'

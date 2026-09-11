@@ -11,7 +11,7 @@ jobs:
   validate-ssot:
     name: 'Run Official SSoT Linter'
     # This calls the master workflow from the correct SSoT location.
-    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.3.8
+    uses: GenCr-ft/gcd-shared-actions/.github/workflows/reusable-ssot-linter.yml@v1.5.0
     secrets:
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
     with:

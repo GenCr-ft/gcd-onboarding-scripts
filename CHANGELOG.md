@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Re-pin the SSoT linter caller to `gcd-shared-actions@v1.5.0`, so this repository actually executes the job-level `concurrency` control released in that tag; `governance-version` (`v1.6.1`), `tooling-version` (`v4.4.1`) and `continue-on-error` are byte-identical. The tag alone reached nobody: measured at `origin/main` of 34 real clones before this sweep, 0 of 32 pin sites across 30 consumers were on `v1.5.0` and 28 sat on `v1.3.8`, because a caller executes the workflow at the tag it pins. The pair is left explicit and unchanged because it already equals the canonical pair recorded `rc: 0` in `policy/compatibility-matrix.yml`, which the new pin-compatibility preflight checks. (GenCr-ft/gcd-shared-actions#165, PR #TBD, @loigallain)
+
 - Re-pin all three SSoT versions — `uses:@v1.3.8`, `tooling-version: v4.4.1`, `governance-version: v1.6.1` — in one change. This repository was **held out of wave 1** because it is `continue-on-error: false`: the pin rule's exit 2 was not masked, so `Check Tool-Version Pin Outcome` would have failed the job. Four repos were pulled from that wave after the pilot exposed it, and had the sweep gone ahead as first planned they would have gone red for a cause nobody had identified. `v1.6.1` removes the cause rather than masking it (gcs-core-governance#357). Measured off-runner at governance `v1.6.1` + tooling `v4.4.1`: **exit 0, clean** — a precondition here rather than a convenience, since there is no mask. `continue-on-error` byte-identical. (#280, PR #TBD, @loigallain)
 
 ### Changed

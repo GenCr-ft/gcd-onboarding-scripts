@@ -32,12 +32,12 @@ excluded by testing whether `.git` is a file:
 
 | `uses:` pin | Sites |
 |---|---|
-| `@v1.3.8` | 28 |
-| `@v1.3.1` / `@v1.3.2` / `@v1.3.5` / `@v1.3.6` | 1 each |
+| `@v1.3.8` | 27 |
+| `@v1.3.1` / `@v1.3.2` / `@v1.3.5` | 1 each |
 | `@v1.4.0` | 0 |
 | `@v1.5.0` | **0** |
 
-32 pin sites across 30 consumer repositories, of 34 real clones. This repository holds one.
+30 real `uses:` pin sites across 30 consumer repositories, of 34 real clones - one per repo. An earlier count of 32 was wrong: the enumerator matched the token inside two COMMENTS rather than `uses:` declarations, and in one repo that rewrote a comment citing a line number and falsified it. This repository holds one site.
 
 ## Scope
 
